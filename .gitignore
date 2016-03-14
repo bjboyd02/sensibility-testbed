@@ -1,5 +1,6 @@
 # Following the example in https://gist.github.com/iainconnor/8605514
 */build
+.gradle
 
 *.iml
 
