@@ -144,6 +144,13 @@ public class ScriptActivity extends Activity {
     return (new File(getSeattlePath() + "seattle_repy/nmmain.py")).exists();
   }
 
+
+  // XXX TODO FOO BAR
+  static { System.loadLibrary("embedded_python_test"); }
+
+  public native void nudgePythonInterpreter();
+
+
   // setup python progressDialog
   private void preparePythonProgress() {
     this.pythonProgress = new ProgressDialog(this);

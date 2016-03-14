@@ -1,1 +1,1 @@
-include ':app'
+include 'com.sensibility_testbed'
