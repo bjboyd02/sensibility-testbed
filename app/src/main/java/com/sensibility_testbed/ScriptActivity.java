@@ -67,8 +67,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+/*
 import com.googlecode.android_scripting.Constants;
 import com.googlecode.android_scripting.FileUtils;
+*/
 
 /**
  *
@@ -143,13 +145,6 @@ public class ScriptActivity extends Activity {
   private boolean isSeattleInstalled() {
     return (new File(getSeattlePath() + "seattle_repy/nmmain.py")).exists();
   }
-
-
-  // XXX TODO FOO BAR
-  static { System.loadLibrary("embedded_python_test"); }
-
-  public native void nudgePythonInterpreter();
-
 
   // setup python progressDialog
   private void preparePythonProgress() {
@@ -938,66 +933,8 @@ public class ScriptActivity extends Activity {
     pythonComplete.create().show();
   }
 
-  // Executed in onStart(), verify that SL4A is installed
-  // Thank you: http://stackoverflow.com/questions/6829187/android-explicit-intent-with-target-component
-  // And: http://stackoverflow.com/questions/2780102/open-another-application-from-your-own-intent/
-  private void checkSL4AInstall() {
-    if (!Environment.getExternalStorageState()
-        .equals(Environment.MEDIA_MOUNTED)) {
-      // External storage device not mounted
-      showNotMountedLayout();
-    } else {
-      // Let's try SL4A! Start SL4A
-      // XXX Repeat of code in ScriptService.java!
-      Log.v(Common.LOG_TAG, "Creating SL4A Intent....");
-      Intent sl4aIntent = new Intent();
-
-      sl4aIntent
-      .setComponent(ComponentName
-          .unflattenFromString("com.googlecode.android_scripting/.activity.ScriptingLayerServiceLauncher"));
-      sl4aIntent.setAction(Constants.ACTION_LAUNCH_SERVER);
-      sl4aIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      // XXX How good an idea is hardcoding the listen port?
-      sl4aIntent.putExtra(Constants.EXTRA_USE_SERVICE_PORT, 45678);
-
-      if (!Utils.isMyServiceInstalled(getBaseContext(), sl4aIntent)) {
-        Log.i(
-            Common.LOG_TAG,
-            "SL4A is not installed. Too bad! Hope the user goes and installs it some day so we can access sensors.");
-        CharSequence text = "SL4A is not installed. Please install it from https://code.google.com/p/android-scripting/";
-
-        final Builder sl4aNotFound = new AlertDialog.Builder(this).setMessage(
-            text).setNeutralButton("OK", new DialogInterface.OnClickListener() {
-              @Override
-              public void onClick(DialogInterface dialog, int which) {
-                // if sl4a is not installed, exit the app
-                android.os.Process.killProcess(android.os.Process.myPid());
-              }
-            });
-        sl4aNotFound.create().show();
-
-      } else {
-        // sl4a is installed. now check if it is running
-        if (!isMyServiceRunning()) {
-          Log.i(Common.LOG_TAG, "SL4A has not yet started!!");
-
-          try {
-            startActivity(sl4aIntent); // NOT startService! D'oh!
-            Log.i(Common.LOG_TAG, "SL4A started, yay!!");
-          } catch (Exception e) {
-            Log.e(Common.LOG_TAG,
-                "Trying to start SL4A failed. Original error: " + e.toString());
-          }
-        } else {
-          Log.i(Common.LOG_TAG, "SL4A has started already!!");
-        }
-        // Python and SL4A installer -> Show main layout
-        showFrontendLayout();
-      }
-    }
-  }
-
   // Executed in onStart(), verify Seattle install directories
+  // XXX If Seattle isn't installed, nothing happens either!?
   private void checkSeattleInstall() {
     seattleInstallDirectory = getExternalFilesDir(null);
 
@@ -1018,9 +955,9 @@ public class ScriptActivity extends Activity {
       showConsentForm();
     }
 
-    // Verify installation for both Seattle and SL4A
+    // Verify installation for Seattle
     checkSeattleInstall();
-    checkSL4AInstall();
+    showFrontendLayout();
   }
 
   // Executed after the activity is created, calls onStart()

@@ -37,11 +37,13 @@ import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 
+/*
 import com.googlecode.android_scripting.AndroidProxy;
 import com.googlecode.android_scripting.Constants;
 import com.googlecode.android_scripting.ForegroundService;
 import com.googlecode.android_scripting.NotificationIdFactory;
 import com.googlecode.android_scripting.interpreter.InterpreterConfiguration;
+*/
 import com.sensibility_testbed.process.SeattleScriptProcess;
 
 /**
@@ -63,8 +65,6 @@ public class ScriptService extends ForegroundService {
 
   // private String AbsolutePath =
   // "/mnt/sdcard/Android/data/com.sensibility_testbed/files";
-
-  AndroidProxy mProxy;
 
   // booleans used in shutting down the service
   private boolean killMe, isRestarting;
@@ -92,37 +92,6 @@ public class ScriptService extends ForegroundService {
   public class LocalBinder extends Binder {
     public ScriptService getService() {
       return ScriptService.this;
-    }
-  }
-
-  private class StartSl4aAndroidProxy extends AsyncTask<Service, Void, Void> {
-    // We need to handle startup of the SL4A Android proxy outside of the main
-    // thread.
-    // Otherwise, devices with API level >9 will throw a NetworkOnMainThread
-    // exception.
-    // (Interpretation: "The main thread could possible spend too much time in a
-    // networking
-    // function. This is frowned upon in higher API levels.")
-    // Implementation based on docs at
-    // http://developer.android.com/reference/android/os/AsyncTask.html
-
-    @Override
-    protected Void doInBackground(Service... params) {
-      Log.i(Common.LOG_TAG, "Am doing stuff in background!");
-      // mProxy is not fully initialized until we call
-      // mProxy.startLocal(). We must not swap out this.mProxy
-      // too early, as other threads rely on mProxy to be fully
-      // initialized when it is no longer null.
-      AndroidProxy androidProxy = new AndroidProxy(params[0], null, true);
-
-      InetSocketAddress proxyAddress = null;
-      while (proxyAddress == null) {
-        Log.i(Common.LOG_TAG, "Starting mProxy... (ScriptService)");
-        proxyAddress = androidProxy.startLocal();
-      }
-      mProxy = androidProxy;
-      Log.i(Common.LOG_TAG, "mProxy started Local.");
-      return null;
     }
   }
 
@@ -175,23 +144,6 @@ public class ScriptService extends ForegroundService {
     File pythonBinary = new File(this.getFilesDir().getAbsolutePath()
         + "/python/bin/python");
 
-    Log.v(Common.LOG_TAG, "ScriptService tries to start AsyncTask.");
-    new StartSl4aAndroidProxy().execute(this);
-
-    Log.v(Common.LOG_TAG,
-        "ScriptService waits for the AndroidProxy to come alive...");
-    while (mProxy == null) {
-      try {
-        Log.v(Common.LOG_TAG, "ScriptService still waiting for AndroidProxy...");
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
-    }
-
-    Log.v(Common.LOG_TAG,
-        "ScriptService's AsyncTask is done, AndroidProxy runs.");
 
     // Set environmental variables (softwareupdater uses them instead of
     // command-line arguments)
@@ -305,21 +257,6 @@ public class ScriptService extends ForegroundService {
         + ":"
         + this.getFilesDir().getAbsolutePath()
         + "/python/lib/python2.7/lib-dynload");
-
-    // Dealing with the proxy in this thread is problematic on API levels >9.
-    // We're wrapping stuff in an AsyncTask instead.
-    Log.v(Common.LOG_TAG, "Trying to start AsyncTask.");
-    new StartSl4aAndroidProxy().execute(this);
-
-    Log.v(Common.LOG_TAG, "Waiting fer mah AndroidProxy...");
-    while (mProxy == null) {
-      try {
-        Log.v(Common.LOG_TAG, "Waiting fer mah AndroidProxy...");
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
     }
 
     // Start process
@@ -354,20 +291,6 @@ public class ScriptService extends ForegroundService {
     }
   }
 
-  // check if sl4a is running thanks to:
-  // http://stackoverflow.com/questions/7440473/android-how-to-check-if-the-intent-service-is-still-running-or-has-stopped-runni
-  private boolean isMyServiceRunning() {
-    ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-    for (RunningServiceInfo service : manager
-        .getRunningServices(Integer.MAX_VALUE)) {
-      if ("com.googlecode.android_scripting.activity.ScriptingLayerService"
-          .equals(service.service.getClassName())) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   // executed after each startService() call
   @Override
   public void onStart(Intent intent, final int startId) {
@@ -393,36 +316,6 @@ public class ScriptService extends ForegroundService {
     startSeattleMain();
     startUpdater();
 
-    // Start SL4A
-    // XXX Is this the right place to do this?
-    // XXX We don't catch unsuccessful start attempts.
-    Log.v(Common.LOG_TAG, "Trying to start SL4A....");
-    Intent sl4aIntent = new Intent();
-    // Thank you,
-    // http://stackoverflow.com/questions/6829187/android-explicit-intent-with-target-component
-    // and
-    // http://stackoverflow.com/questions/2780102/open-another-application-from-your-own-intent/
-    sl4aIntent
-        .setComponent(ComponentName
-            .unflattenFromString("com.googlecode.android_scripting/.activity.ScriptingLayerServiceLauncher"));
-    sl4aIntent.setAction(Constants.ACTION_LAUNCH_SERVER);
-    sl4aIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    // XXX How good an idea is hardcoding the listen port?
-    sl4aIntent.putExtra(Constants.EXTRA_USE_SERVICE_PORT, 45678);
-
-    if (!isMyServiceRunning()) {
-      Log.i(Common.LOG_TAG, "SL4A has not yet started!!");
-
-      try {
-        startActivity(sl4aIntent); // NOT startService! D'oh!
-        Log.i(Common.LOG_TAG, "Started SL4A. Let's hope for the best.");
-      } catch (Exception e) {
-        Log.e(Common.LOG_TAG, "Trying to start SL4A failed. Original error: "
-            + e.toString());
-      }
-    } else {
-      Log.i(Common.LOG_TAG, "SL4A has started already!!");
-    }
   }
 
   // Create notification icon
