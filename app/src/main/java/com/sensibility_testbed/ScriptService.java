@@ -44,7 +44,6 @@ import com.googlecode.android_scripting.ForegroundService;
 import com.googlecode.android_scripting.NotificationIdFactory;
 import com.googlecode.android_scripting.interpreter.InterpreterConfiguration;
 */
-import com.sensibility_testbed.process.SeattleScriptProcess;
 
 /**
  *

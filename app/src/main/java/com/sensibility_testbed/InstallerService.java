@@ -57,7 +57,6 @@ import com.googlecode.android_scripting.FileUtils;
 import com.googlecode.android_scripting.ForegroundService;
 import com.googlecode.android_scripting.NotificationIdFactory;
 import com.googlecode.android_scripting.interpreter.InterpreterConfiguration;
-import com.sensibility_testbed.process.SeattleScriptProcess;
 
 /**
  *
@@ -399,43 +398,6 @@ public class InstallerService extends ForegroundService {
 
         // mLatch.countDown();
         // Launch installer
-        SeattleScriptProcess.launchScript(installer, mInterpreterConfiguration,
-            mProxy, new Runnable() {
-              @Override
-              public void run() {
-                mProxy.shutdown();
-
-                // Mark installation terminated
-                instance = null;
-
-                installerLogger
-                    .info(Common.LOG_INFO_TERMINATED_INSTALLER_SCRIPT);
-                // Check whether the installation was successful
-                // or not
-                if (checkInstallationSuccess()) {
-                  // Send message to activity about success
-                  ScriptActivity.handler
-                      .sendEmptyMessage(ScriptActivity.SEATTLE_INSTALLED);
-                } else {
-                  // If it was unsuccessful, remove nmmain.py,
-                  // so that the app will not think seattle is
-                  // installed
-                  // Other files are not removed to preserve
-                  // the log files
-                  FileUtils.delete(new File(
-                      ScriptActivity.seattleInstallDirectory.getAbsolutePath()
-                          + "/sl4a/seattle/seattle_repy/nmmain.py"));
-                  // Send message to activity about failure
-                  instance = null;
-                  ScriptActivity.handler
-                      .sendEmptyMessage(ScriptActivity.INSTALL_FAILED);
-                }
-
-                // Stop service
-                stopSelf(startId);
-              }
-            }, installer.getParent(), ScriptActivity.seattleInstallDirectory
-                + "/" + packageName, args, env, pythonBinary);
       };
     };
 
