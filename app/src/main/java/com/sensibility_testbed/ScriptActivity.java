@@ -172,7 +172,7 @@ public class ScriptActivity extends Activity {
           // Start Seattle automatically after installation
           if (msg.what == SEATTLE_INSTALLED) {
             ScriptActivity.autostartedAfterInstallation = true;
-            ScriptService.serviceInitiatedByUser = true;
+            //ScriptService.serviceInitiatedByUser = true;
             startService(new Intent(getBaseContext(), ScriptService.class));
           }
           // If AUTOSTART_ON_BOOT key does not exist, create it (default:TRUE)
@@ -384,10 +384,10 @@ public class ScriptActivity extends Activity {
         public void onClick(DialogInterface dialog, int id) {
           Log.i(Common.LOG_TAG, Common.LOG_INFO_UNINSTALL_INITIATED);
           // Kill service, in case it was running
-          if (ScriptService.isServiceRunning())
-            killService();
+          //if (ScriptService.isServiceRunning())
+          //  killService();
           // Remove Seattle folder
-          FileUtils.delete(new File(getSeattlePath()));
+          //FileUtils.delete(new File(getSeattlePath()));
           if (settings.contains(AUTOSTART_ON_BOOT)) {
             SharedPreferences.Editor editor = settings.edit();
             editor.remove(AUTOSTART_ON_BOOT);
@@ -449,7 +449,7 @@ public class ScriptActivity extends Activity {
     currentContentView = R.layout.main;
     // Set up status toggle button
     final ToggleButton toggleStatus = (ToggleButton) findViewById(R.id.toggleStatus);
-    toggleStatus.setChecked(ScriptService.isServiceRunning());
+    //toggleStatus.setChecked(ScriptService.isServiceRunning());
 
     if (ScriptActivity.autostartedAfterInstallation) {
       ScriptActivity.autostartedAfterInstallation = false;
@@ -461,7 +461,7 @@ public class ScriptActivity extends Activity {
       public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
         if (isChecked) {
           // Start service
-          ScriptService.serviceInitiatedByUser = true;
+          //ScriptService.serviceInitiatedByUser = true;
           startService(new Intent(getBaseContext(), ScriptService.class));
         } else {
           // Kill service
@@ -716,8 +716,8 @@ public class ScriptActivity extends Activity {
           Utils
           .unzip(content, this.getFilesDir().getAbsolutePath() + "/", true);
           // set file permissions
-          FileUtils.chmod(new File(this.getFilesDir().getAbsolutePath()
-              + "/python/bin/python"), 0755);
+          //FileUtils.chmod(new File(this.getFilesDir().getAbsolutePath()
+          //    + "/python/bin/python"), 0755);
         }
         // Python_extras_27 we unpack to ->
         // /sdcard/com.sensibility_testbed/extras/python

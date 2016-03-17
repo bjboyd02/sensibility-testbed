@@ -42,7 +42,7 @@ public class AutostartListener extends BroadcastReceiver {
             && settings.getBoolean(ScriptActivity.AUTOSTART_ON_BOOT, true)) {
           Intent serviceIntent = new Intent();
           serviceIntent.setAction("com.sensibility_testbed.ScriptService");
-          ScriptService.serviceInitiatedByUser = true;
+          //ScriptService.serviceInitiatedByUser = true;
           // Start the service
           Log.i(Common.LOG_TAG, Common.LOG_INFO_SEATTLE_STARTED_AUTOMATICALLY);
           context.startService(new Intent(context.getApplicationContext(),
