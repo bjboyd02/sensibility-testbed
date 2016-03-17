@@ -157,14 +157,3 @@ public class Utils {
       Log.e(Common.LOG_TAG, "createDirectoryOnExternalStorage error: " + e);
     }
   }
-
-  // check if an app is installed, thanks to
-  // http://www.grokkingandroid.com/checking-intent-availability/
-  public static boolean isMyServiceInstalled(Context ctx, Intent intent) {
-    final PackageManager mgr = ctx.getPackageManager();
-    List<ResolveInfo> list = mgr.queryIntentActivities(intent,
-        PackageManager.MATCH_DEFAULT_ONLY);
-    return list.size() > 0;
-  }
-
-}

@@ -732,20 +732,6 @@ public class ScriptActivity extends Activity {
     Log.i(Common.LOG_TAG, Common.LOG_INFO_PYTHON_UNZIP_COMPLETED);
   }
 
-  // check if sl4a is running thanks to:
-  // http://stackoverflow.com/questions/7440473/android-how-to-check-if-the-intent-service-is-still-running-or-has-stopped-runni
-  private boolean isMyServiceRunning() {
-    ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-    for (RunningServiceInfo service : manager
-        .getRunningServices(Integer.MAX_VALUE)) {
-      if ("com.googlecode.android_scripting.activity.ScriptingLayerService"
-          .equals(service.service.getClassName())) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   // Executed whenever a boolean shared preference is saved
   private void saveSharedBooleanPreference(String preference, boolean bool) {
     final SharedPreferences.Editor editor = settings.edit();
