@@ -37,14 +37,14 @@ public class Utils {
   }
 
   public static void unzip(InputStream inputStream, String dest,
-      boolean replaceIfExists) throws Exception {
+                           boolean replaceIfExists) throws Exception {
 
     final int BUFFER_SIZE = 4096;
     BufferedOutputStream bufferedOutputStream = null;
 
     try {
       ZipInputStream zipInputStream = new ZipInputStream(
-          new BufferedInputStream(inputStream));
+              new BufferedInputStream(inputStream));
       ZipEntry zipEntry;
 
       while ((zipEntry = zipInputStream.getNextEntry()) != null) {
@@ -58,13 +58,13 @@ public class Utils {
               boolean b = deleteDir(file2);
               if (!b) {
                 Log.e(Common.LOG_TAG, "Unzip failed to delete " + dest
-                    + zipEntryName);
+                        + zipEntryName);
               } else {
                 Log.i(Common.LOG_TAG, "Unzip deleted " + dest + zipEntryName);
               }
             } catch (Exception e) {
               Log.e(Common.LOG_TAG, "Unzip failed to delete " + dest
-                  + zipEntryName, e);
+                      + zipEntryName, e);
             }
           }
         }
@@ -88,7 +88,7 @@ public class Utils {
 
             byte buffer[] = new byte[BUFFER_SIZE];
             bufferedOutputStream = new BufferedOutputStream(
-                new FileOutputStream(file), BUFFER_SIZE);
+                    new FileOutputStream(file), BUFFER_SIZE);
             int count;
 
             while ((count = zipInputStream.read(buffer, 0, BUFFER_SIZE)) != -1) {
@@ -101,8 +101,8 @@ public class Utils {
 
         // Set permission for python files
         if (file.getName().endsWith(".so") || file.getName().endsWith(".py")
-            || file.getName().endsWith(".pyc")
-            || file.getName().endsWith(".pyo")) {
+                || file.getName().endsWith(".pyc")
+                || file.getName().endsWith(".pyo")) {
           FileUtils.chmod(file, 0755);
         }
         Log.i(Common.LOG_TAG, "Unzip extracted " + dest + zipEntryName);
@@ -147,8 +147,8 @@ public class Utils {
         try {
           file.mkdirs();
           Log.i(Common.LOG_TAG, "createDirectoryOnExternalStorage created "
-              + ScriptActivity.seattleInstallDirectory.getAbsolutePath() + "/"
-              + path);
+                  + ScriptActivity.seattleInstallDirectory.getAbsolutePath() + "/"
+                  + path);
         } catch (Exception e) {
           Log.e(Common.LOG_TAG, "createDirectoryOnExternalStorage error: ", e);
         }
@@ -157,3 +157,4 @@ public class Utils {
       Log.e(Common.LOG_TAG, "createDirectoryOnExternalStorage error: " + e);
     }
   }
+}

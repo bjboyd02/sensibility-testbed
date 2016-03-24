@@ -81,6 +81,7 @@ import com.googlecode.android_scripting.FileUtils;
  *
  */
 public class ScriptActivity extends Activity {
+  public native void startEmbeddedPython();
 
   // Use int values instead of enums for easier message handling
   public final static int SEATTLE_INSTALLED = 14;
@@ -138,7 +139,7 @@ public class ScriptActivity extends Activity {
   // Not to be confused with seattle_repy directory, which is a subdirectory
   // of seattle-root
   public static String getSeattlePath() {
-    return seattleInstallDirectory.getAbsolutePath() + "/sl4a/seattle/";
+    return seattleInstallDirectory.getAbsolutePath() + "/seattle/";
   }
 
   // Check if seattle is installed by checking if nmmain.py exists
@@ -647,6 +648,14 @@ public class ScriptActivity extends Activity {
 
   // Show the most appropriate layout
   private void showFrontendLayout() {
+    System.loadLibrary("python2.7");
+    System.loadLibrary("embeddedpython");
+
+    Log.i(Common.LOG_TAG, "Starting embedded Python now.");
+    startEmbeddedPython();
+    Log.i(Common.LOG_TAG, "Embedded Python exited.");
+
+    /*
     if (InstallerService.isInstalling()) {
       // Installer still running
       showInstallingLayout();
@@ -657,6 +666,7 @@ public class ScriptActivity extends Activity {
       // Not yet installed
       showBasicInstallLayout();
     }
+    */
   }
 
   // Show installation in progress layout
@@ -925,6 +935,7 @@ public class ScriptActivity extends Activity {
     seattleInstallDirectory = getExternalFilesDir(null);
 
     // calling isSeattleInstalled() will NOT work...
+    // XXX And what's the problem with it? An exception thrown?
     isSeattleInstalled = (new File(ScriptActivity.getSeattlePath()
         + "seattle_repy/", "nmmain.py")).exists();
     Log.v(Common.LOG_TAG, "Application files will be placed in: "

@@ -126,10 +126,10 @@ public class InstallerService extends ForegroundService {
   public boolean checkInstallationSuccess() {
     // Prefer installInfo.new to installInfo.old
     File f = new File(ScriptActivity.seattleInstallDirectory.getAbsolutePath()
-        + "/sl4a/seattle/seattle_repy/installInfo.new");
+        + "/seattle/seattle_repy/installInfo.new");
     if (!f.exists()) {
       f = new File(ScriptActivity.seattleInstallDirectory.getAbsolutePath()
-          + "/sl4a/seattle/seattle_repy/installInfo.old");
+          + "/seattle/seattle_repy/installInfo.old");
       if (!f.exists())
         return false;
     }
@@ -151,9 +151,7 @@ public class InstallerService extends ForegroundService {
   }
 
   @Override
-  public void onStart(Intent intent, final int startId) {
-    super.onStart(intent, startId);
-
+  public int onStartCommand(Intent intent, int flags, final int startId) {
     // Start the Logger used during Installation
     try {
       initializeInstallerLogger();
@@ -196,14 +194,14 @@ public class InstallerService extends ForegroundService {
       public void run() {
         // Create seattle root folder
         File seattleFolder = new File(ScriptActivity.seattleInstallDirectory
-            + "/sl4a/seattle/");
+            + "/seattle/");
         if (seattleFolder.mkdirs())
           ; // folder created
         else
           ; // folder not created
 
         File archive = new File(ScriptActivity.seattleInstallDirectory
-            + "/sl4a/seattle.zip");
+            + "/seattle.zip");
         archive.delete();
 
         // String user_hash =
@@ -289,8 +287,7 @@ public class InstallerService extends ForegroundService {
         try {
           FileInputStream fis = new FileInputStream(archive);
           Utils.unzip(fis,
-              ScriptActivity.seattleInstallDirectory.getAbsolutePath()
-                  + "/sl4a/", false);
+              ScriptActivity.seattleInstallDirectory.getAbsolutePath(), false);
         } catch (Exception e) {
           installerLogger.log(Level.SEVERE, Common.LOG_EXCEPTION_UNZIPPING, e);
           archive.delete();
@@ -315,7 +312,7 @@ public class InstallerService extends ForegroundService {
         // Get installer script file
         File installer = new File(
             ScriptActivity.seattleInstallDirectory.getAbsolutePath()
-                + "/sl4a/seattle/seattle_repy/seattleinstaller.py");
+                + "/seattle/seattle_repy/seattleinstaller.py");
 
         // Get percentage of resources to donate
         Bundle b = fInt.getExtras();
@@ -402,6 +399,7 @@ public class InstallerService extends ForegroundService {
     };
 
     t.start();
+    return START_STICKY;
   }
 
   private void initializeInstallerLogger() throws IOException {
@@ -412,7 +410,6 @@ public class InstallerService extends ForegroundService {
     installerLogger = Logger.getLogger(getString(R.string.app_name));
     installerLogger.setLevel(Level.INFO);
     File logDir = new File(ScriptActivity.seattleInstallDirectory
-        + File.separator + "sl4a" // folder name
         + File.separator + "seattle" // folder name
         + File.separator + "seattle_repy"); // folder name
     // Check if directory exists, if not create it
