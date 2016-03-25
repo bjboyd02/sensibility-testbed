@@ -19,7 +19,6 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := python2.7
-$(warning $(LOCAL_MODULE_FILENAME))
 LOCAL_SRC_FILES := libpython2.7.so
 # This is where the header files declaring the module's functions live:
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/python2.7/
@@ -29,7 +28,6 @@ include $(PREBUILT_SHARED_LIBRARY)
 # Build our module
 include $(CLEAR_VARS)
 
-$(warning $(LOCAL_PATH))
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/python2.7/
 # XXX SHouldn't these automatically set up through LOCAL_EXPORT_C_INCLUDES 
 # above, and our `#include`ing Python.h.
