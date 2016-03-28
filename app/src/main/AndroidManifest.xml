@@ -32,7 +32,7 @@
 
         <service android:name="com.sensibility_testbed.ScriptService" />
         <service android:name="com.sensibility_testbed.InstallerService" />
-        <service android:name="com.sensibility_testbed.AutostartService" />
+        <service android:name="com.snakei.OutputService" android:exported="false"/>
 
         <activity
             android:name="com.googlecode.android_scripting.activity.FutureActivity"
