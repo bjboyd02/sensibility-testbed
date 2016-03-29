@@ -33,8 +33,8 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/python2.7/
 # above, and our `#include`ing Python.h.
 LOCAL_SHARED_LIBRARIES := python2.7 unistd
 LOCAL_LDLIBS    := -llog
-LOCAL_MODULE    := embeddedpython
-LOCAL_SRC_FILES := embeddedpython.c
+LOCAL_MODULE    := snakei
+LOCAL_SRC_FILES := outputs.c sensors.c interpreter.c snakei.c
 
 include $(BUILD_SHARED_LIBRARY)
 
