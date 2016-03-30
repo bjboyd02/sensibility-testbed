@@ -19,8 +19,10 @@ package com.sensibility_testbed;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -34,6 +36,7 @@ import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -69,6 +72,8 @@ import android.widget.ToggleButton;
 
 import com.snakei.OutputService;
 
+import static android.os.Process.myUid;
+
 /*
 import com.googlecode.android_scripting.Constants;
 import com.googlecode.android_scripting.FileUtils;
@@ -84,6 +89,8 @@ import com.googlecode.android_scripting.FileUtils;
  */
 public class ScriptActivity extends Activity {
   public native void startEmbeddedPython();
+
+    private static boolean pythonRuns = false;
 
   // Use int values instead of enums for easier message handling
   public final static int SEATTLE_INSTALLED = 14;
@@ -504,19 +511,19 @@ public class ScriptActivity extends Activity {
     donate = DEFAULT_DONATE;
     // Set up install button listener
     buttonInstall.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        Intent i = new Intent(getBaseContext(), InstallerService.class);
-        i.putExtra(RESOURCES_TO_DONATE, donate);
-        startService(i);
-        showInstallingLayout();
-      }
+        @Override
+        public void onClick(View v) {
+            Intent i = new Intent(getBaseContext(), InstallerService.class);
+            i.putExtra(RESOURCES_TO_DONATE, donate);
+            startService(i);
+            showInstallingLayout();
+        }
     });
     buttonAdvanced.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        showAdvancedInstallLayout();
-      }
+        @Override
+        public void onClick(View v) {
+            showAdvancedInstallLayout();
+        }
     });
   }
 
@@ -658,8 +665,8 @@ public class ScriptActivity extends Activity {
       // Already installed
       showMainLayout();
     } else {
-      // Not yet installed
-      showBasicInstallLayout();
+      // Not yet installed */
+      showBasicInstallLayout(); /*
     }
     */
   }
@@ -698,7 +705,7 @@ public class ScriptActivity extends Activity {
   private void copyPythonToLocal() {
     String zipPath, zipName;
     InputStream content;
-    R.raw a = new R.raw();
+    /*R.raw a = new R.raw();
     java.lang.reflect.Field[] t = R.raw.class.getFields();
     Resources resources = getResources();
     Log.i(Common.LOG_TAG, Common.LOG_INFO_PYTHON_UNZIP_STARTED);
@@ -735,6 +742,7 @@ public class ScriptActivity extends Activity {
       }
     }
     Log.i(Common.LOG_TAG, Common.LOG_INFO_PYTHON_UNZIP_COMPLETED);
+    */
   }
 
   // Executed whenever a boolean shared preference is saved
@@ -850,15 +858,15 @@ public class ScriptActivity extends Activity {
         })
 
         .setNegativeButton("I changed my mind!",
-            new DialogInterface.OnClickListener() {
-              @Override
-              public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
+                new DialogInterface.OnClickListener() {
+                  @Override
+                  public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
 
-                installPython();
-                saveSharedBooleanPreference(CONSENT_COMPLETED, true);
-              }
-            });
+                    installPython();
+                    saveSharedBooleanPreference(CONSENT_COMPLETED, true);
+                  }
+                });
     emailDialog.setCancelable(false);
     emailDialog.create().show();
   }
@@ -872,7 +880,7 @@ public class ScriptActivity extends Activity {
         .putExtra(Intent.EXTRA_EMAIL, new String[] { email })
         .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.email_subject))
         .putExtra(Intent.EXTRA_TEXT,
-            Html.fromHtml(getString(R.string.email_body)));
+                Html.fromHtml(getString(R.string.email_body)));
     try {
       startActivity(Intent.createChooser(emailIntent, "Send e-mail"));
     } catch (final android.content.ActivityNotFoundException e) {
@@ -934,7 +942,7 @@ public class ScriptActivity extends Activity {
     isSeattleInstalled = (new File(ScriptActivity.getSeattlePath()
         + "seattle_repy/", "nmmain.py")).exists();
     Log.v(Common.LOG_TAG, "Application files will be placed in: "
-        + seattleInstallDirectory.getAbsolutePath());
+            + seattleInstallDirectory.getAbsolutePath());
   }
 
   // Executed after the activity is started / resumed
@@ -942,31 +950,63 @@ public class ScriptActivity extends Activity {
   protected void onStart() {
     super.onStart();
 
-    Intent intent = new Intent(getBaseContext(), com.snakei.PythonInterpreterService.class);
-    Intent intent2 = new Intent(intent); // Copy the other intent
-    intent.putExtra("com.snakei.PythonInterpreterService.environment", "this is the env");
-    intent.putExtra("com.snakei.PythonInterpreterService.commandLineArguments", "these are the args");
+      if (!pythonRuns) {
+          pythonRuns = true;
+          Log.i(Common.LOG_TAG, "UID is " + Integer.toString(myUid()));
+          Log.i(Common.LOG_TAG, Environment.getExternalStoragePublicDirectory("").toString());
 
-    Log.i(Common.LOG_TAG, "Starting first Python now.");
-    startService(intent);
-    Log.i(Common.LOG_TAG, "Starting second Python now.");
-    startService(intent2);
+          for (File dir: getBaseContext().getExternalFilesDirs("")) {
+              Log.i(Common.LOG_TAG, dir.toString());
+          }
+
+          File f = new File(getExternalFilesDir(null), "test2.py");
+          try {
+              Log.i(Common.LOG_TAG, "File is " + f.getCanonicalPath());
+              File f2 = f.getCanonicalFile();
+              Log.i(Common.LOG_TAG, "AbsoluteFile is " + f2.getAbsolutePath());
+
+              OutputStream os = new FileOutputStream(f);
 
 
+              os.write("import androidlog\nl = androidlog.log2\nl('k')\nimport os\nl('still k')\nl(os.getlogin())\n".getBytes());
+              os.flush();
+              os.close();
+          } catch (Exception e){
+              Log.i(Common.LOG_TAG, "Error in file/stream magic");
+              e.printStackTrace();
+          }
+
+
+          //Log.i(Common.LOG_TAG, );
+          //Log.i(Common.LOG_TAG, );
+          Intent intent = new Intent(getBaseContext(), com.snakei.PythonInterpreterService.class);
+          intent.putExtra("com.snakei.PythonInterpreterService.python_path", "/sdcard/mypython/");
+          intent.putExtra("com.snakei.PythonInterpreterService.python_home", "/sdcard/mypython/");
+          intent.putExtra("com.snakei.PythonInterpreterService.python_script",
+                  //Environment.getExternalStorageDirectory().toString() +
+                  "/sdcard/test2.py");
+          intent.putExtra("com.snakei.PythonInterpreterService.python_arguments",
+                  Environment.getExternalStorageDirectory().toString());
+
+          startService(intent);
+          Log.i(Common.LOG_TAG, "Done with first Python.");
+      }
 
     // If the consent form was not finished to completion, show it
+    /*
     if (!settings.getBoolean(CONSENT_COMPLETED, true)) {
       showConsentForm();
-    }
+    } */
 
     // Verify installation for Seattle
-    checkSeattleInstall();
+    //checkSeattleInstall();
     showFrontendLayout();
   }
 
   // Executed after the activity is created, calls onStart()
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+      Log.i(Common.LOG_TAG, "Into onCreate");
     // get and save the shared preferences
     settings = getSharedPreferences(SEATTLE_PREFERENCES, MODE_WORLD_WRITEABLE);
 
@@ -982,5 +1022,10 @@ public class ScriptActivity extends Activity {
 
     super.onCreate(savedInstanceState);
     this.onStart();
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
   }
 }

@@ -22,7 +22,7 @@ public class OutputService extends Service {
 
     public static void logMessage(String message) {
         // This logs into the debug log...
-        Log.i("#### Foo: ", message);
+        Log.i("######## Foo: ", message);
     }
 
     @Override
