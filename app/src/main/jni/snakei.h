@@ -24,9 +24,10 @@
  * First, declare a few references we will populate soon and then reuse 
  * in the course of our runtime.
  */
-JNIEnv* jni_environment;
-jclass output_service_class;
-jmethodID log_message;
+JavaVM* cached_vm;
+JNIEnv* cached_jni_environment;
+jclass cached_output_service_class;
+jmethodID cached_log_message;
 
 
 

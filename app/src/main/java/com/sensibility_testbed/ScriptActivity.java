@@ -650,14 +650,6 @@ public class ScriptActivity extends Activity {
 
   // Show the most appropriate layout
   private void showFrontendLayout() {
-    Intent intent = new Intent(getBaseContext(), com.snakei.PythonInterpreterService.class);
-    intent.putExtra("com.snakei.PythonInterpreterService.environment", "this is the env");
-    intent.putExtra("com.snakei.PythonInterpreterService.commandLineArguments", "these are the args");
-
-    Log.i(Common.LOG_TAG, "Starting embedded Python now.");
-    startService(intent);
-    Log.i(Common.LOG_TAG, "Embedded Python exited.");
-
     /*
     if (InstallerService.isInstalling()) {
       // Installer still running
@@ -949,6 +941,15 @@ public class ScriptActivity extends Activity {
   @Override
   protected void onStart() {
     super.onStart();
+
+    Intent intent = new Intent(getBaseContext(), com.snakei.PythonInterpreterService.class);
+    intent.putExtra("com.snakei.PythonInterpreterService.environment", "this is the env");
+    intent.putExtra("com.snakei.PythonInterpreterService.commandLineArguments", "these are the args");
+
+    Log.i(Common.LOG_TAG, "Starting embedded Python now.");
+    startService(intent);
+    Log.i(Common.LOG_TAG, "Embedded Python exited.");
+
 
     // If the consent form was not finished to completion, show it
     if (!settings.getBoolean(CONSENT_COMPLETED, true)) {

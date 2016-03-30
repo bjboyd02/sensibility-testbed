@@ -28,7 +28,6 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 
   char floatinstring[16];
 
-
   //return (*env)->NewStringUTF(env, floatinstring);
 
   //Py_SetProgramName("/sdcard/mypython/python");
@@ -49,8 +48,9 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 
   LOGI("Initializing androidlog module");
   Py_InitModule("androidlog", AndroidlogMethods);
+  LOGI("androidlog initted");
 
-  PyRun_SimpleString("import androidlog\nandroidlog.log2('Sure hope this works.')\n");
+  PyRun_SimpleString("import androidlog\nandroidlog.log('This one?')\nandroidlog.log2('Sure hope this works.')\n");
 
   LOGI("Now do the file!!!");
   file_pointer = fopen(file_name, "r");

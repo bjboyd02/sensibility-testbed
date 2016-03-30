@@ -30,8 +30,8 @@
             </intent-filter>
         </activity>
 
-        <service android:name="com.sensibility_testbed.ScriptService" />
-        <service android:name="com.sensibility_testbed.InstallerService" />
+        <!-- <service android:name="com.sensibility_testbed.ScriptService" />
+        <service android:name="com.sensibility_testbed.InstallerService" /> -->
         <service android:name="com.snakei.PythonInterpreterService" android:exported="false"/>
 
         <activity

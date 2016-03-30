@@ -20,7 +20,7 @@ public class OutputService extends Service {
         return START_STICKY;
     }
 
-    public void logMessage(String message) {
+    public static void logMessage(String message) {
         // This logs into the debug log...
         Log.i("#### Foo: ", message);
     }
