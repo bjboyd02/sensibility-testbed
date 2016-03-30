@@ -6,7 +6,7 @@
 #include "outputs.h"
 #include "sensors.h"
 
-void start_python_interpreter_with_args(JNIEnv* env, jobject instance, jstring str);
+void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_environment, jstring python_arguments);
 
 #endif /* defined _SNAKEI_INTERPRETER_H_ */
 

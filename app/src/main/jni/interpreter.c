@@ -22,7 +22,7 @@ static PyMethodDef AndroidlogMethods[] = {
 
 
 
-void start_python_interpreter_with_args(JNIEnv* env, jobject instance, jstring str) {
+void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_environment, jstring python_arguments) {
   FILE* file_pointer;
   char* file_name = "/sdcard/test.py";
 

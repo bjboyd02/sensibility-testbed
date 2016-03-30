@@ -34,9 +34,9 @@ model {
                     sharedLibraryFile = file("jniLibs/libpython2.7.so")
                 }
             }
-            embeddedpython {
+            snakei {
                 binaries.withType(SharedLibraryBinary) {
-                    sharedLibraryFile = file("jniLibs/libembeddedpython.so")
+                    sharedLibraryFile = file("jniLibs/libsnakei.so")
                 }
             }
         }
@@ -46,7 +46,7 @@ model {
             jniLibs {
                 dependencies {
                     library "python27"
-                    library "embeddedpython"
+                    library "snakei"
                 }
             }
 

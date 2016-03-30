@@ -67,6 +67,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.snakei.OutputService;
+
 /*
 import com.googlecode.android_scripting.Constants;
 import com.googlecode.android_scripting.FileUtils;
@@ -648,11 +650,12 @@ public class ScriptActivity extends Activity {
 
   // Show the most appropriate layout
   private void showFrontendLayout() {
-    System.loadLibrary("python2.7");
-    System.loadLibrary("embeddedpython");
+    Intent intent = new Intent(getBaseContext(), com.snakei.PythonInterpreterService.class);
+    intent.putExtra("com.snakei.PythonInterpreterService.environment", "this is the env");
+    intent.putExtra("com.snakei.PythonInterpreterService.commandLineArguments", "these are the args");
 
     Log.i(Common.LOG_TAG, "Starting embedded Python now.");
-    startEmbeddedPython();
+    startService(intent);
     Log.i(Common.LOG_TAG, "Embedded Python exited.");
 
     /*
