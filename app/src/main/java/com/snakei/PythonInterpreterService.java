@@ -22,11 +22,15 @@ public class PythonInterpreterService extends Service {
 
         @Override
         public void run() {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+            }
             System.loadLibrary("python2.7");
             System.loadLibrary("snakei");
-            Log.i("goo", "Before start native");
+            Log.i(this.getName(), "Before start native");
             startNativePythonInterpreter(this.environment, this.commandLineArguments);
-            Log.i("goo", "After start native");
+            Log.i(this.getName(), "After start native");
         }
     };
 

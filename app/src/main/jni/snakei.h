@@ -25,7 +25,7 @@
  * in the course of our runtime.
  */
 JavaVM* cached_vm;
-JNIEnv* cached_jni_environment;
+JNIEnv* cached_jni_env;
 jclass cached_output_service_class;
 jmethodID cached_log_message;
 

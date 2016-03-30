@@ -24,7 +24,7 @@ static PyMethodDef AndroidlogMethods[] = {
 
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_environment, jstring python_arguments) {
   FILE* file_pointer;
-  char* file_name = "/sdcard/test.py";
+  char* file_name = "/sdcard/test2.py";
 
   char floatinstring[16];
 
@@ -50,7 +50,7 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
   Py_InitModule("androidlog", AndroidlogMethods);
   LOGI("androidlog initted");
 
-  PyRun_SimpleString("import androidlog\nandroidlog.log('This one?')\nandroidlog.log2('Sure hope this works.')\n");
+  PyRun_SimpleString("import androidlog\nandroidlog.log2('This one?')\nandroidlog.log2('Sure hope this still works.')\n");
 
   LOGI("Now do the file!!!");
   file_pointer = fopen(file_name, "r");

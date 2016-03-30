@@ -943,12 +943,15 @@ public class ScriptActivity extends Activity {
     super.onStart();
 
     Intent intent = new Intent(getBaseContext(), com.snakei.PythonInterpreterService.class);
+    Intent intent2 = new Intent(intent); // Copy the other intent
     intent.putExtra("com.snakei.PythonInterpreterService.environment", "this is the env");
     intent.putExtra("com.snakei.PythonInterpreterService.commandLineArguments", "these are the args");
 
-    Log.i(Common.LOG_TAG, "Starting embedded Python now.");
+    Log.i(Common.LOG_TAG, "Starting first Python now.");
     startService(intent);
-    Log.i(Common.LOG_TAG, "Embedded Python exited.");
+    Log.i(Common.LOG_TAG, "Starting second Python now.");
+    startService(intent2);
+
 
 
     // If the consent form was not finished to completion, show it
