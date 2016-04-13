@@ -34,7 +34,6 @@ int Verbose_PyRun_SimpleString(const char *code) {
     Py_XDECREF(traceback);
     Py_XDECREF(errstring);
   }
-  Py_XDECREF(module);
   return 0;
 }
 
