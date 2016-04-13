@@ -1,5 +1,44 @@
 #include "interpreter.h"
 
+/* Verbosely execute Python code.
+ * Exceptions are print to Android log using LOGI macro.
+ * Returns 0 on success or -1 if an exception was raised.
+ */
+int Verbose_PyRun_SimpleString(const char *code) {
+  // Used for globals and locals
+  PyObject *module = PyImport_AddModule("__main__");
+  PyObject *d = PyDict_New();
+  if (module == NULL)
+    return -1;
+  d = PyModule_GetDict(module);
+
+  PyRun_StringFlags(code, Py_file_input, d, d, NULL);
+
+  if (PyErr_Occurred()) {
+    PyObject *errtype, *errvalue, *traceback;
+    PyObject *errstring = NULL;
+
+    PyErr_Fetch(&errtype, &errvalue, &traceback);
+
+    if(errtype != NULL) {
+      errstring = PyObject_Str(errtype);
+      LOGI("Errtype: %s\n", PyString_AS_STRING(errstring));
+    }
+    if(errvalue != NULL) {
+      errstring = PyObject_Str(errvalue);
+      LOGI("Errvalue: %s\n", PyString_AS_STRING(errstring));
+    }
+
+    Py_XDECREF(errvalue);
+    Py_XDECREF(errtype);
+    Py_XDECREF(traceback);
+    Py_XDECREF(errstring);
+  }
+  Py_XDECREF(module);
+  return 0;
+}
+
+
 
 /* Python-callable wrapper for LOGI */
 static PyObject*
@@ -53,13 +92,12 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
   LOGI("Platform %s", Py_GetPlatform());
   LOGI("PythonHome %s", Py_GetPythonHome());
 
-
-
   LOGI("Initializing androidlog module");
   Py_InitModule("androidlog", AndroidlogMethods);
   LOGI("androidlog initted");
 
-  LOGI("PyRun string returns %i", PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl('Ooh yeah!')\ntry:\n  import os\nexcept Exception, e:\n  l(repr(e)\nl('still k')\nl(os.getlogin())\n")); //l(str(os.getresuid()))\nl(os.getgroups())\nl(str(os.getresgid()))\n") );
+  //LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl(str(locals()))"));
+  LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl('Ooh yeah!!!!!!!!!')\ntry:\n  import os\nexcept Exception, e:\n  l(repr(e))\nl('still k')\nl(os.getlogin())\n")); //l(str(os.getresuid()))\nl(os.getgroups())\nl(str(os.getresgid()))\n") );
   //try:\n  l('How?')\n  f = open('/sdcard/Android/data/com.sensibility_testbed/files/blip', 'w')\nexcept Exception, e:\n  l(repr(e))\nelse:\n  f.write('It worketh!!!\\n')\nl('Done.')\n") );
 
   LOGI("Now do the file!!!");
