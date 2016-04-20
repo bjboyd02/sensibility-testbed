@@ -21,10 +21,68 @@
  * - free memory
  * - return
  */
-PyObject* sensor_get_sensor_list(PyObject *self) {
-    
+
+void c_sensor_list() {
+
+    LOGI("Let's try to get some sensor info...");
+
+    JNIEnv* jni_env;
+    jclass sensor_class;
+    jmethodID sensor_method;
+    int type;
+
+    // Use the cached JVM pointer to get a new environment
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+
+    // Find Java class
+    sensor_class = (*jni_env)->FindClass(jni_env, "com/snakei/SensorService");
+
+    // Find the Java method we want to call
+
+    sensor_method = (*jni_env)->GetStaticMethodID(jni_env,
+                                                  sensor_class, "get_sensor_list", "()Ljava.util.Collection;");
+
+
+    // Call output method
+    type = (*jni_env)->CallStaticIntMethod(jni_env, sensor_class,
+                                     sensor_method);
+
+    LOGI("This is the type of the first sensor, yeah: %i", type);
 
 }
+/*
+PyObject* sensor_get_sensor_list(PyObject *self) {
+
+    // XXX JNIEnv could also be cached
+    JNIEnv* jni_env;
+    jclass sensor_service_class;
+    jmethodID log_message;
+    Get<PrimitiveType>ArrayElements array
+    PyObject *py_sensor_list = PyList_New(sensor_count);
+    PyObject *py_sensor_info;
+
+    // Use the cached JVM pointer to get a new environment
+    // XXX Environment could also be cached
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+
+    // Find Java class
+    output_service_class = (*jni_env)->FindClass(jni_env, "com/snakei/SensorService");
+
+    // Find the Java method we want to call
+    log_message = (*jni_env)->GetStaticMethodID(jni_env,
+                                                output_service_class, "logMessage", "(Ljava/lang/String;)V");
+
+
+    //For each sensor create a dictionary with all the available info
+    int i = 0; //XXX LP: could use -std=99 compile flag instead
+    for (i = 0; i < sensor_count; i++) {
+
+    }
+
+
+    return py_sensor_list;
+
+} */
 
 /*
  * Python Extension(s) to get actual sensor values

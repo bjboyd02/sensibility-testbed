@@ -61,6 +61,8 @@ static PyMethodDef AndroidlogMethods[] = {
 
 
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_arguments) {
+  LOGI("ask for jni sensor list without python");
+  c_sensor_list();
   char* home = (char*) (*env)->GetStringUTFChars(env, python_home, NULL);
   char* path = (char*) (*env)->GetStringUTFChars(env, python_path, NULL);
   // Environment variable EXTERNAL_STORAGE is /storage/emulated/legacy
