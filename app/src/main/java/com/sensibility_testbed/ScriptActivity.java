@@ -69,6 +69,7 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+import com.sensibility_testbed.SensibilityApplication;
 
 import com.snakei.OutputService;
 
@@ -1006,8 +1007,9 @@ public class ScriptActivity extends Activity {
   // Executed after the activity is created, calls onStart()
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-      Log.i(Common.LOG_TAG, "Into onCreate");
-    // get and save the shared preferences
+    Log.i(Common.LOG_TAG, "Into onCreate");
+
+   // get and save the shared preferences
     settings = getSharedPreferences(SEATTLE_PREFERENCES, MODE_WORLD_WRITEABLE);
 
     // If CONSENT_COMPLETED key does not exist, create it

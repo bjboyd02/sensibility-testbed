@@ -29,26 +29,38 @@ void c_sensor_list() {
     JNIEnv* jni_env;
     jclass sensor_class;
     jmethodID sensor_method;
-    int type;
+    jmethodID sensor_constructor;
+    jobject sensor_object;
+    int dummy;
 
     // Use the cached JVM pointer to get a new environment
+    // XXX: Will there be a concurrency issue with other code that uses the cached_vm?
     (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
 
-    // Find Java class
+    // Find Sensor class
     sensor_class = (*jni_env)->FindClass(jni_env, "com/snakei/SensorService");
 
-    // Find the Java method we want to call
+    // Find Sensor default constructor
+    sensor_constructor = (*jni_env)->GetMethodID(jni_env, sensor_class, "<init>", "()V");
 
-    sensor_method = (*jni_env)->GetStaticMethodID(jni_env,
-                                                  sensor_class, "get_sensor_list", "()Ljava.util.Collection;");
+    // Call Sensor constructor
+    sensor_object = (*jni_env)->NewObject(jni_env, sensor_class, sensor_constructor);
 
+    // Find Sensor method
+    sensor_method = (*jni_env)->GetMethodID(jni_env, sensor_class, "get_sensor_list", "()I");
 
-    // Call output method
-    type = (*jni_env)->CallStaticIntMethod(jni_env, sensor_class,
-                                     sensor_method);
+    // Call non-static sensor method on created sensor object
+    // XXX: Get stupid int until we figured out how to return a list of sensor info dicts
+    dummy = (*jni_env)->CallIntMethod(jni_env, sensor_object, sensor_method);
+    LOGI("This is what we got from java, yeah: %i", dummy);
 
-    LOGI("This is the type of the first sensor, yeah: %i", type);
+    // Transform to C dict list to python dict list
+    // ...
 
+    // Release ?
+//    (*cached_vm)->DetachCurentThread(cached_vm);
+    // Return to python
+    // ...
 }
 /*
 PyObject* sensor_get_sensor_list(PyObject *self) {
