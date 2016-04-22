@@ -58,14 +58,17 @@ static PyMethodDef AndroidlogMethods[] = {
   {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
+// Only functions taking two PyObject* arguments are PyCFunction
+// sensor_get_sensor_list only takes one, so we need to cast.
+static PyMethodDef AndroidsensorMethods[] = {
+  {"get_sensor_list", (PyCFunction) sensor_get_sensor_list, METH_NOARGS,
+    "Get a list of sensor info dictionaries."},
+  {NULL, NULL, 0, NULL} // This is the end-of-array marker
+};
 
 
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_arguments) {
   LOGI("Ask for jni sensor info, soon to be python");
-
-  // Call our python extension which is not a python extension yet
-  // but already works somehow :)
-  c_sensor_list();
 
   char* home = (char*) (*env)->GetStringUTFChars(env, python_home, NULL);
   char* path = (char*) (*env)->GetStringUTFChars(env, python_path, NULL);
@@ -101,6 +104,11 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
   Py_InitModule("androidlog", AndroidlogMethods);
   LOGI("androidlog initted");
 
+  LOGI("Initializing sensors module");
+  Py_InitModule("sensor", AndroidsensorMethods);
+  LOGI("androidsensors initted");
+
+  LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog, sensor\nl = androidlog.log2\ns = sensor.get_sensor_list\nl('check out these lovely sensors: ' +  repr(s()))"));
   //LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl(str(locals()))"));
   LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl('Ooh yeah!!!!!!!!!')\ntry:\n  import os\nexcept Exception, e:\n  l(repr(e))\nl('still k')\nl(os.getlogin())\n")); //l(str(os.getresuid()))\nl(os.getgroups())\nl(str(os.getresgid()))\n") );
   //try:\n  l('How?')\n  f = open('/sdcard/Android/data/com.sensibility_testbed/files/blip', 'w')\nexcept Exception, e:\n  l(repr(e))\nelse:\n  f.write('It worketh!!!\\n')\nl('Done.')\n") );

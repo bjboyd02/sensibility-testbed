@@ -24,14 +24,12 @@ import java.util.List;
  *   - Find a way to return complex data to calling c code via JNI
  *   - Refactor Name, this is not an Android service
  *   - Find out if we need to worry about memory leaks
- *
- *
  */
 
 public class SensorService {
     static final String TAG = "SensorService";
 
-    public int get_sensor_list() {
+    public Sensor[] get_sensor_list() {
         Log.i(TAG, "Wham, bam, thank you sensor man-ager!");
         // Fetch the context
         // XXX: Do we have to worry for memory leaks?
@@ -40,22 +38,17 @@ public class SensorService {
         // Create a SensorManager and let it fetch a list of sensors
         SensorManager sensorManager =(SensorManager)SensibilityApplication.getAppContext().getSystemService(app_context.SENSOR_SERVICE);
         List<Sensor> sensorList = sensorManager.getSensorList(Sensor.TYPE_ALL);
-
-        // Create a list of dictionaries
-//        Collection<Map> sensorDictList = new ArrayList<Map>();
-        for(int i=0; i < sensorList.size(); i++) {
-//            Map<String, String> sensorDict = new HashMap<String, String>();
-            // Create a dict entry for each sensor value
-            // ...
-            Log.i(TAG, sensorList.get(i).getName());
-        }
+        Log.i(TAG, "Java says we have " + sensorList.size() +" sensors");
+        Sensor[] sensorArray = new Sensor[sensorList.size()];
+        sensorList.toArray(sensorArray);
+        return sensorArray;
 
         // Figure out how to return complex data types. Ideas:
         // - maybe there is a way to exchange complex datatypes in JNI
         // - convert to JSON and serialze to string
         // - use jni glue like SWIG
         // - find a workaround to only pass simple data types (naaaaah!!)
-        return 0;
+        //return null;
     }
 
 }

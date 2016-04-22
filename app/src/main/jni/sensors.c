@@ -22,45 +22,76 @@
  * - return
  */
 
-void c_sensor_list() {
+PyObject* sensor_get_sensor_list(PyObject *self) {
 
     LOGI("Let's try to get some sensor info...");
 
     JNIEnv* jni_env;
-    jclass sensor_class;
-    jmethodID sensor_method;
-    jmethodID sensor_constructor;
-    jobject sensor_object;
-    int dummy;
+    jclass sensor_service_class;
+    jmethodID sensor_service_constructor;
+    jobject sensor_service_object;
+    jmethodID sensor_service_method;
+    jobject sensor;
+
 
     // Use the cached JVM pointer to get a new environment
     // XXX: Will there be a concurrency issue with other code that uses the cached_vm?
     (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
-
     // Find Sensor class
-    sensor_class = (*jni_env)->FindClass(jni_env, "com/snakei/SensorService");
-
+    sensor_service_class = (*jni_env)->FindClass(jni_env, "com/snakei/SensorService");
     // Find Sensor default constructor
-    sensor_constructor = (*jni_env)->GetMethodID(jni_env, sensor_class, "<init>", "()V");
-
+    sensor_service_constructor = (*jni_env)->GetMethodID(jni_env, sensor_service_class, "<init>", "()V");
     // Call Sensor constructor
-    sensor_object = (*jni_env)->NewObject(jni_env, sensor_class, sensor_constructor);
+    sensor_service_object = (*jni_env)->NewObject(jni_env, sensor_service_class, sensor_service_constructor);
 
-    // Find Sensor method
-    sensor_method = (*jni_env)->GetMethodID(jni_env, sensor_class, "get_sensor_list", "()I");
+    // Find Sensor Service method
+    sensor_service_method = (*jni_env)->GetMethodID(jni_env, sensor_service_class, "get_sensor_list", "()[Landroid/hardware/Sensor;");
 
     // Call non-static sensor method on created sensor object
-    // XXX: Get stupid int until we figured out how to return a list of sensor info dicts
-    dummy = (*jni_env)->CallIntMethod(jni_env, sensor_object, sensor_method);
-    LOGI("This is what we got from java, yeah: %i", dummy);
+    jobjectArray sensor_list = (*jni_env)->CallObjectMethod(jni_env, sensor_service_object, sensor_service_method);
+    int sensor_list_count = (*jni_env)->GetArrayLength(jni_env, sensor_list);
+    LOGI("C says we have %i sensors", (*jni_env)->GetArrayLength(jni_env, sensor_list));
+
+    // Now get each sensor from the sensor array,
+    // call its info functions and save them to python
+
+    PyObject *py_sensor_list = PyList_New(sensor_list_count);
+    PyObject *py_sensor_info;
+    jclass sensor_class = (*jni_env)->FindClass(jni_env, "android/hardware/Sensor");
+    int i;
+    for (i = 0; i < sensor_list_count; i++) {
+        py_sensor_info = PyDict_New();
+        // Get Sensor
+        jobject sensor = (*jni_env)->GetObjectArrayElement(jni_env, sensor_list, i);
+
+        // Find and call Sensor get name method
+        jmethodID sensor_method = (*jni_env)->GetMethodID(jni_env, sensor_class, "getName", "()Ljava/lang/String;");
+        jstring java_sensor_name = (*jni_env)->CallObjectMethod(jni_env, sensor, sensor_method);
+
+        // Convert java string to c char
+        const char *sensor_name = (*jni_env)->GetStringUTFChars(jni_env, java_sensor_name, 0);
+
+        // Create dict entry for the name
+        PyDict_SetItemString(py_sensor_info, "name", PyString_FromString(sensor_name));
+        (*jni_env)->ReleaseStringUTFChars(jni_env, java_sensor_name, sensor_name);
+
+        // XXX Todo do the same for all the other sensors
+        // ...
+
+        // Add info dict to python sensor list
+        PyList_SetItem(py_sensor_list, i, py_sensor_info);
+
+    }
+
+    return py_sensor_list;
 
     // Transform to C dict list to python dict list
     // ...
-
     // Release ?
-//    (*cached_vm)->DetachCurentThread(cached_vm);
+//    (*cached_vm)->DetachCurrentThread(cached_vm);
     // Return to python
     // ...
+
 }
 /*
 PyObject* sensor_get_sensor_list(PyObject *self) {
