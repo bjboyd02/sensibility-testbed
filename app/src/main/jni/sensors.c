@@ -18,7 +18,7 @@ PyObject* sensor_get_sensor_list(PyObject *self) {
 
     JNIEnv* jni_env;
     jclass sensor_service_class;
-    jmethodID sensor_service_constructor;
+    jmethodID sensor_service_getter;
     jobject sensor_service_object;
     jmethodID sensor_service_method;
     jobject sensor;
@@ -26,10 +26,10 @@ PyObject* sensor_get_sensor_list(PyObject *self) {
     // Use the cached JVM pointer to get a new environment
     (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
 
-    // Find SensorService class and instantiate object
+    // Find SensorService class and get singleton instance
     sensor_service_class = (*jni_env)->FindClass(jni_env, "com/snakei/SensorService");
-    sensor_service_constructor = (*jni_env)->GetMethodID(jni_env, sensor_service_class, "<init>", "()V");
-    sensor_service_object = (*jni_env)->NewObject(jni_env, sensor_service_class, sensor_service_constructor);
+    sensor_service_getter = (*jni_env)->GetStaticMethodID(jni_env, sensor_service_class, "getInstance", "()Lcom/snakei/SensorService;");
+    sensor_service_object = (*jni_env)->CallStaticObjectMethod(jni_env, sensor_service_class, sensor_service_getter);
 
     // Find SensorService method to get a list of Android Sensors
     sensor_service_method = (*jni_env)->GetMethodID(jni_env, sensor_service_class, "get_sensor_list", "()[Landroid/hardware/Sensor;");
@@ -66,7 +66,10 @@ PyObject* sensor_get_sensor_list(PyObject *self) {
         // Add info dict to python sensor list
         PyList_SetItem(py_sensor_list, i, py_sensor_info);
     }
-    (*cached_vm)->DetachCurrentThread(cached_vm);
+
+    // XXX: Only detach if AttachCurrentThread wasn't a no-op
+    //(*cached_vm)->DetachCurrentThread(cached_vm);
+
     return py_sensor_list;
 }
 
@@ -101,3 +104,15 @@ PyObject* sensor_get_sensor_list(PyObject *self) {
  * [2] http://www.yoctopuce.com/EN/products/yocto-meteo/doc/METEOMK1.usermanual.html#CHAP14
  *
  */
+
+//void sensor_start_sensing() {
+//    LOGI("Let's fire the accelerometer up...");
+//}
+//
+//void sensor_get_accelerometer() {
+//    LOGI("Let's get some real accelerometer data...");
+//}
+//
+//void sensor_stop_sensing() {
+//    LOGI("Let's shut down the accelerometer...");
+//}
