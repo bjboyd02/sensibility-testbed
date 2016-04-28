@@ -50,5 +50,4 @@ public class SensorService {
         // - find a workaround to only pass simple data types (naaaaah!!)
         //return null;
     }
-
 }
