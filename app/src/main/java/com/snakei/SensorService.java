@@ -3,8 +3,10 @@ package com.snakei;
 import com.sensibility_testbed.SensibilityApplication;
 import android.content.Context;
 import android.hardware.Sensor;
+import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.nfc.Tag;
 import android.os.IBinder;
 import android.util.Log;
 import java.util.Map;
@@ -51,8 +53,9 @@ import java.util.List;
 public class SensorService implements SensorEventListener  {
     static final String TAG = "SensorService";
 
-    private float[] accelerometer_data = new float[3];
     private SensorManager sensorManager;
+
+    private float[] accelerometer_values;
     private Sensor accelerometer;
 
     /* See Initialization on Demand Holder pattern */
@@ -70,6 +73,10 @@ public class SensorService implements SensorEventListener  {
         // XXX: This is a hack, consider changing it
         Context app_context = SensibilityApplication.getAppContext();
         sensorManager = (SensorManager)app_context.getSystemService(app_context.SENSOR_SERVICE);
+
+        // I guess we can get all the sensors right away
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        accelerometer_values = new float[3];
     }
 
     public Sensor[] get_sensor_list() {
@@ -82,7 +89,7 @@ public class SensorService implements SensorEventListener  {
     }
 
     /*
-     * Return static accelerometer float array
+     * Return accelerometer float array
      *
      * The array is updated by the event listener's
      * onSensorChanged callback and can be empty
@@ -90,8 +97,8 @@ public class SensorService implements SensorEventListener  {
      * start_sensing
      *
      */
-    public float[] getAccelerometerData() {
-        return accelerometer_data;
+    public float[] getAccelerometer() {
+        return accelerometer_values;
     }
 
     /*
@@ -99,19 +106,39 @@ public class SensorService implements SensorEventListener  {
      *
      * Todo:
      *      Change to support other Sensors as well
+     *      Only register if it hasn't been registered yet
+     *
+     *
      */
-    public void start_sensing() {
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+    public int start_sensing() {
+//        Log.i(TAG, "Starting sensor");
+        // The sensor should exist because it was created in the class constructor
+        // If it doesn't that means it does not exist on the device or we don't have
+        // the necessary permissions
+        if (accelerometer == null) {
+            Log.i(TAG, "sensor does not exist, or app has not the necessary permissions");
+            // XXX What should we return if the sensor does not exist?
+            return 0;
+        }
+        // Apparently android checks that listener are only registered once
+        if (sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL))
+            return 1;
+        else
+            return 0;
     }
     /*
      * Unregister Accelerometer EventListener
      *
      * Todo:
      *      Change to support other Sensors as well
+     *      Only unregister if noone else is using it
      */
-    public void stop_sensing() {
+    public int stop_sensing() {
+//        Log.i(TAG, "Stopping sensor");
         sensorManager.unregisterListener(this, accelerometer);
+        // XXX: don't just return 1, check if really unregistered
+        return 1;
+
     }
 
     /*
@@ -120,7 +147,10 @@ public class SensorService implements SensorEventListener  {
      */
     @Override
     public void onSensorChanged(SensorEvent event) {
-
+//        Log.i(TAG, "Sensor has changed");
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            accelerometer_values = event.values;
+        }
     }
 
     @Override

@@ -1,5 +1,6 @@
 #include "interpreter.h"
 
+
 /* Verbosely execute Python code.
  * Exceptions are print to Android log using LOGI macro.
  * Returns 0 on success or -1 if an exception was raised.
@@ -68,7 +69,21 @@ static PyMethodDef AndroidsensorMethods[] = {
 
 
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_arguments) {
-  LOGI("Ask for jni sensor info, soon to be python");
+  LOGI("Ask for jni sensor values");
+  if (sensor_start_sensing())
+    LOGI("Started sensing");
+  else
+    LOGI("couldn't start sensing");
+  int i = 0;
+  for (i; i < 60; i++) {
+    sensor_get_accelerometer();
+    sleep(1);
+  }
+  if (sensor_stop_sensing())
+    LOGI("Stopped sensing");
+  else
+    LOGI("couldn't stop sensing");
+
 
   char* home = (char*) (*env)->GetStringUTFChars(env, python_home, NULL);
   char* path = (char*) (*env)->GetStringUTFChars(env, python_path, NULL);
