@@ -60,31 +60,21 @@ static PyMethodDef AndroidlogMethods[] = {
 };
 
 // Only functions taking two PyObject* arguments are PyCFunction
-// sensor_get_sensor_list only takes one, so we need to cast.
+// where this is not the case we need to cast
 static PyMethodDef AndroidsensorMethods[] = {
   {"get_sensor_list", (PyCFunction) sensor_get_sensor_list, METH_NOARGS,
     "Get a list of sensor info dictionaries."},
+  {"start_sensing", (PyCFunction) sensor_start_sensing, METH_NOARGS,
+          "Start Android Sensor Event Listener."},
+  {"stop_sensing", (PyCFunction) sensor_stop_sensing, METH_NOARGS,
+          "Stop Android Sensor Event Listener."},
+  {"get_acceleration", (PyCFunction) sensor_get_acceleration, METH_NOARGS,
+          "Get list of accelerator float values. [x,y,z]"},
   {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
 
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_arguments) {
-  LOGI("Ask for jni sensor values");
-  if (sensor_start_sensing())
-    LOGI("Started sensing");
-  else
-    LOGI("couldn't start sensing");
-  int i = 0;
-  for (i; i < 60; i++) {
-    sensor_get_accelerometer();
-    sleep(1);
-  }
-  if (sensor_stop_sensing())
-    LOGI("Stopped sensing");
-  else
-    LOGI("couldn't stop sensing");
-
-
   char* home = (char*) (*env)->GetStringUTFChars(env, python_home, NULL);
   char* path = (char*) (*env)->GetStringUTFChars(env, python_path, NULL);
   // Environment variable EXTERNAL_STORAGE is /storage/emulated/legacy
@@ -123,9 +113,32 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
   Py_InitModule("sensor", AndroidsensorMethods);
   LOGI("androidsensors initted");
 
-  LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog, sensor\nl = androidlog.log2\ns = sensor.get_sensor_list\nl('check out these lovely sensors: ' +  repr(s()))"));
+  //XXX: Temporary way to write python code until
+  // we have found out how to run files
+  const char* python_code = ""\
+"import androidlog, sensor, sys, time\n"\
+"l = androidlog.log2\n"\
+"l('Lets get some sensor info')\n"\
+"for sensor_info in sensor.get_sensor_list():\n"\
+"  l(repr(sensor_info))\n"\
+"l('Oh, wow, lovely sensors, why not poll them?')\n"\
+"if sensor.start_sensing():\n"\
+"  l('Started sensor...')\n"\
+"else:\n"\
+"  l('Could not start sensor. Abort.')\n"\
+"  sys.exit()\n"\
+"for i in xrange(50):\n"\
+"  l(repr(sensor.get_acceleration()))\n"\
+"  time.sleep(1)\n"\
+"l('Stopping sensor...')\n"\
+"sensor.stop_sensing()\n"\
+"l('Bye, bye!')";
+
+  LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString(python_code));
+
+//LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog, sensor\nl = androidlog.log2\ns = sensor.get_sensor_list\nl('check out these lovely sensors: ' +  repr(s()))"));
   //LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl(str(locals()))"));
-  LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl('Ooh yeah!!!!!!!!!')\ntry:\n  import os\nexcept Exception, e:\n  l(repr(e))\nl('still k')\nl(os.getlogin())\n")); //l(str(os.getresuid()))\nl(os.getgroups())\nl(str(os.getresgid()))\n") );
+//  LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl('Ooh yeah!!!!!!!!!')\ntry:\n  import os\nexcept Exception, e:\n  l(repr(e))\nl('still k')\nl(os.getlogin())\n")); //l(str(os.getresuid()))\nl(os.getgroups())\nl(str(os.getresgid()))\n") );
   //try:\n  l('How?')\n  f = open('/sdcard/Android/data/com.sensibility_testbed/files/blip', 'w')\nexcept Exception, e:\n  l(repr(e))\nelse:\n  f.write('It worketh!!!\\n')\nl('Done.')\n") );
 
   LOGI("Now do the file!!!");

@@ -45,9 +45,9 @@ import java.util.List;
  *
  * Is called via JNI C code
  * Todo:
- *   - Find a way to return complex data to calling c code via JNI
  *   - Consider Refactor Name, this is not an Android service
  *   - Find out if we need to worry about memory leaks
+ *   - Make sure sensors are wake-up sensors
  */
 
 public class SensorService implements SensorEventListener  {
@@ -97,7 +97,7 @@ public class SensorService implements SensorEventListener  {
      * start_sensing
      *
      */
-    public float[] getAccelerometer() {
+    public float[] getAcceleration() {
         return accelerometer_values;
     }
 
@@ -131,7 +131,7 @@ public class SensorService implements SensorEventListener  {
      *
      * Todo:
      *      Change to support other Sensors as well
-     *      Only unregister if noone else is using it
+     *      Only unregister if nobody else is using it
      */
     public int stop_sensing() {
 //        Log.i(TAG, "Stopping sensor");
