@@ -105,7 +105,7 @@ PyObject* sensor_get_sensor_list(PyObject *self) {
  *
  */
 
-int _start_or_stop_sensing(const char *start_or_stop) {
+int _start_or_stop_sensing(const char *sensor_service_method_name) {
     JNIEnv* jni_env;
     jclass sensor_service_class;
     jmethodID sensor_service_getter;
@@ -121,7 +121,7 @@ int _start_or_stop_sensing(const char *start_or_stop) {
     sensor_service_object = (*jni_env)->CallStaticObjectMethod(jni_env, sensor_service_class, sensor_service_getter);
 
     // XXX: We'll need to pass an argument, on which sensor we want to start or stop sensing
-    sensor_service_method = (*jni_env)->GetMethodID(jni_env, sensor_service_class, start_or_stop, "()I");
+    sensor_service_method = (*jni_env)->GetMethodID(jni_env, sensor_service_class, sensor_service_method_name, "()I");
     int success = (int) (*jni_env)->CallBooleanMethod(jni_env, sensor_service_object, sensor_service_method);
     // XXX: Only detach if AttachCurrentThread wasn't a no-op
     //(*cached_vm)->DetachCurrentThread(cached_vm);
@@ -129,8 +129,8 @@ int _start_or_stop_sensing(const char *start_or_stop) {
     return success;
 }
 
-PyObject* sensor_get_acceleration(PyObject *self) {
-    LOGI("Let's get some real accelerometer data...");
+PyObject* _get_sensor_values(const char *sensor_service_method_name) {
+    LOGI("Get sensor values...");
     JNIEnv* jni_env;
     jclass sensor_service_class;
     jmethodID sensor_service_getter;
@@ -145,23 +145,33 @@ PyObject* sensor_get_acceleration(PyObject *self) {
     sensor_service_getter = (*jni_env)->GetStaticMethodID(jni_env, sensor_service_class, "getInstance", "()Lcom/snakei/SensorService;");
     sensor_service_object = (*jni_env)->CallStaticObjectMethod(jni_env, sensor_service_class, sensor_service_getter);
 
-    // XXX: We'll need to pass an argument, on which sensor we want to start sensing
-    sensor_service_method = (*jni_env)->GetMethodID(jni_env, sensor_service_class, "getAcceleration", "()[F");
-    jfloatArray sensor_values = (jfloatArray) (*jni_env)->CallObjectMethod(jni_env, sensor_service_object, sensor_service_method);
+    sensor_service_method = (*jni_env)->GetMethodID(jni_env, sensor_service_class, sensor_service_method_name, "()[D");
+    jdoubleArray sensor_values = (jdoubleArray) (*jni_env)->CallObjectMethod(jni_env, sensor_service_object, sensor_service_method);
 
-    jfloat *sensor_values_ptr = (*jni_env)->GetFloatArrayElements(jni_env, sensor_values, 0);
+    if (sensor_values == NULL) {
+        LOGI("NULL");
+        Py_RETURN_NONE;
+    }
 
-    PyObject *py_accelerator_list = PyList_New(3);
-    PyList_SetItem(py_accelerator_list, 0, Py_BuildValue("f", sensor_values_ptr[0]));
-    PyList_SetItem(py_accelerator_list, 1, Py_BuildValue("f", sensor_values_ptr[1]));
-    PyList_SetItem(py_accelerator_list, 2, Py_BuildValue("f", sensor_values_ptr[2]));
+    int sensor_values_cnt = (*jni_env)->GetArrayLength(jni_env, sensor_values);
+    jdouble *sensor_values_ptr = (*jni_env)->GetDoubleArrayElements(jni_env, sensor_values, 0);
 
-    (*jni_env)->ReleaseFloatArrayElements(jni_env, sensor_values, sensor_values_ptr, 0);
+    PyObject *py_sensor_values = PyList_New(sensor_values_cnt);
+    int i = 0;
+    for (i = 0; i < sensor_values_cnt; i++) {
+        PyList_SetItem(py_sensor_values, i, Py_BuildValue("d", sensor_values_ptr[i]));
+    }
+
+    (*jni_env)->ReleaseDoubleArrayElements(jni_env, sensor_values, sensor_values_ptr, 0);
 
     // XXX: Only detach if AttachCurrentThread wasn't a no-op
     //(*cached_vm)->DetachCurrentThread(cached_vm);
 
-    return py_accelerator_list;
+    return py_sensor_values;
+}
+
+PyObject* sensor_get_acceleration(PyObject *self) {
+    return _get_sensor_values("getAcceleration");
 }
 
 /*

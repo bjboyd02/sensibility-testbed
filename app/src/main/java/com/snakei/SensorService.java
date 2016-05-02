@@ -53,10 +53,60 @@ import java.util.List;
 public class SensorService implements SensorEventListener  {
     static final String TAG = "SensorService";
 
-    private SensorManager sensorManager;
+    private SensorManager sensor_manager;
 
-    private float[] accelerometer_values;
+
+    // We need all of those sensors to register listener on them
+    // Most of the devices won't support most of the sensors
+    // But hey, Android does it, so do we
     private Sensor accelerometer;
+    private SensorEvent accelerometer_event;
+//    private Sensor ambient_temperature;
+//    private Sensor game_rotation_vector;
+//    private Sensor geomagnetic_rotation_vector;
+//    private Sensor gravity;
+//    private Sensor gyroscope;
+//    private Sensor gyroscope_uncalibrated;
+//    private Sensor heart_rate;
+//    private Sensor light;
+//    private Sensor linear_acceleration;
+//    private Sensor magnetic_field;
+//    private Sensor magnetic_field_uncalibrated;
+//    private Sensor pressure;
+//    private Sensor proximity;
+//    private Sensor relative_humidity;
+//    private Sensor rotation_vector;
+//    private Sensor significant_motion;
+//    private Sensor step_counter;
+//    private Sensor step_detector;
+
+    // For each Sensor we write the values that we get in the
+    // listener callback to the according value array.
+    // Those arrays are eventually polled by C/Python
+    // XXX: We maybe should also store timestamp and accuracy
+    // Note:
+    // Some sensors we can't use with our current polling strategy
+    // because they don't fire events with interesting values
+    // but only tell that something happened
+    // TYPE_SIGNIFICANT_MOTION
+    // TYPE_STEP_DETECTOR
+//    private float[] accelerometer_values;
+//    private float[] ambient_temperature_values;
+//    private float[] game_rotation_vector_values;
+//    private float[] geomagnetic_rotation_vector_values;
+//    private float[] gravity_values;
+//    private float[] gyroscope_values;
+//    private float[] gyroscope_uncalibrated_values;
+//    private float[] heart_rate_values;
+//    private float[] light_values;
+//    private float[] linear_acceleration_values;
+//    private float[] magnetic_field_values;
+//    private float[] magnetic_field_uncalibrated_values;
+//    private float[] pressure_values;
+//    private float[] proximity_values;
+//    private float[] relative_humidity_values;
+//    private float[] rotation_vector_values;
+//    private float[] step_counter_values;
 
     /* See Initialization on Demand Holder pattern */
     private static class SensorServiceHolder {
@@ -72,35 +122,90 @@ public class SensorService implements SensorEventListener  {
         // Fetch the context
         // XXX: This is a hack, consider changing it
         Context app_context = SensibilityApplication.getAppContext();
-        sensorManager = (SensorManager)app_context.getSystemService(app_context.SENSOR_SERVICE);
+        sensor_manager = (SensorManager)app_context.getSystemService(app_context.SENSOR_SERVICE);
 
         // I guess we can get all the sensors right away
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        accelerometer_values = new float[3];
+        accelerometer = sensor_manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+//        ambient_temperature = sensor_manager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
+//        game_rotation_vector = sensor_manager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
+//        geomagnetic_rotation_vector = sensor_manager.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR);
+//        gravity = sensor_manager.getDefaultSensor(Sensor.TYPE_GRAVITY);
+//        gyroscope = sensor_manager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+//        gyroscope_uncalibrated = sensor_manager.getDefaultSensor(Sensor.TYPE_GYROSCOPE_UNCALIBRATED);
+//        heart_rate = sensor_manager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
+//        light = sensor_manager.getDefaultSensor(Sensor.TYPE_LIGHT);
+//        linear_acceleration = sensor_manager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+//        magnetic_field = sensor_manager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+//        magnetic_field_uncalibrated = sensor_manager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED);
+//        pressure = sensor_manager.getDefaultSensor(Sensor.TYPE_PRESSURE);
+//        proximity = sensor_manager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
+//        relative_humidity = sensor_manager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY);
+//        rotation_vector = sensor_manager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+//        step_counter = sensor_manager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+
+        // Initialize empty float arrays, because someone could them before
+        // the listener was registered / has written values to them
+        // Note: we always get float arrays but the length varies
+        // from sensor to sensor
+//        accelerometer_values = new float[3];
+//        ambient_temperature_values = new float[1];
+//        game_rotation_vector_values = new float[4];
+//        geomagnetic_rotation_vector_values = new float[5]; //XXX: Verify length of array
+//        gravity_values = new float[3];
+//        gyroscope_values = new float[3];
+//        gyroscope_uncalibrated_values = new float[6];
+//        heart_rate_values = new float[1]; //XXX: Verify length of array
+//        light_values = new float[1];
+//        linear_acceleration_values = new float[3];
+//        magnetic_field_values = new float[3];
+//        magnetic_field_uncalibrated_values = new float[6];
+//        pressure_values = new float[1];
+//        proximity_values = new float[1];
+//        relative_humidity_values = new float[1];
+//        rotation_vector_values = new float[5];
+//        step_counter_values = new float[1];
     }
 
     public Sensor[] get_sensor_list() {
         // Fetch a list of sensors
-        List<Sensor> sensorList = sensorManager.getSensorList(Sensor.TYPE_ALL);
-        Log.i(TAG, "Java says we have " + sensorList.size() +" sensors");
+        List<Sensor> sensorList = sensor_manager.getSensorList(Sensor.TYPE_ALL);
+//        Log.i(TAG, "Java says we have " + sensorList.size() +" sensors");
         Sensor[] sensorArray = new Sensor[sensorList.size()];
         sensorList.toArray(sensorArray);
         return sensorArray;
     }
 
+
+    private double[] _getSensorResult(SensorEvent event) {
+        if (event == null) {
+            return null;
+        }
+        // Reading and writing event objects is done concurrently
+        // XXX: I am pretty sure we will need a ReadWrite lock
+        // We return sensor values and two timestamps
+        double[] result = new double[event.values.length + 2];
+        result[0] = (double) System.currentTimeMillis(); // XXX Losing precision
+        result[1] = (double) event.timestamp / 1000000; // XXX Losing more precision
+        for (int i = 0; i < event.values.length; i++){
+            result[i+2] = (double) event.values[i];
+        }
+        Log.i(TAG, "oida");
+        return result;
+    }
+
     /*
-     * Return accelerometer float array
-     *
+     * Return last accelerometer values
+     * as stored in event
      * The array is updated by the event listener's
      * onSensorChanged callback and can be empty
      * The listener gets registered by calling
      * start_sensing
      *
      */
-    public float[] getAcceleration() {
-        return accelerometer_values;
+    public double[] getAcceleration() {
+        return _getSensorResult(accelerometer_event);
     }
-
     /*
      * Register Accelerometer EventListener
      *
@@ -121,7 +226,7 @@ public class SensorService implements SensorEventListener  {
             return 0;
         }
         // Apparently android checks that listener are only registered once
-        if (sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL))
+        if (sensor_manager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL))
             return 1;
         else
             return 0;
@@ -135,7 +240,7 @@ public class SensorService implements SensorEventListener  {
      */
     public int stop_sensing() {
 //        Log.i(TAG, "Stopping sensor");
-        sensorManager.unregisterListener(this, accelerometer);
+        sensor_manager.unregisterListener(this, accelerometer);
         // XXX: don't just return 1, check if really unregistered
         return 1;
 
@@ -148,9 +253,42 @@ public class SensorService implements SensorEventListener  {
     @Override
     public void onSensorChanged(SensorEvent event) {
 //        Log.i(TAG, "Sensor has changed");
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            accelerometer_values = event.values;
-        }
+          accelerometer_event = event;
+//        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+//            accelerometer_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE){
+//            ambient_temperature_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_GAME_ROTATION_VECTOR){
+//            game_rotation_vector_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR){
+//            geomagnetic_rotation_vector_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_GRAVITY){
+//            gravity_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
+//            gyroscope_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE_UNCALIBRATED){
+//            gyroscope_uncalibrated_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_HEART_RATE){
+//            heart_rate_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_LIGHT){
+//            light_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){
+//            linear_acceleration_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD){
+//            magnetic_field_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED){
+//            magnetic_field_uncalibrated_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_PRESSURE){
+//            pressure_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_PROXIMITY){
+//            proximity_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY){
+//            relative_humidity_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR){
+//            rotation_vector_values = event.values;
+//        } else if (event.sensor.getType() == Sensor.TYPE_STEP_COUNTER){
+//            step_counter_values = event.values;
+//        }
     }
 
     @Override
