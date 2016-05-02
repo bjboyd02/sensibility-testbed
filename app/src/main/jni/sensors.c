@@ -14,8 +14,6 @@
 
 PyObject* sensor_get_sensor_list(PyObject *self) {
 
-    LOGI("Let's try to get some sensor info...");
-
     JNIEnv* jni_env;
     jclass sensor_service_class;
     jmethodID sensor_service_getter;
@@ -105,7 +103,7 @@ PyObject* sensor_get_sensor_list(PyObject *self) {
  *
  */
 
-int _start_or_stop_sensing(const char *sensor_service_method_name) {
+int _start_or_stop_sensing(const char *sensor_service_method_name, int sensor_type) {
     JNIEnv* jni_env;
     jclass sensor_service_class;
     jmethodID sensor_service_getter;
@@ -114,23 +112,21 @@ int _start_or_stop_sensing(const char *sensor_service_method_name) {
 
     // Use the cached JVM pointer to get a new environment
     (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
-
     // Find SensorService class and get singleton instance
     sensor_service_class = (*jni_env)->FindClass(jni_env, "com/snakei/SensorService");
     sensor_service_getter = (*jni_env)->GetStaticMethodID(jni_env, sensor_service_class, "getInstance", "()Lcom/snakei/SensorService;");
     sensor_service_object = (*jni_env)->CallStaticObjectMethod(jni_env, sensor_service_class, sensor_service_getter);
 
     // XXX: We'll need to pass an argument, on which sensor we want to start or stop sensing
-    sensor_service_method = (*jni_env)->GetMethodID(jni_env, sensor_service_class, sensor_service_method_name, "()I");
-    int success = (int) (*jni_env)->CallBooleanMethod(jni_env, sensor_service_object, sensor_service_method);
+    sensor_service_method = (*jni_env)->GetMethodID(jni_env, sensor_service_class, sensor_service_method_name, "(I)I");
+    int success = (int) (*jni_env)->CallBooleanMethod(jni_env, sensor_service_object, sensor_service_method, sensor_type);
     // XXX: Only detach if AttachCurrentThread wasn't a no-op
     //(*cached_vm)->DetachCurrentThread(cached_vm);
-
     return success;
 }
 
 PyObject* _get_sensor_values(const char *sensor_service_method_name) {
-    LOGI("Get sensor values...");
+//    LOGI("Get sensor values...");
     JNIEnv* jni_env;
     jclass sensor_service_class;
     jmethodID sensor_service_getter;
@@ -173,18 +169,66 @@ PyObject* _get_sensor_values(const char *sensor_service_method_name) {
 PyObject* sensor_get_acceleration(PyObject *self) {
     return _get_sensor_values("getAcceleration");
 }
+PyObject* sensor_get_ambient_temperature(PyObject *self) {
+    return _get_sensor_values("getAmbientTemperature");
+}
+PyObject* sensor_get_game_rotation_vector(PyObject *self) {
+    return _get_sensor_values("getGameRotationVector");
+}
+PyObject* sensor_get_geomagnetic_rotation_vector(PyObject *self) {
+    return _get_sensor_values("getGeomagneticRotationVector");
+}
+PyObject* sensor_get_gravity(PyObject *self) {
+    return _get_sensor_values("getGravity");
+}
+PyObject* sensor_get_gyroscope(PyObject *self) {
+    return _get_sensor_values("getGyroscope");
+}
+PyObject* sensor_get_gyroscope_uncalibrated(PyObject *self) {
+    return _get_sensor_values("gyroscope_uncalibrated_event");
+}
+PyObject* sensor_get_heart_rate(PyObject *self) {
+    return _get_sensor_values("getHeartRate");
+}
+PyObject* sensor_get_light(PyObject *self) {
+    return _get_sensor_values("getLight");
+}
+PyObject* sensor_get_linear_acceleration(PyObject *self) {
+    return _get_sensor_values("getLinearAcceleration");
+}
+PyObject* sensor_get_magnetic_field(PyObject *self) {
+    return _get_sensor_values("getMagneticField");
+}
+PyObject* sensor_get_magnetic_field_uncalibrated(PyObject *self) {
+    return _get_sensor_values("getMagneticFieldUncalibrated");
+}
+PyObject* sensor_get_pressure(PyObject *self) {
+    return _get_sensor_values("getPressure");
+}
+PyObject* sensor_get_proximity(PyObject *self) {
+    return _get_sensor_values("getProximity");
+}
+PyObject* sensor_get_relative_humidity(PyObject *self) {
+    return _get_sensor_values("getRelativeHumidity");
+}
+PyObject* sensor_get_rotation_vector(PyObject *self) {
+    return _get_sensor_values("getRotationVector");
+}
+PyObject* sensor_get_step_counter(PyObject *self) {
+    return _get_sensor_values("getStepCounter");
+}
 
 /*
  * Start a sensor by registering a SensorEventHandler in Java
  */
-PyObject* sensor_start_sensing(PyObject *self) {
-//    LOGI("Let's fire the accelerometer up...");
-    return PyBool_FromLong((long) _start_or_stop_sensing("start_sensing"));
+PyObject* sensor_start_sensing(PyObject *self, PyObject *sensor_type) {
+//    LOGI("Let's fire the sensor up...");
+    return PyBool_FromLong((long) _start_or_stop_sensing("start_sensing", PyInt_AsLong(sensor_type)));
 }
 /*
  * Stop a sensor by unregistering a SensorEventHandler in Java
  */
-PyObject* sensor_stop_sensing(PyObject *self) {
-//    LOGI("Let's shut down the accelerometer...");
-    return PyBool_FromLong((long)_start_or_stop_sensing("stop_sensing"));
+PyObject* sensor_stop_sensing(PyObject *self, PyObject *sensor_type) {
+//    LOGI("Let's shut down the sensor...");
+    return PyBool_FromLong((long)_start_or_stop_sensing("stop_sensing", PyInt_AsLong(sensor_type)));
 }

@@ -64,12 +64,18 @@ static PyMethodDef AndroidlogMethods[] = {
 static PyMethodDef AndroidsensorMethods[] = {
   {"get_sensor_list", (PyCFunction) sensor_get_sensor_list, METH_NOARGS,
     "Get a list of sensor info dictionaries."},
-  {"start_sensing", (PyCFunction) sensor_start_sensing, METH_NOARGS,
+  {"start_sensing", sensor_start_sensing, METH_O,
           "Start Android Sensor Event Listener."},
-  {"stop_sensing", (PyCFunction) sensor_stop_sensing, METH_NOARGS,
+  {"stop_sensing", sensor_stop_sensing, METH_O,
           "Stop Android Sensor Event Listener."},
   {"get_acceleration", (PyCFunction) sensor_get_acceleration, METH_NOARGS,
-          "Get list of accelerator float values. [x,y,z]"},
+          "Get list of accelerator values. [sample ts, poll ts, x, y, z]"},
+  {"get_magnetic_field", (PyCFunction) sensor_get_magnetic_field, METH_NOARGS,
+          "Get list of magnetic field values ... "},
+  {"get_proximity", (PyCFunction) sensor_get_proximity, METH_NOARGS,
+          "...."},
+  {"get_light", (PyCFunction) sensor_get_light, METH_NOARGS,
+          "...."},
   {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
@@ -119,21 +125,39 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 "import androidlog, sensor, sys, time\n"\
 "l = androidlog.log2\n"\
 "l('Lets get some sensor info')\n"\
+"\n"\
 "for sensor_info in sensor.get_sensor_list():\n"\
 "  l(repr(sensor_info))\n"\
+"\n"\
 "l('Oh, wow, lovely sensors, why not poll them?')\n"\
-"if sensor.start_sensing():\n"\
-"  l('Started sensor...')\n"\
-"else:\n"\
-"  l('Could not start sensor. Abort.')\n"\
-"  sys.exit()\n"\
-"for i in xrange(50):\n"\
-"  l(repr(sensor.get_acceleration()))\n"\
-"  time.sleep(1)\n"\
-"l('Stopping sensor...')\n"\
-"sensor.stop_sensing()\n"\
+"l('Lets start with some of the existing sensors...')\n"\
+"\n"\
+"l('Starting accelerometer...')\n"\
+"sensor.start_sensing(1)\n"\
+"l('Starting Magnetic field sensor...')\n"\
+"sensor.start_sensing(11)\n"\
+"l('Starting Proximity sensor...')\n"\
+"sensor.start_sensing(14)\n"\
+"l('Starting Light sensor...')\n"\
+"sensor.start_sensing(9)\n"\
+"\n"\
+"for i in xrange(10):\n"\
+"  l('Accelerometer: ' + repr(sensor.get_acceleration()))\n"\
+"  l('Magnetic field: ' + repr(sensor.get_magnetic_field()))\n"\
+"  l('Proximity: ' + repr(sensor.get_proximity()))\n"\
+"  l('Light: ' + repr(sensor.get_light()))\n"\
+"  time.sleep(0.5)\n"\
+"  \n"\
+"l('Stopping accelerometer...')\n"\
+"sensor.stop_sensing(1)\n"\
+"l('Stopping Magnetic field sensor...')\n"\
+"sensor.stop_sensing(11)\n"\
+"l('Stopping Proximity sensor...')\n"\
+"sensor.stop_sensing(14)\n"\
+"l('Stopping Light sensor...')\n"\
+"sensor.stop_sensing(9)\n"\
+"\n"\
 "l('Bye, bye!')";
-
   LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString(python_code));
 
 //LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog, sensor\nl = androidlog.log2\ns = sensor.get_sensor_list\nl('check out these lovely sensors: ' +  repr(s()))"));
