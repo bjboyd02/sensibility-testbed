@@ -53,6 +53,11 @@ import java.util.List;
 public class SensorService implements SensorEventListener  {
     static final String TAG = "SensorService";
 
+    // XXX: These values are hardcoded in C!
+    // If we change them here, we have to change them there as well
+    // Look for functions that get passed integers and compare them
+    // with below constants
+
     static final int CUSTOM_TYPE_ACCELEROMETER = 1;
     static final int CUSTOM_TYPE_AMBIENT_TEMPERATURE = 2;
     static final int CUSTOM_TYPE_GAME_ROTATION_VECTOR = 3;
@@ -233,6 +238,7 @@ public class SensorService implements SensorEventListener  {
 //        Log.i(TAG, "Starting sensor");
 
         Sensor tmp_sensor;
+
         if (sensor_type == CUSTOM_TYPE_ACCELEROMETER) {
             tmp_sensor = accelerometer;
         } else if (sensor_type == CUSTOM_TYPE_AMBIENT_TEMPERATURE) {

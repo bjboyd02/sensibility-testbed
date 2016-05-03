@@ -221,14 +221,14 @@ PyObject* sensor_get_step_counter(PyObject *self) {
 /*
  * Start a sensor by registering a SensorEventHandler in Java
  */
-PyObject* sensor_start_sensing(PyObject *self, PyObject *sensor_type) {
+int sensor_start_sensing(int sensor_type) {
 //    LOGI("Let's fire the sensor up...");
-    return PyBool_FromLong((long) _start_or_stop_sensing("start_sensing", PyInt_AsLong(sensor_type)));
+    return _start_or_stop_sensing("start_sensing", sensor_type);
 }
 /*
  * Stop a sensor by unregistering a SensorEventHandler in Java
  */
-PyObject* sensor_stop_sensing(PyObject *self, PyObject *sensor_type) {
+int sensor_stop_sensing(int sensor_type) {
 //    LOGI("Let's shut down the sensor...");
-    return PyBool_FromLong((long)_start_or_stop_sensing("stop_sensing", PyInt_AsLong(sensor_type)));
+    return _start_or_stop_sensing("stop_sensing", sensor_type);
 }

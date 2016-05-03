@@ -64,10 +64,6 @@ static PyMethodDef AndroidlogMethods[] = {
 static PyMethodDef AndroidsensorMethods[] = {
   {"get_sensor_list", (PyCFunction) sensor_get_sensor_list, METH_NOARGS,
     "Get a list of sensor info dictionaries."},
-  {"start_sensing", sensor_start_sensing, METH_O,
-          "Start Android Sensor Event Listener."},
-  {"stop_sensing", sensor_stop_sensing, METH_O,
-          "Stop Android Sensor Event Listener."},
   {"get_acceleration", (PyCFunction) sensor_get_acceleration, METH_NOARGS,
           "Get list of accelerator values. [sample ts, poll ts, x, y, z]"},
   {"get_magnetic_field", (PyCFunction) sensor_get_magnetic_field, METH_NOARGS,
@@ -94,6 +90,12 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 
   LOGI("script is %s", script);
   LOGI("Oh and btw, args are %s", args);
+
+  LOGI("Start Sensing IN C!!!!");
+  sensor_start_sensing(1);
+  sensor_start_sensing(11);
+  sensor_start_sensing(14);
+  sensor_start_sensing(9);
 
   //Py_SetProgramName("/sdcard/mypython/python");
   LOGI("Before Py_Initialize...");
@@ -132,15 +134,6 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 "l('Oh, wow, lovely sensors, why not poll them?')\n"\
 "l('Lets start with some of the existing sensors...')\n"\
 "\n"\
-"l('Starting accelerometer...')\n"\
-"sensor.start_sensing(1)\n"\
-"l('Starting Magnetic field sensor...')\n"\
-"sensor.start_sensing(11)\n"\
-"l('Starting Proximity sensor...')\n"\
-"sensor.start_sensing(14)\n"\
-"l('Starting Light sensor...')\n"\
-"sensor.start_sensing(9)\n"\
-"\n"\
 "for i in xrange(10):\n"\
 "  l('Accelerometer: ' + repr(sensor.get_acceleration()))\n"\
 "  l('Magnetic field: ' + repr(sensor.get_magnetic_field()))\n"\
@@ -148,14 +141,6 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 "  l('Light: ' + repr(sensor.get_light()))\n"\
 "  time.sleep(0.5)\n"\
 "  \n"\
-"l('Stopping accelerometer...')\n"\
-"sensor.stop_sensing(1)\n"\
-"l('Stopping Magnetic field sensor...')\n"\
-"sensor.stop_sensing(11)\n"\
-"l('Stopping Proximity sensor...')\n"\
-"sensor.stop_sensing(14)\n"\
-"l('Stopping Light sensor...')\n"\
-"sensor.stop_sensing(9)\n"\
 "\n"\
 "l('Bye, bye!')";
   LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString(python_code));
@@ -174,6 +159,12 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 
   LOGI("Before Py_Finalize...");
   Py_Finalize();
+  LOGI("Stop Sensing IN C!!!!");
+  sensor_stop_sensing(1);
+  sensor_stop_sensing(11);
+  sensor_stop_sensing(14);
+  sensor_stop_sensing(9);
+
   LOGI("Done. Bye!");
 
 
