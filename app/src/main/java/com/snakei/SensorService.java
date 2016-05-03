@@ -97,28 +97,27 @@ public class SensorService implements SensorEventListener  {
     private Sensor rotation_vector;
     private Sensor step_counter;
 
-    // For each Sensor we store the Event that we received upon
+    // For each Sensor we store the data (timestamp + values that we received upon
     // a previously registered ``onSensorChange''
-    // New Events overwrite older Events
-    // Events are eventually transformed to double arrays of timestamps
-    // and sensor values and returned to C/Python when called
-    private SensorEvent accelerometer_event;
-    private SensorEvent ambient_temperature_event;
-    private SensorEvent game_rotation_vector_event;
-    private SensorEvent geomagnetic_rotation_vector_event;
-    private SensorEvent gravity_event;
-    private SensorEvent gyroscope_event;
-    private SensorEvent gyroscope_uncalibrated_event;
-    private SensorEvent heart_rate_event;
-    private SensorEvent light_event;
-    private SensorEvent linear_acceleration_event;
-    private SensorEvent magnetic_field_event;
-    private SensorEvent magnetic_field_uncalibrated_event;
-    private SensorEvent pressure_event;
-    private SensorEvent proximity_event;
-    private SensorEvent relative_humidity_event;
-    private SensorEvent rotation_vector_event;
-    private SensorEvent step_counter_event;
+    // New arrays overwrite older
+    // Data is eventually returned to C/Python when called
+    private double[] accelerometer_data;
+    private double[] ambient_temperature_data;
+    private double[] game_rotation_vector_data;
+    private double[] geomagnetic_rotation_vector_data;
+    private double[] gravity_data;
+    private double[] gyroscope_data;
+    private double[] gyroscope_uncalibrated_data;
+    private double[] heart_rate_data;
+    private double[] light_data;
+    private double[] linear_acceleration_data;
+    private double[] magnetic_field_data;
+    private double[] magnetic_field_uncalibrated_data;
+    private double[] pressure_data;
+    private double[] proximity_data;
+    private double[] relative_humidity_data;
+    private double[] rotation_vector_data;
+    private double[] step_counter_data;
 
     /* See Initialization on Demand Holder pattern */
     private static class SensorServiceHolder {
@@ -173,94 +172,58 @@ public class SensorService implements SensorEventListener  {
     }
 
     /*
-     * Generic function that creates an array out of
-     * Sensor Event Data:
-     * [<current time>, <time at event propagation>,
-     * <sensor value[0]>, ..., <sensor value[n-1]>]
-     *
-     * Todo:
-     * Find out if precision is an issue for long -> double cast
-     *      System.currentTimeMillis (milliseconds)
-     *      SensorEvent.timestamp (nanoseconds)
-     * Find out if reading and writing to SensorEvents concurrently
-     * requires us to use a Lock
-     */
-
-    private double[] _getSensorTimeAndValues(SensorEvent event) {
-        // Return null if function is called before a SensorEvent
-        // was came in
-        if (event == null) {
-            return null;
-        }
-        // Having one data type makes it easier to give it back to C
-        // Double should be okay for time and sensor values
-        double[] result = new double[event.values.length + 2];
-        // Losing precision here
-        result[0] = (double) System.currentTimeMillis();
-        // Losing even more precision here
-        result[1] = (double) event.timestamp / 1000000;
-
-        // Note: we always get float arrays but the length varies
-        // from Sensor to Sensor
-        for (int i = 0; i < event.values.length; i++){
-            result[i+2] = (double) event.values[i];
-        }
-        return result;
-    }
-
-    /*
      * Subsequent calls require preceding call to ``start_sensing''
      */
     public double[] getAcceleration() {
-        return _getSensorTimeAndValues(accelerometer_event);
+        return accelerometer_data;
     }
     public double[] getAmbientTemperature() {
-        return _getSensorTimeAndValues(ambient_temperature_event);
+        return ambient_temperature_data;
     }
     public double[] getGameRotationVector() {
-        return _getSensorTimeAndValues(game_rotation_vector_event);
+        return game_rotation_vector_data;
     }
     public double[] getGeomagneticRotationVector() {
-        return _getSensorTimeAndValues(geomagnetic_rotation_vector_event);
+        return geomagnetic_rotation_vector_data;
     }
     public double[] getGravity() {
-        return _getSensorTimeAndValues(gravity_event);
+        return gravity_data;
     }
     public double[] getGyroscope() {
-        return _getSensorTimeAndValues(gyroscope_event);
+        return gyroscope_data;
     }
     public double[] getGyroscopeUncalibrated() {
-        return _getSensorTimeAndValues(gyroscope_uncalibrated_event);
+        return gyroscope_uncalibrated_data;
     }
     public double[] getHeartRate() {
-        return _getSensorTimeAndValues(heart_rate_event);
+        return heart_rate_data;
     }
     public double[] getLight() {
-        return _getSensorTimeAndValues(light_event);
+        return light_data;
     }
     public double[] getLinearAcceleration() {
-        return _getSensorTimeAndValues(linear_acceleration_event);
+        return linear_acceleration_data;
     }
     public double[] getMagneticField() {
-        return _getSensorTimeAndValues(magnetic_field_event);
+        return magnetic_field_data;
     }
     public double[] getMagneticFieldUncalibrated() {
-        return _getSensorTimeAndValues(magnetic_field_uncalibrated_event);
+        return magnetic_field_uncalibrated_data;
     }
     public double[] getPressure() {
-        return _getSensorTimeAndValues(pressure_event);
+        return pressure_data;
     }
     public double[] getProximity() {
-        return _getSensorTimeAndValues(proximity_event);
+        return proximity_data;
     }
     public double[] getRelativeHumidity() {
-        return _getSensorTimeAndValues(relative_humidity_event);
+        return relative_humidity_data;
     }
     public double[] getRotationVector() {
-        return _getSensorTimeAndValues(rotation_vector_event);
+        return rotation_vector_data;
     }
     public double[] getStepCounter() {
-        return _getSensorTimeAndValues(step_counter_event);
+        return step_counter_data;
     }
 
     /*
@@ -381,46 +344,70 @@ public class SensorService implements SensorEventListener  {
     }
 
     /*
-     *  Assigns most recent SensorEvent for every Sensor
-     *  the Sensor's respective event attribute of this Service class
+     * Creates an array out of Sensor Event Data:
+     * [<current time>, <time at event propagation>,
+     * <sensor value[0]>, ..., <sensor value[n-1]>]
+     *  assigns array to the Sensor's respective data attribute of this Service class
+     *
+     * Todo:
+     * Find out if precision is an issue for long -> double cast
+     *      System.currentTimeMillis (milliseconds)
+     *      SensorEvent.timestamp (nanoseconds)
+     * Find out if reading and writing to SensorEvents concurrently
+     * requires us to use a Lock
      *
      */
     @Override
     public void onSensorChanged(SensorEvent event) {
+
+        // Having one data type makes it easier to give it back to C
+        // Double should be okay for time and sensor values
+        double[] result = new double[event.values.length + 2];
+        // Losing precision here
+        result[0] = (double) System.currentTimeMillis();
+        // Losing even more precision here
+        result[1] = (double) event.timestamp / 1000000;
+
+        // Note: we always get float arrays but the length varies
+        // from Sensor to Sensor
+        for (int i = 0; i < event.values.length; i++){
+            result[i+2] = (double) event.values[i];
+        }
+
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            accelerometer_event = event;
+            accelerometer_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE){
-            ambient_temperature_event = event;
+            ambient_temperature_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_GAME_ROTATION_VECTOR){
-            game_rotation_vector_event = event;
+            game_rotation_vector_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR){
-            geomagnetic_rotation_vector_event = event;
+            geomagnetic_rotation_vector_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_GRAVITY){
-            gravity_event = event;
+            gravity_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
-            gyroscope_event = event;
+            gyroscope_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE_UNCALIBRATED){
-            gyroscope_uncalibrated_event = event;
+            gyroscope_uncalibrated_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_HEART_RATE){
-            heart_rate_event = event;
+            heart_rate_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_LIGHT){
-            light_event = event;
+            light_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){
-            linear_acceleration_event = event;
+            linear_acceleration_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD){
-            magnetic_field_event = event;
+            magnetic_field_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED){
-            magnetic_field_uncalibrated_event = event;
+            magnetic_field_uncalibrated_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_PRESSURE){
-            pressure_event = event;
+            pressure_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_PROXIMITY){
-            proximity_event = event;
+            proximity_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY){
-            relative_humidity_event = event;
+            relative_humidity_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR){
-            rotation_vector_event = event;
+            rotation_vector_data = result;
         } else if (event.sensor.getType() == Sensor.TYPE_STEP_COUNTER) {
-            step_counter_event = event;
+            step_counter_data = result;
         }
     }
 
