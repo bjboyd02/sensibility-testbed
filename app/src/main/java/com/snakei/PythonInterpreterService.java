@@ -2,8 +2,17 @@ package com.snakei;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.os.IBinder;
 import android.util.Log;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOError;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import static android.os.Process.myUid;
 
@@ -11,7 +20,7 @@ import static android.os.Process.myUid;
  * Implement a sensor-enabled Python interpreter.
  */
 public class PythonInterpreterService extends Service {
-    private native void startNativePythonInterpreter(String path, String home, String script, String args);
+    private native void startNativePythonInterpreter(String path, String home, String script, String files, String args);
 
     private class PythonInterpreterThread extends Thread {
         private String python_path;
@@ -19,21 +28,53 @@ public class PythonInterpreterService extends Service {
         private String python_script;
         private String python_arguments;
 
+        private String python_files;
+
+
         private PythonInterpreterThread(String python_path, String python_home,
                 String python_script, String python_arguments) {
             this.python_path = python_path;
             this.python_home = python_home;
             this.python_script = python_script;
             this.python_arguments = python_arguments;
+
+            this.python_files = getExternalFilesDir(null).getPath();
         }
 
         @Override
         public void run() {
+
+            // Copy python files we want to execute in our Interpreter
+            // from the asset directory somewhere were the interpreter can fopen them
+            // XXX: This is just to test the python extensions
+            // Copying all the seattle files should probably happen somewhere else, later
+            try {
+                AssetManager asset_manager = getAssets();
+                String[] files;
+                files = asset_manager.list("");
+                if (files != null) for (String filename : files) {
+                    if (filename.endsWith(".py")) {
+                            InputStream in;
+                            OutputStream out;
+                            in = asset_manager.open(filename);
+                            File out_file = new File(this.python_files + filename);
+                            out = new FileOutputStream(out_file);
+                            byte[] buffer = new byte[1024];
+                            int read;
+                            while ((read = in.read(buffer)) != -1) {
+                                out.write(buffer, 0, read);
+                            }
+                    }
+                }
+            } catch (Exception e) {
+                Log.i("PythonInterpreterThread", e.getMessage());
+            }
+
             System.loadLibrary("python2.7");
             System.loadLibrary("snakei");
             Log.i(this.getName(), "Before start native");
             startNativePythonInterpreter(this.python_path, this.python_home,
-                    this.python_script, this.python_arguments);
+                    this.python_script, this.python_files, this.python_arguments);
             Log.i(this.getName(), "After start native");
         }
     };

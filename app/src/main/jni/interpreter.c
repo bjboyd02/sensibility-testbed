@@ -39,7 +39,6 @@ int Verbose_PyRun_SimpleString(const char *code) {
 }
 
 
-
 /* Python-callable wrapper for LOGI */
 static PyObject*
 androidlog_log(PyObject *self, PyObject *python_string)
@@ -76,7 +75,7 @@ static PyMethodDef AndroidsensorMethods[] = {
 };
 
 
-void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_arguments) {
+void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_files, jstring python_arguments) {
   char* home = (char*) (*env)->GetStringUTFChars(env, python_home, NULL);
   char* path = (char*) (*env)->GetStringUTFChars(env, python_path, NULL);
   // Environment variable EXTERNAL_STORAGE is /storage/emulated/legacy
@@ -134,7 +133,7 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 "l('Oh, wow, lovely sensors, why not poll them?')\n"\
 "l('Lets start with some of the existing sensors...')\n"\
 "\n"\
-"for i in xrange(10):\n"\
+"for i in xrange(2):\n"\
 "  l('Accelerometer: ' + repr(sensor.get_acceleration()))\n"\
 "  l('Magnetic field: ' + repr(sensor.get_magnetic_field()))\n"\
 "  l('Proximity: ' + repr(sensor.get_proximity()))\n"\
@@ -151,10 +150,15 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
   //try:\n  l('How?')\n  f = open('/sdcard/Android/data/com.sensibility_testbed/files/blip', 'w')\nexcept Exception, e:\n  l(repr(e))\nelse:\n  f.write('It worketh!!!\\n')\nl('Done.')\n") );
 
   LOGI("Now do the file!!!");
-  script_pointer = fopen(script, "r");
+//  script_pointer = fopen(script, "r");
+  script_pointer = fopen("/storage/emulated/0/Android/data/com.sensibility_testbed/filestest_asset.py", "r");
   if (script_pointer == NULL) {
     LOGI("NULL file pointer for '%s' because errno %i '%s'", script, errno, strerror(errno));
   }
+  char buf[50];
+  fgets(buf, 50, script_pointer);
+  LOGI("We can access the file: %s", buf);
+
   LOGI("PyRun returns %i", PyRun_SimpleFile(script_pointer, script));
 
   LOGI("Before Py_Finalize...");
