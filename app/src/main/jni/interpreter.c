@@ -1,44 +1,5 @@
 #include "interpreter.h"
 
-
-/* Verbosely execute Python code.
- * Exceptions are print to Android log using LOGI macro.
- * Returns 0 on success or -1 if an exception was raised.
- */
-int Verbose_PyRun_SimpleString(const char *code) {
-  // Used for globals and locals
-  PyObject *module = PyImport_AddModule("__main__");
-  PyObject *d = PyDict_New();
-  if (module == NULL)
-    return -1;
-  d = PyModule_GetDict(module);
-
-  PyRun_StringFlags(code, Py_file_input, d, d, NULL);
-
-  if (PyErr_Occurred()) {
-    PyObject *errtype, *errvalue, *traceback;
-    PyObject *errstring = NULL;
-
-    PyErr_Fetch(&errtype, &errvalue, &traceback);
-
-    if(errtype != NULL) {
-      errstring = PyObject_Str(errtype);
-      LOGI("Errtype: %s\n", PyString_AS_STRING(errstring));
-    }
-    if(errvalue != NULL) {
-      errstring = PyObject_Str(errvalue);
-      LOGI("Errvalue: %s\n", PyString_AS_STRING(errstring));
-    }
-
-    Py_XDECREF(errvalue);
-    Py_XDECREF(errtype);
-    Py_XDECREF(traceback);
-    Py_XDECREF(errstring);
-  }
-  return 0;
-}
-
-
 /* Python-callable wrapper for LOGI */
 static PyObject*
 androidlog_log(PyObject *self, PyObject *python_string)
@@ -78,11 +39,10 @@ static PyMethodDef AndroidsensorMethods[] = {
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_files, jstring python_arguments) {
   char* home = (char*) (*env)->GetStringUTFChars(env, python_home, NULL);
   char* path = (char*) (*env)->GetStringUTFChars(env, python_path, NULL);
+  char* files = (char*) (*env)->GetStringUTFChars(env, python_files, NULL);
   // Environment variable EXTERNAL_STORAGE is /storage/emulated/legacy
   char* script = "/storage/emulated/legacy/Android/data/com.sensibility_testbed/files/test2.py"; //(char*) (*env)->GetStringUTFChars(env, python_script, NULL);
   char* args = (char*) (*env)->GetStringUTFChars(env, python_arguments, NULL);
-
-  FILE* script_pointer;
 
   LOGI("home is %s but I won't set it! Ha!", home);
   //Py_SetPythonHome(home);
@@ -150,16 +110,14 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
   //try:\n  l('How?')\n  f = open('/sdcard/Android/data/com.sensibility_testbed/files/blip', 'w')\nexcept Exception, e:\n  l(repr(e))\nelse:\n  f.write('It worketh!!!\\n')\nl('Done.')\n") );
 
   LOGI("Now do the file!!!");
-//  script_pointer = fopen(script, "r");
-  script_pointer = fopen("/storage/emulated/0/Android/data/com.sensibility_testbed/filestest_asset.py", "r");
-  if (script_pointer == NULL) {
-    LOGI("NULL file pointer for '%s' because errno %i '%s'", script, errno, strerror(errno));
-  }
-  char buf[50];
-  fgets(buf, 50, script_pointer);
-  LOGI("We can access the file: %s", buf);
 
-  LOGI("PyRun returns %i", PyRun_SimpleFile(script_pointer, script));
+  // Och, memory...
+  char *filename = "test_asset.py";
+  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+  strcpy(full_filename, files);
+  strcat(full_filename, filename);
+
+  LOGI("PyRun returns %i", Verbose_PyRun_SimpleFile(full_filename));
 
   LOGI("Before Py_Finalize...");
   Py_Finalize();

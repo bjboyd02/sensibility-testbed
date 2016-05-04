@@ -10,6 +10,7 @@
 #include "interpreter.h"
 #include "outputs.h"
 #include "sensors.h"
+#include "pyhelper.h"
 
 
 

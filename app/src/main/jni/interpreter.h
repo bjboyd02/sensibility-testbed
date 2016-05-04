@@ -8,8 +8,7 @@
 #include <unistd.h>
 #include "outputs.h"
 #include "sensors.h"
-
-int Verbose_PyRun_SimpleString(const char *code);
+#include "pyhelper.h"
 
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_files, jstring python_arguments);
 #endif /* defined _SNAKEI_INTERPRETER_H_ */
