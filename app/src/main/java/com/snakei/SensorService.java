@@ -18,9 +18,9 @@ import java.util.List;
 /**
  * Created by lukas on 4/20/16.
  *
- *
- * Pseudo Service class that fetches a list of all available Sensors and
- * transforms into Sensor objects into a list of dictionaries of sensor info
+ * Pseudo Service class that facades Android Sensors and
+ * provides methods for starting and stopping Sensors
+ * polling their values and getting information about them.
  *
  * This class is a Singleton using the thread safe
  * Java Initialization on Demand Holder pattern
