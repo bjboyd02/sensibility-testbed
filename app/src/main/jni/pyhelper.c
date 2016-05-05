@@ -17,9 +17,7 @@ int Verbose_PyRun_SimpleString(const char *code) {
     if (module == NULL)
         return -1;
     d = PyModule_GetDict(module);
-
     PyRun_StringFlags(code, Py_file_input, d, d, NULL);
-
     if (PyErr_Occurred()) {
         PyObject *errtype, *errvalue, *traceback;
         PyObject *errstring = NULL;

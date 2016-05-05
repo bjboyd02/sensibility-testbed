@@ -5,6 +5,8 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Looper;
+import android.util.Log;
 
 import com.sensibility_testbed.SensibilityApplication;
 
@@ -15,7 +17,7 @@ import com.sensibility_testbed.SensibilityApplication;
  *
  * This class is a Singleton using the thread safe
  * Java Initialization on Demand Holder pattern
- * (cf. SensorService.java for explaination)
+ * (cf. SensorService.java for explanation)
  * XXX: Maybe we can generalize some common aspects of
  * all the "Sensor" code (Real android sensors, location, cell, wifi,...)
  * Try now, DRY later!
@@ -48,9 +50,9 @@ import com.sensibility_testbed.SensibilityApplication;
 
 public class LocationService implements LocationListener {
     static final String TAG = "LocationService";
-    LocationManager location_manager;
-    double[] location_values_gps;
-    double[] location_values_network;
+    private LocationManager location_manager;
+    private double[] location_values_gps;
+    private double[] location_values_network;
 
     /* See Initialization on Demand Holder pattern */
     private static class LocationServiceHolder {
@@ -65,21 +67,40 @@ public class LocationService implements LocationListener {
     private LocationService() {
         Context app_context = SensibilityApplication.getAppContext();
         location_manager = (LocationManager)app_context.getSystemService(app_context.LOCATION_SERVICE);
-
+    }
+    /*
+     * Register location update listeners
+     *
+     * Todo: return meaningful code
+     */
+    public void start_location() {
         // We could use one, both or PASSIVE_PROVIDER instead
         // There is no use in listening for PASSIVE_PROVIDER if one of the other two is registered
         // It only retrieves values if any other app is listening to a gps or network provider
         // If they can we can too, furthermore we need the same permissions for passive as for gps
         // and network.
         // Sensibility API currently returns values from all three providers
-        location_manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-        location_manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+        Log.i(TAG, "Register GPS Location Update Listener...");
+        location_manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this, Looper.getMainLooper());
+        Log.i(TAG, "Register Network Location Update Listener...");
+        location_manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this, Looper.getMainLooper());
+    }
+
+    /*
+     * Unregister location update listeners
+     *
+     * Todo: return meaningful code
+     */
+    public void stop_location() {
+        location_manager.removeUpdates(this);
     }
 
     public double[] getLocationValuesGPS() {
+        Log.i(TAG, "Polling gps");
         return location_values_gps;
     }
-    public double[] getLocationValuesGPS() {
+    public double[] getLocationValuesNetwork() {
+        Log.i(TAG, "Polling network");
         return location_values_network;
     }
 
@@ -99,26 +120,30 @@ public class LocationService implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
-        double[] result = new double[8];
-        result[0] = (double) System.currentTimeMillis();
-        result[1] = (double) location.getTime(); // long
-        result[2] = (double) location.getAccuracy(); // float
-        result[3] = location.getAltitude();
-        result[4] = (double) location.getBearing(); //float
-        // XXX Do we want this?
-        // location.getElapsedRealtimeNanos();
-        result[5] = location.getLatitude();
-        result[6] = location.getLongitude();
-        result[7] = (double) location.getSpeed(); // float
+        Log.i(TAG, "get location");
+
+        Log.i(TAG, String.format("time %i, accuarcy %f, alt %f, bearing %f, latitude %f, longitude %f, speed %f", location.getTime(), location.getAccuracy(), location.getAltitude(), location.getBearing(), location.getLatitude(), location.getLongitude(), location.getSpeed()));
+
+//        double[] result = new double[8];
+//        result[0] = (double) System.currentTimeMillis();
+//        result[1] = (double) location.getTime(); // long
+//        result[2] = (double) location.getAccuracy(); // float
+//        result[3] = location.getAltitude();
+//        result[4] = (double) location.getBearing(); //float
+//        // XXX Do we want this?
+//        // location.getElapsedRealtimeNanos();
+//        result[5] = location.getLatitude();
+//        result[6] = location.getLongitude();
+//        result[7] = (double) location.getSpeed(); // float
 
         // XXX Could contain # of gps satellite. Interested?
         //location.getExtras()
 
-        if (location.getProvider() == LocationManager.GPS_PROVIDER) {
-            location_values_gps = result;
-        } else if (location.getProvider() == LocationManager.NETWORK_PROVIDER) {
-            location_values_network = result;
-        }
+//        if (location.getProvider() == LocationManager.GPS_PROVIDER) {
+//            location_values_gps = result;
+//        } else if (location.getProvider() == LocationManager.NETWORK_PROVIDER) {
+//            location_values_network = result;
+//        }
     }
 
     @Override

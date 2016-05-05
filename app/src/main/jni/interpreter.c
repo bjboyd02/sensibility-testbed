@@ -21,6 +21,7 @@ static PyMethodDef AndroidlogMethods[] = {
 
 // Only functions taking two PyObject* arguments are PyCFunction
 // where this is not the case we need to cast
+// Todo: write descriptions
 static PyMethodDef AndroidsensorMethods[] = {
   {"get_sensor_list", (PyCFunction) sensor_get_sensor_list, METH_NOARGS,
     "Get a list of sensor info dictionaries."},
@@ -35,6 +36,12 @@ static PyMethodDef AndroidsensorMethods[] = {
   {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
+// Todo: write descriptions
+static PyMethodDef AndroidlocationMethods[] = {
+        {"get_location", (PyCFunction) location_get_location, METH_NOARGS,
+                        "Get locations."},
+        {NULL, NULL, 0, NULL} // This is the end-of-array marker
+};
 
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_files, jstring python_arguments) {
   char* home = (char*) (*env)->GetStringUTFChars(env, python_home, NULL);
@@ -49,12 +56,6 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 
   LOGI("script is %s", script);
   LOGI("Oh and btw, args are %s", args);
-
-  LOGI("Start Sensing IN C!!!!");
-  sensor_start_sensing(1);
-  sensor_start_sensing(11);
-  sensor_start_sensing(14);
-  sensor_start_sensing(9);
 
   //Py_SetProgramName("/sdcard/mypython/python");
   LOGI("Before Py_Initialize...");
@@ -80,52 +81,49 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
   Py_InitModule("sensor", AndroidsensorMethods);
   LOGI("androidsensors initted");
 
-  //XXX: Temporary way to write python code until
-  // we have found out how to run files
-  const char* python_code = ""\
-"import androidlog, sensor, sys, time\n"\
-"l = androidlog.log2\n"\
-"l('Lets get some sensor info')\n"\
-"\n"\
-"for sensor_info in sensor.get_sensor_list():\n"\
-"  l(repr(sensor_info))\n"\
-"\n"\
-"l('Oh, wow, lovely sensors, why not poll them?')\n"\
-"l('Lets start with some of the existing sensors...')\n"\
-"\n"\
-"for i in xrange(2):\n"\
-"  l('Accelerometer: ' + repr(sensor.get_acceleration()))\n"\
-"  l('Magnetic field: ' + repr(sensor.get_magnetic_field()))\n"\
-"  l('Proximity: ' + repr(sensor.get_proximity()))\n"\
-"  l('Light: ' + repr(sensor.get_light()))\n"\
-"  time.sleep(0.5)\n"\
-"  \n"\
-"\n"\
-"l('Bye, bye!')";
-  LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString(python_code));
+  LOGI("Initializing location module");
+  Py_InitModule("location", AndroidlocationMethods);
+  LOGI("androidlocation initted");
+
 
 //LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog, sensor\nl = androidlog.log2\ns = sensor.get_sensor_list\nl('check out these lovely sensors: ' +  repr(s()))"));
   //LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl(str(locals()))"));
 //  LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl('Ooh yeah!!!!!!!!!')\ntry:\n  import os\nexcept Exception, e:\n  l(repr(e))\nl('still k')\nl(os.getlogin())\n")); //l(str(os.getresuid()))\nl(os.getgroups())\nl(str(os.getresgid()))\n") );
   //try:\n  l('How?')\n  f = open('/sdcard/Android/data/com.sensibility_testbed/files/blip', 'w')\nexcept Exception, e:\n  l(repr(e))\nelse:\n  f.write('It worketh!!!\\n')\nl('Done.')\n") );
 
-  LOGI("Now do the file!!!");
+  LOGI("Now do the python file(s)!!!");
 
-  // Och, memory...
-  char *filename = "test_asset.py";
-  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-  strcpy(full_filename, files);
-  strcat(full_filename, filename);
 
-  LOGI("PyRun returns %i", Verbose_PyRun_SimpleFile(full_filename));
+  LOGI("Start Sensing IN C!!!!");
+//  sensor_start_sensing(1);
+//  sensor_start_sensing(11);
+//  sensor_start_sensing(14);
+//  sensor_start_sensing(9);
+//  // Och, memory...
+//  char *filename = "test_sensors.py";
+//  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+//  strcpy(full_filename, files);
+//  strcat(full_filename, filename);
+//
+//  LOGI("PyRun returns %i", Verbose_PyRun_SimpleFile(full_filename));
+//  LOGI("Stop Sensing IN C!!!!");
+//  sensor_stop_sensing(1);
+//  sensor_stop_sensing(11);
+//  sensor_stop_sensing(14);
+//  sensor_stop_sensing(9);
+
+//  LOGI("Start Locating IN C!!!!");
+//  location_start_location();
+//  char *filename = "test_location.py";
+//  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+//  strcpy(full_filename, files);
+//  strcat(full_filename, filename);
+//  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
+//  LOGI("Stop Locating IN C!!!!");
+//  location_stop_location();
 
   LOGI("Before Py_Finalize...");
   Py_Finalize();
-  LOGI("Stop Sensing IN C!!!!");
-  sensor_stop_sensing(1);
-  sensor_stop_sensing(11);
-  sensor_stop_sensing(14);
-  sensor_stop_sensing(9);
 
   LOGI("Done. Bye!");
 
