@@ -2,9 +2,15 @@ package com.snakei;
 // TODO Should we make this a proper Library Module? https://developer.android.com/tools/projects/index.html#LibraryModules
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
+
+import com.sensibility_testbed.SensibilityApplication;
+
 
 /**
  * Output service for Snakei
@@ -25,10 +31,29 @@ public class OutputService {
 //        return START_STICKY;
 //    }
 
-    public static void logMessage(String message) {
+    public static Toast toast;
+
+    public static void logMessage(final String message) {
         // This logs into the debug log...
         Log.i("######## Foo: ", message);
+
+        //Also log to UI
+        //XXX useful for e.g. GPS debugging where I have to carry the phone arround
+
+        final Context app_context = SensibilityApplication.getAppContext();
+        // UI activity needs to run on the UI Thread (MainLooper)
+        final Handler handler = new Handler(app_context.getMainLooper());
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (toast != null)
+                    toast.cancel();
+                toast = Toast.makeText(app_context, message, Toast.LENGTH_SHORT);
+                toast.show();
+            }
+        });
     }
+
 
 //    @Override
 //    public IBinder onBind(Intent intent) {
