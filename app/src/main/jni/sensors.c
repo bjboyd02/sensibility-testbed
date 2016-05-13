@@ -19,7 +19,6 @@ PyObject* sensor_get_sensor_list(PyObject *self) {
     jmethodID sensor_service_getter;
     jobject sensor_service_object;
     jmethodID sensor_service_method;
-    jobject sensor;
 
     // Use the cached JVM pointer to get a new environment
     (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
@@ -58,7 +57,10 @@ PyObject* sensor_get_sensor_list(PyObject *self) {
         // Release the chars!!!!
         (*jni_env)->ReleaseStringUTFChars(jni_env, java_sensor_name, sensor_name);
 
-        // XXX Todo do the same for all the other sensors
+        (*jni_env)->DeleteLocalRef(jni_env, sensor);
+        (*jni_env)->DeleteLocalRef(jni_env, java_sensor_name);
+
+        // XXX Todo do the same for all the other sensor info
         // ...
 
         // Add info dict to python sensor list
@@ -67,6 +69,12 @@ PyObject* sensor_get_sensor_list(PyObject *self) {
 
     // XXX: Only detach if AttachCurrentThread wasn't a no-op
     //(*cached_vm)->DetachCurrentThread(cached_vm);
+
+    // Delete local references
+    (*jni_env)->DeleteLocalRef(jni_env, sensor_service_object);
+    (*jni_env)->DeleteLocalRef(jni_env, sensor_list);
+    (*jni_env)->DeleteLocalRef(jni_env, sensor_class);
+    (*jni_env)->DeleteLocalRef(jni_env, sensor_service_class);
 
     return py_sensor_list;
 }
@@ -122,6 +130,11 @@ int _start_or_stop_sensing(const char *sensor_service_method_name, int sensor_ty
     int success = (int) (*jni_env)->CallBooleanMethod(jni_env, sensor_service_object, sensor_service_method, sensor_type);
     // XXX: Only detach if AttachCurrentThread wasn't a no-op
     //(*cached_vm)->DetachCurrentThread(cached_vm);
+
+    // Delete local references
+    (*jni_env)->DeleteLocalRef(jni_env, sensor_service_object);
+    (*jni_env)->DeleteLocalRef(jni_env, sensor_service_class);
+
     return success;
 }
 
@@ -162,6 +175,11 @@ PyObject* _get_sensor_values(const char *sensor_service_method_name) {
 
     // XXX: Only detach if AttachCurrentThread wasn't a no-op
     //(*cached_vm)->DetachCurrentThread(cached_vm);
+
+    // Delete local references
+    (*jni_env)->DeleteLocalRef(jni_env, sensor_service_object);
+    (*jni_env)->DeleteLocalRef(jni_env, sensor_values);
+    (*jni_env)->DeleteLocalRef(jni_env, sensor_service_class);
 
     return py_sensor_values;
 }

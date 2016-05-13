@@ -34,6 +34,9 @@ PyObject* androidlog_log2(PyObject *self, PyObject *python_message)
   (*jni_env)->CallStaticVoidMethod(jni_env, output_service_class, 
       log_message, java_message);
 
+  (*jni_env)->DeleteLocalRef(jni_env, output_service_class);
+  (*jni_env)->DeleteLocalRef(jni_env, java_message);
+
   Py_RETURN_NONE;  // I.e., `return Py_None;` with reference counting
 }
 
