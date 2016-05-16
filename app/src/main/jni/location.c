@@ -63,6 +63,9 @@ PyObject* _get_location_values(const char *location_provider_method_name) {
     jdoubleArray location_values = (jdoubleArray) (*jni_env)->CallObjectMethod(jni_env, service_object, service_method);
     if (location_values == NULL) {
         LOGI("NULL");
+        (*jni_env)->DeleteLocalRef(jni_env, location_values);
+        (*jni_env)->DeleteLocalRef(jni_env, service_class);
+        (*jni_env)->DeleteLocalRef(jni_env, service_object);
         Py_RETURN_NONE;
     }
 
@@ -70,6 +73,7 @@ PyObject* _get_location_values(const char *location_provider_method_name) {
     jdouble *location_values_ptr = (*jni_env)->GetDoubleArrayElements(jni_env, location_values, 0);
 
     PyObject *py_location_values = PyDict_New();
+
     // Create dict entry for the name
     PyDict_SetItemString(py_location_values, "time_polled", Py_BuildValue("d", location_values_ptr[0]));
     PyDict_SetItemString(py_location_values, "time_sample", Py_BuildValue("d", location_values_ptr[1]));
@@ -84,6 +88,9 @@ PyObject* _get_location_values(const char *location_provider_method_name) {
 
     // XXX: Only detach if AttachCurrentThread wasn't a no-op
     //(*cached_vm)->DetachCurrentThread(cached_vm);
+    (*jni_env)->DeleteLocalRef(jni_env, location_values);
+    (*jni_env)->DeleteLocalRef(jni_env, service_class);
+    (*jni_env)->DeleteLocalRef(jni_env, service_object);
 
     return py_location_values;
 
@@ -102,7 +109,7 @@ PyObject* location_get_location() {
     }
     PyObject *values_network = _get_location_values("getLocationValuesNetwork");
     if (values_network != Py_None) {
-        PyDict_SetItemString(py_location_providers, "network", values_gps);
+        PyDict_SetItemString(py_location_providers, "network", values_network);
     }
     return py_location_providers;
 }

@@ -122,28 +122,26 @@ public class LocationService implements LocationListener {
     public void onLocationChanged(Location location) {
         Log.i(TAG, "get location");
 
-        Log.i(TAG, String.format("time %i, accuarcy %f, alt %f, bearing %f, latitude %f, longitude %f, speed %f", location.getTime(), location.getAccuracy(), location.getAltitude(), location.getBearing(), location.getLatitude(), location.getLongitude(), location.getSpeed()));
+        double[] result = new double[8];
+        result[0] = (double) System.currentTimeMillis();
+        result[1] = (double) location.getTime(); // long
+        result[2] = (double) location.getAccuracy(); // float
+        result[3] = location.getAltitude();
+        result[4] = (double) location.getBearing(); //float
+        // XXX Do we want this?
+        // location.getElapsedRealtimeNanos();
+        result[5] = location.getLatitude();
+        result[6] = location.getLongitude();
+        result[7] = (double) location.getSpeed(); // float
 
-//        double[] result = new double[8];
-//        result[0] = (double) System.currentTimeMillis();
-//        result[1] = (double) location.getTime(); // long
-//        result[2] = (double) location.getAccuracy(); // float
-//        result[3] = location.getAltitude();
-//        result[4] = (double) location.getBearing(); //float
-//        // XXX Do we want this?
-//        // location.getElapsedRealtimeNanos();
-//        result[5] = location.getLatitude();
-//        result[6] = location.getLongitude();
-//        result[7] = (double) location.getSpeed(); // float
+//        // XXX Could contain # of gps satellite. Interested?
+//        location.getExtras()
 
-        // XXX Could contain # of gps satellite. Interested?
-        //location.getExtras()
-
-//        if (location.getProvider() == LocationManager.GPS_PROVIDER) {
-//            location_values_gps = result;
-//        } else if (location.getProvider() == LocationManager.NETWORK_PROVIDER) {
-//            location_values_network = result;
-//        }
+        if (location.getProvider().equals(LocationManager.GPS_PROVIDER)) {
+            location_values_gps = result;
+        } else if (location.getProvider().equals(LocationManager.NETWORK_PROVIDER)) {
+            location_values_network = result;
+        }
     }
 
     @Override

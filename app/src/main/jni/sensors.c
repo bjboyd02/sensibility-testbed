@@ -158,6 +158,9 @@ PyObject* _get_sensor_values(const char *sensor_service_method_name) {
     jdoubleArray sensor_values = (jdoubleArray) (*jni_env)->CallObjectMethod(jni_env, sensor_service_object, sensor_service_method);
 
     if (sensor_values == NULL) {
+        (*jni_env)->DeleteLocalRef(jni_env, sensor_service_object);
+        (*jni_env)->DeleteLocalRef(jni_env, sensor_values);
+        (*jni_env)->DeleteLocalRef(jni_env, sensor_service_class);
         LOGI("NULL");
         Py_RETURN_NONE;
     }

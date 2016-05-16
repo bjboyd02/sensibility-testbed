@@ -38,7 +38,7 @@ public class OutputService {
         Log.i("######## Foo: ", message);
 
         //Also log to UI
-        //XXX useful for e.g. GPS debugging where I have to carry the phone arround
+        //XXX useful for e.g. GPS debugging where I have to carry the phone around
 
         final Context app_context = SensibilityApplication.getAppContext();
         // UI activity needs to run on the UI Thread (MainLooper)
