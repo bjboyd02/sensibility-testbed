@@ -8,7 +8,14 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
+import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
+import com.google.android.gms.location.LocationServices;
+
 import com.sensibility_testbed.SensibilityApplication;
+
 
 /**
  * Created by lukas on 5/4/16.
@@ -48,9 +55,16 @@ import com.sensibility_testbed.SensibilityApplication;
  *
  */
 
-public class LocationService implements LocationListener {
+public class LocationService implements LocationListener, ConnectionCallbacks, OnConnectionFailedListener {
     static final String TAG = "LocationService";
     private LocationManager location_manager;
+    private GoogleApiClient google_api_client;
+
+    private Location location_gps;
+    private Location location_network;
+    private Location location_google;
+
+
     private double[] location_values_gps;
     private double[] location_values_network;
 
@@ -67,6 +81,13 @@ public class LocationService implements LocationListener {
     private LocationService() {
         Context app_context = SensibilityApplication.getAppContext();
         location_manager = (LocationManager)app_context.getSystemService(app_context.LOCATION_SERVICE);
+
+        google_api_client = new GoogleApiClient.Builder(app_context)
+            .addConnectionCallbacks(this)
+            .addOnConnectionFailedListener(this)
+            .addApi(LocationServices.API)
+            .build();
+
     }
     /*
      * Register location update listeners
@@ -84,6 +105,8 @@ public class LocationService implements LocationListener {
         location_manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this, Looper.getMainLooper());
         Log.i(TAG, "Register Network Location Update Listener...");
         location_manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this, Looper.getMainLooper());
+
+        google_api_client.connect();
     }
 
     /*
@@ -93,7 +116,9 @@ public class LocationService implements LocationListener {
      */
     public void stop_location() {
         location_manager.removeUpdates(this);
+        google_api_client.disconnect();
     }
+
 
     public double[] getLocationValuesGPS() {
         Log.i(TAG, "Polling gps");
@@ -139,8 +164,10 @@ public class LocationService implements LocationListener {
 
         if (location.getProvider().equals(LocationManager.GPS_PROVIDER)) {
             location_values_gps = result;
+            location_gps = location;
         } else if (location.getProvider().equals(LocationManager.NETWORK_PROVIDER)) {
             location_values_network = result;
+            location_network = location;
         }
     }
 
@@ -154,6 +181,26 @@ public class LocationService implements LocationListener {
     }
     @Override
     public void onProviderDisabled(String provider) {
+
+    }
+
+
+    @Override
+    public void onConnected(Bundle connectionHint) {
+        location_google = LocationServices
+                .FusedLocationApi
+                .getLastLocation(google_api_client);
+
+        Log.i(TAG, String.format("time %i, accuarcy %f, alt %f, bearing %f, latitude %f, longitude %f, speed %f",
+                location_google.getTime(), location_google.getAccuracy(), location_google.getAltitude(), location_google.getBearing(),
+                location_google.getLatitude(), location_google.getLongitude(), location_google.getSpeed()));
+    }
+    @Override
+    public void onConnectionSuspended(int cause) {
+
+    }
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
 
     }
 }
