@@ -4,7 +4,6 @@ import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
@@ -15,6 +14,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import com.sensibility_testbed.SensibilityApplication;
@@ -62,24 +62,28 @@ import java.util.Locale;
  *
  */
 
-public class LocationService implements LocationListener, ConnectionCallbacks, OnConnectionFailedListener {
+public class LocationService implements ConnectionCallbacks, OnConnectionFailedListener,
+        android.location.LocationListener, com.google.android.gms.location.LocationListener {
     static final String TAG = "LocationService";
 
     // Used to start/stop listener on network and gps location provider
     private LocationManager location_manager;
+
     // Used to connect to Google Play Service
     private GoogleApiClient google_api_client;
-    // Used to transform lat/long to addresses or vice-verca
+    // Used to define accuracy and frequency of Google Play Services location updates
+    private LocationRequest google_location_request;
+    // Used to transform lat/long to addresses or vice-versa
     // needs Google Play Service
     private Geocoder geocoder;
 
     private Location location_gps;
     private Location location_network;
-    private Location location_google;
+    private Location location_fused;
 
     private double[] location_values_gps;
     private double[] location_values_network;
-    private double[] location_values_google;
+    private double[] location_values_fused;
 
     /* See Initialization on Demand Holder pattern */
     private static class LocationServiceHolder {
@@ -94,6 +98,12 @@ public class LocationService implements LocationListener, ConnectionCallbacks, O
     private LocationService() {
         Context app_context = SensibilityApplication.getAppContext();
         location_manager = (LocationManager)app_context.getSystemService(app_context.LOCATION_SERVICE);
+
+        // Set Google Play Service Qos Paramters to "real-time"
+        google_location_request = new LocationRequest();
+        google_location_request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        google_location_request.setInterval(5);
+
         geocoder = new Geocoder(app_context, Locale.getDefault());
     }
     /*
@@ -113,7 +123,7 @@ public class LocationService implements LocationListener, ConnectionCallbacks, O
         Log.i(TAG, "Register Network Location Update Listener...");
         location_manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this, Looper.getMainLooper());
 
-        //Connect to Google Play Service
+        // Create Google Play Service client and connect
         Log.i(TAG, "Connecting to Google Play Service");
         google_api_client = new GoogleApiClient.Builder(SensibilityApplication.getAppContext())
                 .addConnectionCallbacks(this)
@@ -124,13 +134,16 @@ public class LocationService implements LocationListener, ConnectionCallbacks, O
     }
 
     /*
-     * Unregister location update listeners
+     * Unregister Android location update listeners
+     * Unregister Google Play Service location update listeners
      * Disconnect from Google Play Service
      *
      * Todo: return meaningful code
      */
     public void stop_location() {
+
         location_manager.removeUpdates(this);
+        LocationServices.FusedLocationApi.removeLocationUpdates(google_api_client, this);
         google_api_client.disconnect();
     }
 
@@ -143,14 +156,35 @@ public class LocationService implements LocationListener, ConnectionCallbacks, O
         Log.i(TAG, "Polling network locations");
         return location_values_network;
     }
-    public double[] getLocationValuesGoogle() {
+    public double[] getLocationValuesFused() {
         Log.i(TAG, "Polling google locations");
-        return location_values_google;
+        return location_values_fused;
     }
+
+    public double[] getLastKnownLocationValuesGPS() {
+        Log.i(TAG, "Polling gps last known locations");
+        Location location = location_manager.getLastKnownLocation("gps");
+        return _convert_location(location);
+    }
+    public double[] getLastKnownLocationValuesNetwork() {
+        Log.i(TAG, "Polling network last known locations");
+        Location location = location_manager.getLastKnownLocation("network");
+        return _convert_location(location);
+    }
+    public double[] getLastKnownLocationValuesFused() {
+        Log.i(TAG, "Polling fused last known locations");
+        if (google_api_client.isConnected()) {
+            Location location = LocationServices.FusedLocationApi.getLastLocation(google_api_client);
+            return _convert_location(location);
+        } else {
+            return null;
+        }
+    }
+
     /*
      * Which location should we use to get the address?
      * Probably the one with the best accuracy?
-     * For now let's try it with google
+     * For now let's try it with fused
      *
      * Todo:
      *   Better failure handling
@@ -160,11 +194,11 @@ public class LocationService implements LocationListener, ConnectionCallbacks, O
         Log.i(TAG, "Try to get address from last known location location");
         List<Address> addresses = null;
         if (google_api_client.isConnected() &&
-                location_google != null && geocoder.isPresent()) {
+                location_fused != null && geocoder.isPresent()) {
             try {
                 addresses = geocoder.getFromLocation(
-                        location_google.getLatitude(),
-                        location_google.getLongitude(),
+                        location_fused.getLatitude(),
+                        location_fused.getLongitude(),
                         1);
             } catch (IOException ioException) {
                 Log.i(TAG, ioException.getMessage());
@@ -186,20 +220,22 @@ public class LocationService implements LocationListener, ConnectionCallbacks, O
     }
 
     /*
-     * Store location values on location change to values member
-     * variable of according provider
+     * Helper method that converts a Locatoin object to a double array
      *
-     * XXX I don't like all the (double) casting, but maybe it does not matter
-     *      In case of floats it needs additional memory
-     *      In case of longs it loses precision
+     * XXX
+     * I don't like all the (double) casting, but maybe it does not matter
+     * - In case of floats it needs additional memory
+     * - In case of longs it loses precision
      *
      * Would storing all the actual values to some object and
      * calling them from C in a complicated way
      * (for each value at least three method calls) be doing
      * it the right way?
      */
-
     private double[] _convert_location(Location location) {
+        if (location == null)
+            return null;
+
         double[] result = new double[8];
         result[0] = (double) System.currentTimeMillis();
         result[1] = (double) location.getTime(); // long
@@ -217,53 +253,90 @@ public class LocationService implements LocationListener, ConnectionCallbacks, O
         return result;
     }
 
+    /*
+     * ###################################################
+     * Required LocationListener implementations
+     * (Android AND Google Play Service)
+     * ###################################################
+     */
+
+    /*
+     * Callback: Receives gps, network and fused locations
+     *
+     * Stores location object and location double values to the according
+     * class members
+     *
+     * CAUTION !!!!!!!!!
+     * This method implements `onLocationChanged` of two different
+     * interfaces:
+     *     - android.location.LocationListener
+     *     - com.google.android.gms.location.LocationListener
+     * Both callbacks receive an Android Location Object but
+     * from different Location Providers
+     *
+     * Android's Interface expects Locations of provider type:
+     *      - LocationManager.GPS_PROVIDER
+     *      - LocationManager.NETWORK_PROVIDER
+     * Google Play Services's Interface expects Locations of provider type:
+     *      "fused"
+     *
+     * XXX
+     * It is not safe to expect that the string "fused" won't change
+     *
+     */
     @Override
     public void onLocationChanged(Location location) {
-        Log.i(TAG, "get location");
+        Log.i(TAG, "Received location");
 
-        // Store the location the a float array
-        // Addiationally store location as object
         if (location.getProvider().equals(LocationManager.GPS_PROVIDER)) {
             location_values_gps = _convert_location(location);
             location_gps = location;
         } else if (location.getProvider().equals(LocationManager.NETWORK_PROVIDER)) {
             location_values_network = _convert_location(location);
             location_network = location;
+        } else if (location.getProvider().equals("fused")) {
+            location_values_fused = _convert_location(location);
+            location_fused = location;
+        } else {
+            Log.i(TAG, String.format("Received location from unknown Provider: %s", location.getProvider()));
         }
     }
 
+    /*
+     * ###################################################
+     * Required LocationListener implementations (android)
+     * ###################################################
+     */
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-
     }
     @Override
     public void onProviderEnabled(String provider) {
-
     }
     @Override
     public void onProviderDisabled(String provider) {
-
     }
 
-
+    /*
+     * ###################################################
+     * Required ConnectionCallback implementations (Google Play Services)
+     * ###################################################
+     */
     @Override
     public void onConnected(Bundle connectionHint) {
-        Log.i(TAG, "connected to google");
-
-        location_google = LocationServices
-                .FusedLocationApi
-                .getLastLocation(google_api_client);
-
-        location_values_google = _convert_location(location_google);
-        getLocationAddress();
-//        double[] loc = location_values_google;
-//        Log.i(TAG, String.format("time %f, time2 %f, accuarcy %f, alt %f, bearing %f, latitude %f, longitude %f, speed %f",
-//                loc[0], loc[1], loc[2], loc[3], loc[4], loc[5], loc[6], loc[7]));
+        Log.i(TAG, "Connected to google");
+        LocationServices.FusedLocationApi
+                .requestLocationUpdates(google_api_client, google_location_request, this, Looper.getMainLooper());
     }
     @Override
     public void onConnectionSuspended(int cause) {
-
     }
+
+    /*
+     * ###################################################
+     * Required OnConnectionFailedListener implementation (Google Play Services)
+     * ###################################################
+     */
     @Override
     public void onConnectionFailed(ConnectionResult result) {
             Log.i(TAG, String.format("Connection failed with code: %d. " +

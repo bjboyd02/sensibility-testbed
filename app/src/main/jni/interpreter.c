@@ -39,7 +39,9 @@ static PyMethodDef AndroidsensorMethods[] = {
 // Todo: write descriptions
 static PyMethodDef AndroidlocationMethods[] = {
         {"get_location", (PyCFunction) location_get_location, METH_NOARGS,
-                        "Get locations."},
+                        "Get locations from GPS, Network and Fused"},
+        {"get_lastknown_location", (PyCFunction) location_get_lastknown_location, METH_NOARGS,
+                "Get last known locations from GPS, Network and Fused"},
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 

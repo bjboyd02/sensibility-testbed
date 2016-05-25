@@ -12,5 +12,6 @@
 void location_start_location();
 void location_stop_location();
 PyObject* location_get_location();
+PyObject* location_get_lastknown_location();
 
 #endif //_SNAKEI_location_H_

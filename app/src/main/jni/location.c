@@ -97,9 +97,9 @@ PyObject* _get_location_values(const char *location_provider_method_name) {
 }
 
 /*
- * Calls get location for different location providers
- * (currently GPS and Network) and returns one dictionary
- * to Python
+ * Calls get location for different location providers, i.e.
+ * GPS, Network and Fused (uses Google Play Services),
+ * and returns one dictionary to Python
  */
 PyObject* location_get_location() {
     PyObject *py_location_providers = PyDict_New();
@@ -110,6 +110,31 @@ PyObject* location_get_location() {
     PyObject *values_network = _get_location_values("getLocationValuesNetwork");
     if (values_network != Py_None) {
         PyDict_SetItemString(py_location_providers, "network", values_network);
+    }
+    PyObject *values_fused = _get_location_values("getLocationValuesFused");
+    if (values_fused != Py_None) {
+        PyDict_SetItemString(py_location_providers, "fused", values_fused);
+    }
+    return py_location_providers;
+}
+/*
+ * Calls get last known location for different location providers, i.e.
+ * GPS, Network and Fused (uses Google Play Services),
+ * and returns one dictionary to Python
+ */
+PyObject* location_get_lastknown_location() {
+    PyObject *py_location_providers = PyDict_New();
+    PyObject *values_gps = _get_location_values("getLastKnownLocationValuesGPS");
+    if (values_gps != Py_None) {
+        PyDict_SetItemString(py_location_providers, "gps", values_gps);
+    }
+    PyObject *values_network = _get_location_values("getLastKnownLocationValuesNetwork");
+    if (values_network != Py_None) {
+        PyDict_SetItemString(py_location_providers, "network", values_network);
+    }
+    PyObject *values_fused = _get_location_values("getLastKnownLocationValuesFused");
+    if (values_fused != Py_None) {
+        PyDict_SetItemString(py_location_providers, "fused", values_fused);
     }
     return py_location_providers;
 }
