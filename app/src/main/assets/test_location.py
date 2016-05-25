@@ -1,11 +1,12 @@
 import androidlog, location, sys, time
 l = androidlog.log2
+l("doing nothing in python")
+time.sleep(20)
+raise Exception("Fuck off")
 path = "/storage/emulated/legacy/Android/data/com.sensibility_testbed/files/"
 filename = "locations_" + str(time.time())
 
 with open(path + filename, "w+") as out:
-clear
-
     l('Lets do the location')
     out.write("time_polled, time_sample, accuracy, altitude, bearing, latitude, longitude, speed\n")
     while True:
