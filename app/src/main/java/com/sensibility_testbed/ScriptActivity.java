@@ -954,28 +954,35 @@ public class ScriptActivity extends Activity {
       if (!pythonRuns) {
           pythonRuns = true;
           Log.i(Common.LOG_TAG, "UID is " + Integer.toString(myUid()));
-          Log.i(Common.LOG_TAG, Environment.getExternalStoragePublicDirectory("").toString());
 
-          for (File dir: getBaseContext().getExternalFilesDirs("")) {
-              Log.i(Common.LOG_TAG, dir.toString());
-          }
-
-          File f = new File(getExternalFilesDir(null), "test2.py");
-          try {
-              Log.i(Common.LOG_TAG, "File is " + f.getCanonicalPath());
-              File f2 = f.getCanonicalFile();
-              Log.i(Common.LOG_TAG, "AbsoluteFile is " + f2.getAbsolutePath());
-
-              OutputStream os = new FileOutputStream(f);
-
-
-              os.write("import androidlog\nl = androidlog.log2\nl('k')\nimport os\nl('still k')\nl(os.getlogin())\n".getBytes());
-              os.flush();
-              os.close();
-          } catch (Exception e){
-              Log.i(Common.LOG_TAG, "Error in file/stream magic");
-              e.printStackTrace();
-          }
+        /*
+         * Apparently external storage only is emulated if the device does not have
+         * a sdcard slot. If it has one but there is no sdcard, writing to external
+         * storage throws an exception
+         * XXX: Comment for now and verify later how to handle files We don't need this for now.
+         */
+//          Log.i(Common.LOG_TAG, Environment.getExternalStoragePublicDirectory("").toString());
+//
+//          for (File dir: getBaseContext().getExternalFilesDirs("")) {
+//              Log.i(Common.LOG_TAG, dir.toString());
+//          }
+//
+//          File f = new File(getExternalFilesDir(null), "test2.py");
+//          try {
+//              Log.i(Common.LOG_TAG, "File is " + f.getCanonicalPath());
+//              File f2 = f.getCanonicalFile();
+//              Log.i(Common.LOG_TAG, "AbsoluteFile is " + f2.getAbsolutePath());
+//
+//              OutputStream os = new FileOutputStream(f);
+//
+//
+//              os.write("import androidlog\nl = androidlog.log2\nl('k')\nimport os\nl('still k')\nl(os.getlogin())\n".getBytes());
+//              os.flush();
+//              os.close();
+//          } catch (Exception e){
+//              Log.i(Common.LOG_TAG, "Error in file/stream magic");
+//              e.printStackTrace();
+//          }
 
 
           //Log.i(Common.LOG_TAG, );

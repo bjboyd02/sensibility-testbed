@@ -38,7 +38,8 @@ public class PythonInterpreterService extends Service {
             this.python_script = python_script;
             this.python_arguments = python_arguments;
 
-            this.python_files = getExternalFilesDir(null).getPath();
+//            this.python_files = getExternalFilesDir(null).getPath();
+            this.python_files = getFilesDir().getPath();
         }
 
         @Override
