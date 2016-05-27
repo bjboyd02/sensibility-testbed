@@ -42,6 +42,8 @@ static PyMethodDef AndroidlocationMethods[] = {
                         "Get locations from GPS, Network and Fused"},
         {"get_lastknown_location", (PyCFunction) location_get_lastknown_location, METH_NOARGS,
                 "Get last known locations from GPS, Network and Fused"},
+        {"get_geolocation", (PyCFunction) location_get_geolocation, METH_VARARGS,
+                "Get address(es) from latitude and longitude"},
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 

@@ -3,6 +3,8 @@
 //
 
 #include "location.h"
+#include "python2.7/listobject.h"
+
 
 void _start_stop_location(const char* location_service_method_name) {
     JNIEnv* jni_env;
@@ -22,6 +24,9 @@ void _start_stop_location(const char* location_service_method_name) {
     (*jni_env)->CallVoidMethod(jni_env, service_object, service_method);
     // XXX: Only detach if AttachCurrentThread wasn't a no-op
     //(*cached_vm)->DetachCurrentThread(cached_vm);
+
+    (*jni_env)->DeleteLocalRef(jni_env, service_class);
+    (*jni_env)->DeleteLocalRef(jni_env, service_object);
 }
 
 void location_start_location() {
@@ -137,4 +142,147 @@ PyObject* location_get_lastknown_location() {
         PyDict_SetItemString(py_location_providers, "fused", values_fused);
     }
     return py_location_providers;
+}
+
+PyObject* _call_java_string_method(JNIEnv* jni_env, jclass java_class, jobject java_object, const char *method_name) {
+
+    if(java_class == NULL) {
+        LOGI("Class is null");
+        return NULL;
+    }
+    if(java_object == NULL) {
+        LOGI("Object is null");
+        return NULL;
+    }
+
+    jmethodID method_id = (*jni_env)->GetMethodID(jni_env, java_class, method_name, "()Ljava/lang/String;");
+    jstring java_string = (*jni_env)->CallObjectMethod(jni_env, java_object, method_id);
+
+    if(java_string == NULL) {
+        LOGI("Java string is null");
+    }
+
+    PyObject *py_string = NULL;
+
+    if (java_string != NULL) {
+        // Convert Java string to C char*
+        const char *c_string = (*jni_env)->GetStringUTFChars(jni_env, java_string, 0);
+        // Convert C char* to Python string
+        py_string = PyString_FromString(c_string);
+        // Free memory and delete reference
+        (*jni_env)->ReleaseStringUTFChars(jni_env, java_string, c_string);
+    }
+    (*jni_env)->DeleteLocalRef(jni_env, java_string);
+
+    return py_string;
+}
+
+PyObject* location_get_geolocation(PyObject *self, PyObject *args) {
+
+    jdouble latitude, longitude;
+    jint max_results;
+
+    if (!PyArg_ParseTuple(args, "ddi", &longitude, &latitude, &max_results)){
+        LOGI("Wrong arguments. I wonder if I should raise an Exception.");
+        Py_RETURN_NONE;
+    }
+
+    JNIEnv* jni_env;
+    jclass service_class;
+    jmethodID service_getter;
+    jobject service_object;
+    jmethodID service_method;
+
+    // Use the cached JVM pointer to get a new environment
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+
+    // Find LocationService class and get singleton instance
+    service_class = (*jni_env)->FindClass(jni_env, "com/snakei/LocationService");
+    service_getter = (*jni_env)->GetStaticMethodID(jni_env, service_class, "getInstance", "()Lcom/snakei/LocationService;");
+    service_object = (*jni_env)->CallStaticObjectMethod(jni_env, service_class, service_getter);
+
+    // Find Geolocation method and call it
+    service_method = (*jni_env)->GetMethodID(jni_env, service_class, "getGeoLocation", "(DDI)[Landroid/location/Address;");
+
+
+    jobjectArray java_addresses = (jobjectArray) (*jni_env)->CallObjectMethod(jni_env, service_object, service_method, latitude, longitude, max_results);
+    if (java_addresses == NULL) {
+        LOGI("Addresses are null :(");
+        (*jni_env)->DeleteLocalRef(jni_env, service_class);
+        (*jni_env)->DeleteLocalRef(jni_env, service_object);
+        Py_RETURN_NONE;
+    }
+    int addresses_cnt = (*jni_env)->GetArrayLength(jni_env, java_addresses);
+
+    PyObject *py_addresses = PyList_New(addresses_cnt);
+    jclass address_class = (*jni_env)->FindClass(jni_env, "android/location/Address");
+
+    char *address_part_names[] = {"admin_area", "country_code" , "country_name" , "feature_name",
+                     "locality" , "phone" , "postal_code" , "premises",
+                     "sub_admin_area" , "sub_locality" , "sub_thoroughfare" , "thoroughfare",
+                     "url"};
+    char *address_part_methods[] = {"getAdminArea", "getCountryCode", "getCountryName", "getFeatureName",
+                       "getLocality", "getPhone", "getPostalCode", "getPremises",
+                       "getSubAdminArea", "getSubLocality", "getSubThoroughfare",
+                       "getThoroughfare", "getUrl"};
+    int address_parts_cnt = 13;
+    assert(sizeof(address_part_names) == sizeof(address_part_methods) == address_parts_cnt);
+
+    int i = 0;
+    for (i; i < addresses_cnt; i++) {
+        PyObject *py_address = PyDict_New();
+        jobject address_object = (*jni_env)->GetObjectArrayElement(jni_env, java_addresses, i);
+
+        if (address_object == NULL) {
+            LOGI("Address object is null");
+            continue;
+        }
+
+        // Getting all Address parts
+        int j = 0;
+        for (j; j < address_parts_cnt; j++) {
+            PyObject *py_address_part = _call_java_string_method(jni_env, address_class, address_object,
+                                                                 address_part_methods[j]);
+            if (py_address_part == NULL) {
+                LOGI("Py Address part is null");
+                continue;
+            }
+            PyDict_SetItemString(py_address, address_part_names[j], py_address_part);
+        }
+
+        LOGI("GETTING ADDRESS LINES");
+        // Getting all Address lines
+        jmethodID line_max_idx_method = (*jni_env)->GetMethodID(jni_env, address_class, "getMaxAddressLineIndex", "()I");
+        jint line_cnt = (*jni_env)->CallIntMethod(jni_env, address_object, line_max_idx_method);
+        LOGI("GOT ADDRESS LINES: %i", line_cnt);
+
+        if (line_cnt > 0) {
+            PyObject *py_address_lines = PyList_New(line_cnt);
+            int k = 0;
+            for (k; k < line_cnt; k++) {
+                PyObject *py_address_line = _call_java_string_method(jni_env, address_class, address_object,
+                                                                     "getMaxAddressLineIndex");
+                if (py_address_line == NULL) {
+                    LOGI("Py Address line is null");
+                    continue;
+                }
+                LOGI("Setting address line list item");
+                PyList_SetItem(py_address_lines, k, py_address_line);
+            }
+            LOGI("SETTING ADDRESSES LINE DICT ITEM");
+            PyDict_SetItemString(py_address, "lines", py_address_lines);
+        }
+
+        // Append address dictionary to list
+        PyList_SetItem(py_addresses, i, py_address);
+    }
+
+
+    // XXX: Only detach if AttachCurrentThread wasn't a no-op
+    //(*cached_vm)->DetachCurrentThread(cached_vm);
+
+    (*jni_env)->DeleteLocalRef(jni_env, service_class);
+    (*jni_env)->DeleteLocalRef(jni_env, service_object);
+
+    return py_addresses;
 }

@@ -20,6 +20,7 @@ import com.google.android.gms.location.LocationServices;
 import com.sensibility_testbed.SensibilityApplication;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -130,6 +131,7 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
+
         google_api_client.connect();
     }
 
@@ -143,10 +145,19 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
     public void stop_location() {
 
         location_manager.removeUpdates(this);
-        LocationServices.FusedLocationApi.removeLocationUpdates(google_api_client, this);
-        google_api_client.disconnect();
-    }
 
+        // If in the process of connecting wait with disconnect until being connected
+        if (google_api_client.isConnecting()) {
+            google_api_client.blockingConnect();
+            google_api_client.disconnect();
+        }
+        // Disconnect from Google Api Only if we are conncted
+        if(google_api_client.isConnected()) {
+            // If listener is not registered this has no effects
+            LocationServices.FusedLocationApi.removeLocationUpdates(google_api_client, this);
+            google_api_client.disconnect();
+        }
+    }
 
     public double[] getLocationValuesGPS() {
         Log.i(TAG, "Polling gps locations");
@@ -182,24 +193,21 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
     }
 
     /*
-     * Which location should we use to get the address?
-     * Probably the one with the best accuracy?
-     * For now let's try it with fused
-     *
+
      * Todo:
      *   Better failure handling
-     *   Pass parameter for max(addresses)
      */
-    public void getLocationAddress() {
-        Log.i(TAG, "Try to get address from last known location location");
+    public Address[] getGeoLocation(double latitude, double longitude, int max_results) {
+        Log.i(TAG, "Get address(es) for location");
         List<Address> addresses = null;
+        Address[] addresses_array = null;
         if (google_api_client.isConnected() &&
                 location_fused != null && geocoder.isPresent()) {
             try {
                 addresses = geocoder.getFromLocation(
-                        location_fused.getLatitude(),
-                        location_fused.getLongitude(),
-                        1);
+                        latitude,
+                        longitude,
+                        max_results);
             } catch (IOException ioException) {
                 Log.i(TAG, ioException.getMessage());
             } catch (IllegalArgumentException illegalArgumentException) {
@@ -208,15 +216,32 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
         } else {
             Log.i(TAG, "Did not perform reverse geocoding");
         }
-        if (addresses != null && addresses.size() > 0) {
+        if (addresses != null) {
+            addresses_array = new Address[addresses.size()];
+            addresses.toArray(addresses_array);
             for (Address address: addresses  ) {
-                for (int i = 0; i < address.getMaxAddressLineIndex(); i++){
-                    Log.i(TAG, address.getAddressLine(i));
-                }
+//                Log.i(TAG, address.getAdminArea());
+//                Log.i(TAG, address.getCountryCode());
+//                Log.i(TAG, address.getCountryName());
+//                Log.i(TAG, address.getFeatureName());
+//                Log.i(TAG, address.getLocality());
+//                Log.i(TAG, address.getPhone());
+//                Log.i(TAG, address.getPostalCode());
+//                Log.i(TAG, address.getPremises());
+//                Log.i(TAG, address.getSubAdminArea());
+//                Log.i(TAG, address.getSubLocality());
+//                Log.i(TAG, address.getSubThoroughfare());
+//                Log.i(TAG, address.getThoroughfare());
+//                Log.i(TAG, address.getUrl());
+
+//                for (int i = 0; i < address.getMaxAddressLineIndex(); i++){
+//                    Log.i(TAG, address.getAddressLine(i));
+//                }
             }
         } else {
             Log.i(TAG, "Did not get any addresses");
         }
+        return addresses_array;
     }
 
     /*
@@ -286,15 +311,17 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
      */
     @Override
     public void onLocationChanged(Location location) {
-        Log.i(TAG, "Received location");
 
         if (location.getProvider().equals(LocationManager.GPS_PROVIDER)) {
+            Log.i(TAG, "Received location GPS");
             location_values_gps = _convert_location(location);
             location_gps = location;
         } else if (location.getProvider().equals(LocationManager.NETWORK_PROVIDER)) {
+            Log.i(TAG, "Received location Network");
             location_values_network = _convert_location(location);
             location_network = location;
         } else if (location.getProvider().equals("fused")) {
+            Log.i(TAG, "Received location Fused");
             location_values_fused = _convert_location(location);
             location_fused = location;
         } else {

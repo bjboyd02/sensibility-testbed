@@ -7,11 +7,13 @@
 
 #include <Python.h>
 #include <jni.h>
+#include <assert.h>
 #include "snakei.h"
 
 void location_start_location();
 void location_stop_location();
 PyObject* location_get_location();
 PyObject* location_get_lastknown_location();
+PyObject* location_get_geolocation(PyObject *self, PyObject *args);
 
 #endif //_SNAKEI_location_H_
