@@ -34,7 +34,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/python2.7/
 LOCAL_SHARED_LIBRARIES := python2.7 unistd
 LOCAL_LDLIBS    := -llog
 LOCAL_MODULE    := snakei
-LOCAL_SRC_FILES := outputs.c sensors.c location.c interpreter.c snakei.c pyhelper.c
+LOCAL_SRC_FILES := outputs.c sensors.c location.c media.c interpreter.c snakei.c pyhelper.c jnihelper.c
 
 include $(BUILD_SHARED_LIBRARY)
 
