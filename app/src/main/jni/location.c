@@ -182,7 +182,7 @@ PyObject* location_get_geolocation(PyObject *self, PyObject *args) {
     jdouble latitude, longitude;
     jint max_results;
 
-    if (!PyArg_ParseTuple(args, "ddi", &longitude, &latitude, &max_results)){
+    if (!PyArg_ParseTuple(args, "ddi", &latitude, &longitude, &max_results)){
         LOGI("Wrong arguments. I wonder if I should raise an Exception.");
         Py_RETURN_NONE;
     }
@@ -256,22 +256,22 @@ PyObject* location_get_geolocation(PyObject *self, PyObject *args) {
         jint line_cnt = (*jni_env)->CallIntMethod(jni_env, address_object, line_max_idx_method);
         LOGI("GOT ADDRESS LINES: %i", line_cnt);
 
-        if (line_cnt > 0) {
-            PyObject *py_address_lines = PyList_New(line_cnt);
-            int k = 0;
-            for (k; k < line_cnt; k++) {
-                PyObject *py_address_line = _call_java_string_method(jni_env, address_class, address_object,
-                                                                     "getMaxAddressLineIndex");
-                if (py_address_line == NULL) {
-                    LOGI("Py Address line is null");
-                    continue;
-                }
-                LOGI("Setting address line list item");
-                PyList_SetItem(py_address_lines, k, py_address_line);
-            }
-            LOGI("SETTING ADDRESSES LINE DICT ITEM");
-            PyDict_SetItemString(py_address, "lines", py_address_lines);
-        }
+//        if (line_cnt > 0) {
+//            PyObject *py_address_lines = PyList_New(line_cnt);
+//            int k = 0;
+//            for (k; k < line_cnt; k++) {
+//                PyObject *py_address_line = _call_java_string_method(jni_env, address_class, address_object,
+//                                                                     "getAddressLine");
+//                if (py_address_line == NULL) {
+//                    LOGI("Py Address line is null");
+//                    continue;
+//                }
+//                LOGI("Setting address line list item");
+//                PyList_SetItem(py_address_lines, k, py_address_line);
+//            }
+//            LOGI("SETTING ADDRESSES LINE DICT ITEM");
+//            PyDict_SetItemString(py_address, "lines", py_address_lines);
+//        }
 
         // Append address dictionary to list
         PyList_SetItem(py_addresses, i, py_address);

@@ -198,7 +198,7 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
      *   Better failure handling
      */
     public Address[] getGeoLocation(double latitude, double longitude, int max_results) {
-        Log.i(TAG, "Get address(es) for location");
+        Log.i(TAG, String.format("Get address(es) for location -- lat: %f, lon: %f, max: %d", latitude, longitude, max_results));
         List<Address> addresses = null;
         Address[] addresses_array = null;
         if (google_api_client.isConnected() &&
