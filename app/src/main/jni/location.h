@@ -9,6 +9,7 @@
 #include <jni.h>
 #include <assert.h>
 #include "snakei.h"
+#include "jnihelper.h"
 
 void location_start_location();
 void location_stop_location();

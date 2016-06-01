@@ -15,5 +15,6 @@ jmethodID jh_getMethod(JNIEnv* jni_env, jclass class, const char *method_name, c
 jobject jh_getInstance(JNIEnv* jni_env, jclass class, jmethodID getter);
 void jh_callVoidMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...);
 PyObject* jh_callBooleanMethod(JNIEnv* jni_env, jclass class, jobject object, const char *method_name, ...);
+PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...);
 
 #endif //SENSIBILITY_TESTBED_JNIHELPER_H

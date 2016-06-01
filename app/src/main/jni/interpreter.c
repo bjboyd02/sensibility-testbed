@@ -116,25 +116,25 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 //  sensor_stop_sensing(14);
 //  sensor_stop_sensing(9);
 
-//  LOGI("Start Locating IN C!!!!");
-//  location_start_location();
-//  char *filename = "test_location.py";
-//  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-//  strcpy(full_filename, files);
-//  strcat(full_filename, filename);
-//  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
-//  LOGI("Stop Locating IN C!!!!");
-//  location_stop_location();
+  LOGI("Start Locating IN C!!!!");
+  location_start_location();
+  char *filename = "test_location.py";
+  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+  strcpy(full_filename, files);
+  strcat(full_filename, filename);
+  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
+  LOGI("Stop Locating IN C!!!!");
+  location_stop_location();
 //
 //  LOGI("Start Media-ing IN C!!!!");
-  media_start_media();
+//  media_start_media();
 //  char *filename = "test_media.py";
 //  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
 //  strcpy(full_filename, files);
 //  strcat(full_filename, filename);
 //  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
 //  LOGI("Stop Media-ing IN C!!!!");
-  media_stop_media();
+//  media_stop_media();
 
 
   LOGI("Before Py_Finalize...");
