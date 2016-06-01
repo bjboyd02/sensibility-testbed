@@ -62,22 +62,37 @@ void jh_callVoidMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...) {
         LOGI("jh_callVoidMethod: exception occurred");
     }
 }
-//
-//PyObject* jnihelper_callBooleanMethod(JNIEnv* jni_env, jclass class, jobject object, const char *method_name) {
-//    jmethodID method = (*jni_env)->GetMethodID(jni_env, class, method_name, "()V");
-//
-//    va_list args;
-//    va_start(args, method);
-//    jboolean success = (*jni_env)->CallBooleanMethod(jni_env, object, method, args);
-//    va_end(args);
-//
-//    if (success) {
-//        Py_RETURN_TRUE;
-//    } else {
-//        Py_RETURN_FALSE;
-//    }
-//}
 
+PyObject* jh_callBooleanMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...) {
+
+    va_list args;
+    va_start(args, method);
+    jboolean success = (*jni_env)->CallBooleanMethodV(jni_env, object, method, args);
+    va_end(args);
+
+    if ((*jni_env)->ExceptionOccurred(jni_env)){
+        LOGI("jh_callBooleanMethod: exception occurred");
+    }
+
+    if (success) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+PyObject* jh_callIntMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...) {
+
+    va_list args;
+    va_start(args, method);
+    int retval = (*jni_env)->CallIntMethodV(jni_env, object, method, args);
+    va_end(args);
+
+    if ((*jni_env)->ExceptionOccurred(jni_env)){
+        LOGI("jh_callIntMethod: exception occurred");
+    }
+    return Py_BuildValue("i", retval);
+
+}
 PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...) {
 
     jstring java_string;

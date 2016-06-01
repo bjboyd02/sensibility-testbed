@@ -2,12 +2,14 @@ package com.snakei;
 
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 
 import com.sensibility_testbed.SensibilityApplication;
 
 import org.w3c.dom.Text;
 
+import java.util.HashMap;
 import java.util.UUID;
 
 /**
@@ -17,14 +19,14 @@ import java.util.UUID;
  *
  */
 public class MediaService implements TextToSpeech.OnInitListener {
-
+    static final String TAG = "MediaService";
     public class MediaPlayInfo {
 
     }
 
     private TextToSpeech tts;
     private boolean tts_initialized = false;
-    private int queue_method = TextToSpeech.QUEUE_ADD;
+    private int queue_mode = TextToSpeech.QUEUE_FLUSH;
 
     /* See Initialization on Demand Holder pattern */
     private static class MediaServiceHolder {
@@ -77,16 +79,47 @@ public class MediaService implements TextToSpeech.OnInitListener {
      * KEY_PARAM_PAN
      * Engine specific parameters
      */
-    public boolean ttsSpeak(String message) {
-        if (tts != null && tts_initialized) {
+    public int ttsSpeak(String message) throws InterruptedException {
+
+        Log.i(TAG, String.format("In java we received: '%s'", message));
+        if (tts != null) {
+            while (true) {
+                if (tts_initialized)
+                    break;
+                Log.i(TAG, "Waiting for TTS to init");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
             UUID utterance_id = UUID.randomUUID();
-            tts.speak(message, queue_method, null, utterance_id.toString());
+            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                @Override
+                public void onStart(String utteranceId) {
+                    Log.i(TAG, "Start uttering");
+                }
+
+                @Override
+                public void onDone(String utteranceId) {
+                    Log.i(TAG, "Done uttering");
+                }
+
+                @Override
+                public void onError(String utteranceId) {
+                    Log.i(TAG, "Error while uttering");
+                }
+            });
+
+            return tts.speak(message, queue_mode, null, utterance_id.toString());
         }
-        return true;
+
+       return -1;
     }
 
-
+    @Override
     public void onInit(int status) {
+        Log.i(TAG, String.format("On TTS init: %d ", status));
         if (status == TextToSpeech.SUCCESS) {
             tts_initialized = true;
         }
