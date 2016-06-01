@@ -44,7 +44,7 @@ public class MediaService implements TextToSpeech.OnInitListener {
         tts.shutdown();
     }
 
-    public void microphoneRecord(String file_name, Integer duration) {
+    public void microphoneRecord(String file_name, int duration) {
 
     }
 
@@ -90,9 +90,5 @@ public class MediaService implements TextToSpeech.OnInitListener {
         if (status == TextToSpeech.SUCCESS) {
             tts_initialized = true;
         }
-    }
-
-    public void test(int a, int b, int c) {
-        Log.i("TAG", String.format("a: %d, b: %d, c: %d", a, b, c));
     }
 }

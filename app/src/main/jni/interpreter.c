@@ -127,16 +127,15 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 //  location_stop_location();
 //
 //  LOGI("Start Media-ing IN C!!!!");
-//  media_start_media();
+  media_start_media();
 //  char *filename = "test_media.py";
 //  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
 //  strcpy(full_filename, files);
 //  strcat(full_filename, filename);
 //  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
 //  LOGI("Stop Media-ing IN C!!!!");
-//  media_stop_media();
+  media_stop_media();
 
-  test_me();
 
   LOGI("Before Py_Finalize...");
   Py_Finalize();
