@@ -51,6 +51,8 @@ static PyMethodDef AndroidmediaMethods[] = {
                         "Text-to-speech"},
         {"microphone_record", (PyCFunction) media_microphone_record, METH_VARARGS,
                 "Record audio"},
+        {"is_tts_speaking", (PyCFunction) media_is_tts_speaking, METH_NOARGS,
+                "Record audio"},
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
@@ -139,7 +141,7 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 //
   LOGI("Start Media-ing IN C!!!!");
   media_start_media();
-  char *filename = "test_media.py";
+  char *filename = "test_tts.py";
   char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
   strcpy(full_filename, files);
   strcat(full_filename, filename);

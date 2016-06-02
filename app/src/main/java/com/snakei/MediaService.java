@@ -49,9 +49,24 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
         tts_initialized = false;
         tts.shutdown();
 
-        recorder.release();
+        //recorder.release();
     }
 
+    /*
+     * Records from the default microphone to a file at
+     * passed `file_name` for a given `duration` (ms) if the
+     * duration is exceeded, recording stops and automatically
+     * and `onInfo` receives a message
+     * `MEDIA_RECORDER_INFO_MAX_DURATION_REACHED`
+     *
+     * Todo:
+     *      Think about initialization and freeing of resource
+     *         Should this be done in start_media, stop_media?
+     *
+     *      There are a lot of things that can be parametrized
+     *      e.g. Format, Encoder, ...
+     *
+     */
     public void microphoneRecord(String file_name, int duration) {
         Log.i(TAG, String.format("Trying to record to file: %s", file_name));
         recorder = new MediaRecorder();
@@ -78,14 +93,22 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
 //        return media_play_info;
 //    }
 //
-//    public boolean isTtsSpeaking() {
-//        return is_tts_speaking;
-//    }
+
+    /*
+     * Checks if TTS is speaking
+     * Apparently also returns TRUE if something
+     * is in the queue but utterance has not
+     * started yet.
+     */
+
+    public boolean isTtsSpeaking() {
+        return tts.isSpeaking();
+    }
     /*
      * Adds method to TTS queue for playback.
      *
      * Todo:
-     *      Should be return right away when the message was added to the queue
+     *      Should we return right away when the message was added to the queue
      *      or should we wait until the message was spoken?
 
      * Further possible parameters
@@ -137,6 +160,11 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
         return -1;
     }
 
+    /*
+     * ###################################################
+     * Text To Speech Initialization callback
+     * ###################################################
+     */
     @Override
     public void onInit(int status) {
         Log.i(TAG, String.format("On TTS init: %d ", status));
@@ -145,6 +173,12 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
         }
     }
 
+    /*
+     * ###################################################
+     * Media Recorder Info Callback
+     * e.g. gets called when maximum record time is reached
+     * ###################################################
+     */
     @Override
     public void onInfo(MediaRecorder mr, int what, int extra) {
         Log.i(TAG, String.format("Info: %d", what));
