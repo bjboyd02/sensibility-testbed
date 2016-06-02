@@ -1,5 +1,7 @@
 package com.snakei;
 
+import android.content.Context;
+import android.media.AudioManager;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
@@ -26,6 +28,7 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
     public class MediaPlayInfo {
 
     }
+    AudioManager audio_manager;
     private MediaRecorder recorder;
     private TextToSpeech tts;
     private boolean tts_initialized = false;
@@ -42,13 +45,14 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
     }
 
     public void start_media() {
-        tts = new TextToSpeech(SensibilityApplication.getAppContext(), this);
+        Context app_context = SensibilityApplication.getAppContext();
+        tts = new TextToSpeech(app_context, this);
+        audio_manager = (AudioManager)app_context.getSystemService(Context.AUDIO_SERVICE);
 
     }
     public void stop_media() {
         tts_initialized = false;
         tts.shutdown();
-
         //recorder.release();
     }
 
@@ -83,11 +87,9 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
         recorder.start();
     }
 
-//    public boolean isMediaPlaying() {
-//
-//        return is_media_playing;
-//    }
-//
+    public boolean isMediaPlaying() {
+        return audio_manager.isMusicActive();
+    }
 //    public MediaPlayInfo getMediaPlayInfo() {
 //
 //        return media_play_info;
@@ -135,6 +137,9 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
                 }
             }
             UUID utterance_id = UUID.randomUUID();
+
+            // XXX: UtteranceProgressListern is not really needed
+            // This is just handy for debugging
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override
                 public void onStart(String utteranceId) {
@@ -152,11 +157,10 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
                 }
             });
 
-            int x = tts.speak(message, queue_mode, null, utterance_id.toString());
-            Log.i(TAG, String.format("speak returned: %d", x));
-            return x;
+            int retval = tts.speak(message, queue_mode, null, utterance_id.toString());
+            Log.i(TAG, String.format("speak returned: %d", retval));
+            return retval;
         }
-
         return -1;
     }
 

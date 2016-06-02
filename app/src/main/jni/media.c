@@ -9,6 +9,7 @@ struct media_cache {
     jmethodID microphone_record;
     jmethodID tts_speak;
     jmethodID is_tts_speaking;
+    jmethodID is_media_playing;
 } m_cached;
 
 
@@ -26,10 +27,11 @@ void media_start_media() {
     jmethodID microphone_record = jh_getMethod(jni_env, class, "microphoneRecord", "(Ljava/lang/String;I)V");
     jmethodID tts_speak = jh_getMethod(jni_env, class, "ttsSpeak", "(Ljava/lang/String;)I");
     jmethodID is_tts_speaking = jh_getMethod(jni_env, class, "isTtsSpeaking", "()Z");
+    jmethodID is_media_playing = jh_getMethod(jni_env, class, "isMediaPlaying", "()Z");
 
     m_cached = (struct media_cache){.class = class, .get_instance = get_instance,
-            .microphone_record = microphone_record,
-            .tts_speak = tts_speak, .is_tts_speaking = is_tts_speaking};
+            .microphone_record = microphone_record, .tts_speak = tts_speak,
+            .is_tts_speaking = is_tts_speaking, .is_media_playing = is_media_playing};
 
     jh_callVoidMethod(jni_env, instance, start_media);
 
@@ -101,8 +103,15 @@ PyObject* media_microphone_record(PyObject *self, PyObject *args) {
 }
 
 PyObject* media_is_media_playing(PyObject *self) {
-
+    JNIEnv *jni_env;
+    // Use the cached JVM pointer to get a new environment
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    jobject instance = jh_getInstance(jni_env, m_cached.class, m_cached.get_instance);
+    PyObject* is_playing  = jh_callBooleanMethod(jni_env, instance, m_cached.is_media_playing);
+    (*jni_env)->DeleteLocalRef(jni_env, instance);
+    return is_playing;
 }
+
 PyObject* media_is_tts_speaking(PyObject *self) {
     JNIEnv *jni_env;
     // Use the cached JVM pointer to get a new environment
