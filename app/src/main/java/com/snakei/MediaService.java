@@ -79,7 +79,7 @@ public class MediaService implements TextToSpeech.OnInitListener {
      * KEY_PARAM_PAN
      * Engine specific parameters
      */
-    public int ttsSpeak(String message) throws InterruptedException {
+    public boolean ttsSpeak(String message) throws InterruptedException {
 
         Log.i(TAG, String.format("In java we received: '%s'", message));
         if (tts != null) {
@@ -111,10 +111,12 @@ public class MediaService implements TextToSpeech.OnInitListener {
                 }
             });
 
-            return tts.speak(message, queue_mode, null, utterance_id.toString());
+            int x = tts.speak(message, queue_mode, null, utterance_id.toString());
+            Log.i(TAG, String.format("speak returned: %d", x));
+
         }
 
-       return -1;
+        return true;
     }
 
     @Override
