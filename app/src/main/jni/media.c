@@ -73,3 +73,27 @@ PyObject* media_tts_speak(PyObject *self, PyObject *args) {
 
     return success;
 }
+
+PyObject* media_microphone_record(PyObject *self, PyObject *args) {
+    JNIEnv *jni_env;
+    char *file_name;
+    int duration;
+    jstring java_file_name;
+
+    if (!PyArg_ParseTuple(args, "si", &file_name, &duration)){
+        LOGI("Wrong arguments. I guess I should raise an Exception.");
+        Py_RETURN_NONE;
+    }
+
+    // Use the cached JVM pointer to get a new environment
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+
+    // Convert C string to Java string
+    java_file_name = (*jni_env)->NewStringUTF(jni_env, file_name);
+
+    jobject instance = jh_getInstance(jni_env, m_cached.class, m_cached.get_instance);
+    jh_callVoidMethod(jni_env, instance, m_cached.microphone_record, java_file_name, (jint) duration);
+
+    (*jni_env)->DeleteLocalRef(jni_env, instance);
+    (*jni_env)->DeleteLocalRef(jni_env, java_file_name);
+}

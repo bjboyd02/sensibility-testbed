@@ -1,5 +1,6 @@
 package com.snakei;
 
+import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
@@ -9,6 +10,7 @@ import com.sensibility_testbed.SensibilityApplication;
 
 import org.w3c.dom.Text;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -18,12 +20,13 @@ import java.util.UUID;
  *
  *
  */
-public class MediaService implements TextToSpeech.OnInitListener {
+public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.OnInfoListener {
     static final String TAG = "MediaService";
+
     public class MediaPlayInfo {
 
     }
-
+    private MediaRecorder recorder;
     private TextToSpeech tts;
     private boolean tts_initialized = false;
     private int queue_mode = TextToSpeech.QUEUE_FLUSH;
@@ -40,14 +43,29 @@ public class MediaService implements TextToSpeech.OnInitListener {
 
     public void start_media() {
         tts = new TextToSpeech(SensibilityApplication.getAppContext(), this);
+
     }
     public void stop_media() {
         tts_initialized = false;
         tts.shutdown();
+
+        recorder.release();
     }
 
     public void microphoneRecord(String file_name, int duration) {
-
+        Log.i(TAG, String.format("Trying to record to file: %s", file_name));
+        recorder = new MediaRecorder();
+        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        recorder.setOutputFile(file_name);
+        recorder.setMaxDuration(duration);
+        try {
+            recorder.prepare();
+        } catch (IOException e) {
+            Log.i(TAG, "prepare failed()");
+        }
+        recorder.start();
     }
 
 //    public boolean isMediaPlaying() {
@@ -79,7 +97,7 @@ public class MediaService implements TextToSpeech.OnInitListener {
      * KEY_PARAM_PAN
      * Engine specific parameters
      */
-    public boolean ttsSpeak(String message) throws InterruptedException {
+    public int ttsSpeak(String message) throws InterruptedException {
 
         Log.i(TAG, String.format("In java we received: '%s'", message));
         if (tts != null) {
@@ -113,10 +131,10 @@ public class MediaService implements TextToSpeech.OnInitListener {
 
             int x = tts.speak(message, queue_mode, null, utterance_id.toString());
             Log.i(TAG, String.format("speak returned: %d", x));
-
+            return x;
         }
 
-        return true;
+        return -1;
     }
 
     @Override
@@ -125,5 +143,10 @@ public class MediaService implements TextToSpeech.OnInitListener {
         if (status == TextToSpeech.SUCCESS) {
             tts_initialized = true;
         }
+    }
+
+    @Override
+    public void onInfo(MediaRecorder mr, int what, int extra) {
+        Log.i(TAG, String.format("Info: %d", what));
     }
 }
