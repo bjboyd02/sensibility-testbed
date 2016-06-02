@@ -8,18 +8,16 @@ with open(path + filename, "w+") as out:
     l('Lets do the location')
     out.write("time_polled, time_sample, accuracy, altitude, bearing, latitude, longitude, speed\n")
     while True:
-        loc = location.get_location()
-        nw = loc.get("network")
-        if nw:
-            out.write("%s,%f,%f,%f,%f,%f,%f,%f,%f\n" % ("nw", nw.get("time_polled"), nw.get("time_sample"), nw.get("accuracy"),
-              nw.get("altitude"), nw.get("bearing c"), nw.get("latitude"), nw.get("longitude"), nw.get("speed")))
+        data = location.get_location()
+        l(repr(data))
+        for provider in ["network", "gps", "fused"]:
+            loc = data.get(provider)
+            if loc:
+                out.write("%s,%f,%f,%f,%f,%f,%f,%f,%f\n" % (provider, loc.get("time_polled", -1), loc.get("time_sample", -1), loc.get("accuracy", -1),
+                  loc.get("altitude", -1), loc.get("bearing", -1), loc.get("latitude", -1), loc.get("longitude", -1), loc.get("speed", -1)))
 
-        gps = loc.get("gps")
-        if gps:
-            out.write("%s,%f,%f,%f,%f,%f,%f,%f,%f\n" % ("gps", gps.get("time_polled"), gps.get("time_sample"), gps.get("accuracy"),
-              gps.get("altitude"), gps.get("bearing"), gps.get("latitude"), gps.get("longitude"), gps.get("speed")))
 
-        l(repr(loc))
+        
         time.sleep(0.5)
         out.flush()
 
