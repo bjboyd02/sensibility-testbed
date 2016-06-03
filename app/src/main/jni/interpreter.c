@@ -58,6 +58,12 @@ static PyMethodDef AndroidmediaMethods[] = {
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
+static PyMethodDef AndroidmiscinfoMethods[] = {
+        {"jsontest", (PyCFunction) miscinfo_jsontest, METH_NOARGS,
+                        "Test JSON stuff."},
+        {NULL, NULL, 0, NULL} // This is the end-of-array marker
+};
+
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_files, jstring python_arguments) {
   char* home = (char*) (*env)->GetStringUTFChars(env, python_home, NULL);
   char* path = (char*) (*env)->GetStringUTFChars(env, python_path, NULL);
@@ -104,6 +110,11 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
   Py_InitModule("media", AndroidmediaMethods);
   LOGI("androidmedia initted");
 
+  LOGI("Initializing miscinfo module");
+  Py_InitModule("miscinfo", AndroidmiscinfoMethods);
+  LOGI("androidmiscinfo initted");
+
+  //LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog, sensor\nl = androidlog.log2\ns = sensor.get_sensor_list\nl('check out these lovely sensors: ' +  repr(s()))"));
 //LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog, sensor\nl = androidlog.log2\ns = sensor.get_sensor_list\nl('check out these lovely sensors: ' +  repr(s()))"));
   //LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl(str(locals()))"));
 //  LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl('Ooh yeah!!!!!!!!!')\ntry:\n  import os\nexcept Exception, e:\n  l(repr(e))\nl('still k')\nl(os.getlogin())\n")); //l(str(os.getresuid()))\nl(os.getgroups())\nl(str(os.getresgid()))\n") );
@@ -140,17 +151,25 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 //  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
 //  LOGI("Stop Locating IN C!!!!");
 //  location_stop_location();
-//
-  LOGI("Start Media-ing IN C!!!!");
-  media_start_media();
-  char *filename = "test_media.py";
+
+//  LOGI("Start Media-ing IN C!!!!");
+//  media_start_media();
+//  char *filename = "test_media.py";
+//  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+//  strcpy(full_filename, files);
+//  strcat(full_filename, filename);
+//  LOGI("PyRun File: %s", full_filename);
+//  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
+//  LOGI("Stop Media-ing IN C!!!!");
+//  media_stop_media();
+
+
+  char *filename = "test_miscinfo.py";
   char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
   strcpy(full_filename, files);
   strcat(full_filename, filename);
   LOGI("PyRun File: %s", full_filename);
   LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
-  LOGI("Stop Media-ing IN C!!!!");
-  media_stop_media();
 
 
   LOGI("Before Py_Finalize...");

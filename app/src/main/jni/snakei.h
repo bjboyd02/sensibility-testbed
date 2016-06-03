@@ -11,6 +11,7 @@
 #include "outputs.h"
 #include "sensors.h"
 #include "pyhelper.h"
+#include "miscinfo.h"
 
 
 
