@@ -19,15 +19,24 @@ import java.util.UUID;
 /**
  * Created by lukas on 5/27/16.
  *
+ * Pseudo service that facades some Android media services
  *
+ * - Get info about the media
+ * - Record audio to a file
+ * - Text-to-speech
  *
+ * Todo:
+ *   currently we use most of the default settings for audio playing and recording
+ *   should we allow the user to change these settings?
+ *
+ *   same story as in other sensibility service providers, how do we handle initialization
+ *   release of resources?
+ *
+ *   Skips media info function for the moment (do we really need this?)
  */
 public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.OnInfoListener {
     static final String TAG = "MediaService";
 
-    public class MediaPlayInfo {
-
-    }
     AudioManager audio_manager;
     private MediaRecorder recorder;
     private TextToSpeech tts;
@@ -90,11 +99,17 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
     public boolean isMediaPlaying() {
         return audio_manager.isMusicActive();
     }
+
+    /*
+     * Todo:
+     *      Do we really need this???
+     *      And if so, what kind of information are we interested in?
+     */
 //    public MediaPlayInfo getMediaPlayInfo() {
 //
 //        return media_play_info;
 //    }
-//
+
 
     /*
      * Checks if TTS is speaking

@@ -121,6 +121,4 @@ PyObject* media_is_tts_speaking(PyObject *self) {
     (*jni_env)->DeleteLocalRef(jni_env, instance);
     return is_speaking;
 }
-PyObject* media_get_media_play_info(PyObject *self) {
 
-}
