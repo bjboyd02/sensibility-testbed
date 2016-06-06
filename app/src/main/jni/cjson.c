@@ -537,8 +537,6 @@ static PyObject*
 decode_json(JSONData *jsondata)
 {
     PyObject *object;
-    LOGI("######## %s", *jsondata->ptr);
-    LOGI("######## %s", jsondata->ptr);
     skipSpaces(jsondata);
     switch(*jsondata->ptr) {
     case 0:
@@ -1236,18 +1234,27 @@ decode_json(JSONData *jsondata)
 // }
 
 
-PyObject* JSON_decode_c(char** json_string) {
+/*
+ * Converts a C JSON string to a Python dictionary.
+ *
+ * Todo:
+ *      We have to think about how to exceptions.
+ *      The user does not need to know that we are using
+ *      JSON to pass data from JAVA to Python
+ */
+PyObject* JSON_decode_c(char *json_string) {
     PyObject *object;
     JSONData jsondata;
 
-    jsondata.ptr = jsondata.str;
+    jsondata.str = json_string;
+    jsondata.ptr = json_string;
     jsondata.end = json_string + strlen(json_string);
     jsondata.all_unicode = False;
 
     object = decode_json(&jsondata);
 
     if (object == NULL) {
-        LOGI("Something went wrong");
+        LOGI("JSON decoding returned NULL");
     }
     return object;
 }
