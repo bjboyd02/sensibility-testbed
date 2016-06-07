@@ -141,12 +141,19 @@ PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object, jmethodID met
     PyObject *obj = NULL;
 
     if (java_string != NULL) {
-        // Convert Java string to C char*
-        const char *c_string = (*jni_env)->GetStringUTFChars(jni_env, java_string, 0);
+        // Convert Java string to C const char*
+        const char *c_string_const = (*jni_env)->GetStringUTFChars(jni_env, java_string, 0);
+
+        // Convert Java string to char*
+        char *c_string = malloc(strlen(c_string_const) + 1);
+        strcpy(c_string, c_string_const);
+
         // Convert C char* to Python string
         obj = JSON_decode_c(c_string);
+
+        free(c_string);
         // Free memory and delete reference
-        (*jni_env)->ReleaseStringUTFChars(jni_env, java_string, c_string);
+        (*jni_env)->ReleaseStringUTFChars(jni_env, java_string, c_string_const);
     }
     (*jni_env)->DeleteLocalRef(jni_env, java_string);
 

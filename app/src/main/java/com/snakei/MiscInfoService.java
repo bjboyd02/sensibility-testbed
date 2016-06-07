@@ -215,7 +215,7 @@ public class MiscInfoService {
         battery_info_json.put("technology", technology);
 
         // Dump JSON to string and return
-        return battery_info.toString();
+        return battery_info_json.toString();
     }
 //    /*
 //     * ###################################################
