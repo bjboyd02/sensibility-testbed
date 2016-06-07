@@ -6,6 +6,7 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 
 import com.sensibility_testbed.SensibilityApplication;
@@ -42,6 +43,7 @@ import java.io.StringWriter;
 public class MiscInfoService {
     static final String TAG = "MiscInfoService";
     ConnectivityManager connectivity_manager;
+    WifiManager wifi_manager;
     Context app_context;
 
     /* See Initialization on Demand Holder pattern */
@@ -58,6 +60,7 @@ public class MiscInfoService {
     public MiscInfoService() {
         app_context = SensibilityApplication.getAppContext();
         connectivity_manager = (ConnectivityManager) app_context.getSystemService(app_context.CONNECTIVITY_SERVICE);
+        wifi_manager = (WifiManager) app_context.getSystemService(app_context.WIFI_SERVICE);
     }
 
     /*
@@ -116,15 +119,18 @@ public class MiscInfoService {
 //
 //    }
 //
-//    /*
-//     * ###################################################
-//     * WiFi
-//     * ###################################################
-//     */
-//
-//    public boolean isWifiEnabled() {
-//
-//    }
+    /*
+     * ###################################################
+     * WiFi
+     * ###################################################
+     */
+
+    public boolean isWifiEnabled() {
+        return wifi_manager.isWifiEnabled();
+    }
+    public int getWifiState() {
+        return wifi_manager.getWifiState();
+    }
 //
 //    /*
 //     * {

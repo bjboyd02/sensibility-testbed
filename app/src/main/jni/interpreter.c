@@ -61,6 +61,10 @@ static PyMethodDef AndroidmediaMethods[] = {
 static PyMethodDef AndroidmiscinfoMethods[] = {
         {"get_battery_info", (PyCFunction) miscinfo_get_battery_info, METH_NOARGS,
                         "Get battery info."},
+        {"is_wifi_enabled", (PyCFunction) miscinfo_is_wifi_enabled, METH_NOARGS,
+                "Checks if Wifi is currently enabled."},
+        {"get_wifi_state", (PyCFunction) miscinfo_get_wifi_state, METH_NOARGS,
+                "Checks if Wifi is currently enabled."},
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
