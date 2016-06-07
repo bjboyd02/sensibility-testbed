@@ -6,6 +6,8 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
+import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 
@@ -131,23 +133,50 @@ public class MiscInfoService {
     public int getWifiState() {
         return wifi_manager.getWifiState();
     }
-//
-//    /*
-//     * {
-//     *  "ssid": network SSID (string),
-//     *  "bssid": network BSSID, i.e. MAC address (string),
-//     *  "rssi": received signal strength in dBm (negative int),
-//     *  "supplicant_state": current WPA association state (string),
-//     *  "link_speed": link speed in MBps (int),
-//     *  "mac_address": this device's WiFi interface MAC (string),
-//     *  XXX "ip_address": this device's IP address (XXX int, byte quadruples reversed!),
-//     *  XXX "network_id": XXX (int),
-//     *  "hidden_ssid": True if the SSID is not broadcast (bool)
-//     *  }
-//     */
-//    public ?? getWifiConnectionInfo() {
-//
-//    }
+
+    /*
+     * {
+     *  "ssid": network SSID (string),
+     *  "bssid": network BSSID, i.e. MAC address (string),
+     *  "rssi": received signal strength in dBm (negative int),
+     *  "supplicant_state": current WPA association state (string),
+     *  "link_speed": link speed in MBps (int),
+     *  "mac_address": this device's WiFi interface MAC (string),
+     *  XXX "ip_address": this device's IP address (XXX int, byte quadruples reversed!),
+     *  XXX "network_id": XXX (int),
+     *  "hidden_ssid": True if the SSID is not broadcast (bool)
+     *  }
+     */
+    public String getWifiConnectionInfo() throws JSONException {
+        JSONObject wifi_info_json = new JSONObject();
+
+        WifiInfo wifi_info = wifi_manager.getConnectionInfo();
+
+        String ssid = wifi_info.getSSID();
+        Boolean hidden_ssid = wifi_info.getHiddenSSID();
+        String bssid = wifi_info.getBSSID();
+        int rssi = wifi_info.getRssi();
+        String supplicant_state = wifi_info.getSupplicantState().name();
+        int link_speed = wifi_info.getLinkSpeed();
+        String mac_address = wifi_info.getMacAddress();
+        int ip_address = wifi_info.getIpAddress();
+        int network_id = wifi_info.getNetworkId();
+        int frequency = wifi_info.getFrequency();
+
+        wifi_info_json.put("ssid", ssid);
+        wifi_info_json.put("hidden_ssid", hidden_ssid);
+        wifi_info_json.put("bssid", bssid);
+        wifi_info_json.put("rssi", rssi);
+        wifi_info_json.put("supplicant_state", supplicant_state);
+        wifi_info_json.put("link_speed", link_speed);
+        wifi_info_json.put("mac_address", mac_address);
+        wifi_info_json.put("ip_address", ip_address);
+        wifi_info_json.put("network_id", network_id);
+        wifi_info_json.put("frequency", frequency);
+
+        // Dump JSON to string and return
+        return wifi_info_json.toString();
+    }
 //
 //    /*
 //     * [{

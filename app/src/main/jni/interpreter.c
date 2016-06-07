@@ -65,6 +65,8 @@ static PyMethodDef AndroidmiscinfoMethods[] = {
                 "Checks if Wifi is currently enabled."},
         {"get_wifi_state", (PyCFunction) miscinfo_get_wifi_state, METH_NOARGS,
                 "Checks if Wifi is currently enabled."},
+        {"get_wifi_connection_info", (PyCFunction) miscinfo_get_wifi_connection_info, METH_NOARGS,
+                "Get info about the Wifi currently connected to."},
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
