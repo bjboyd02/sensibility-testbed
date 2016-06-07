@@ -7,6 +7,6 @@
 #include "snakei.h"
 
 
-PyObject* JSON_decode_c(char* json_string);
+PyObject* JSON_decode_c(const char* json_string);
 
 #endif //SENSIBILITY_TESTBED_CJSON_H

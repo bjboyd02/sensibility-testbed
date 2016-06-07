@@ -6,8 +6,10 @@
 #define SENSIBILITY_TESTBED_JNIHELPER_H
 
 #include <jni.h>
-#include <snakei.h>
 #include <stdarg.h>
+#include "snakei.h"
+#include "cjson.h"
+
 
 jclass jh_getClass(JNIEnv* jni_env, const char *class_name);
 jmethodID jh_getGetter(JNIEnv* jni_env, jclass class, const char *type_signature);
@@ -17,5 +19,6 @@ void jh_callVoidMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...);
 PyObject* jh_callBooleanMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...);
 PyObject* jh_callIntMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...);
 PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...);
+PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...);
 
 #endif //SENSIBILITY_TESTBED_JNIHELPER_H

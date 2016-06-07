@@ -1242,7 +1242,7 @@ decode_json(JSONData *jsondata)
  *      The user does not need to know that we are using
  *      JSON to pass data from JAVA to Python
  */
-PyObject* JSON_decode_c(char *json_string) {
+PyObject* JSON_decode_c(const char *json_string) {
     PyObject *object;
     JSONData jsondata;
 

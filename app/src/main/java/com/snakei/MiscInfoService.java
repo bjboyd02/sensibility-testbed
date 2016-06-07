@@ -1,5 +1,20 @@
 package com.snakei;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkInfo;
+import android.os.BatteryManager;
+
+import com.sensibility_testbed.SensibilityApplication;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.StringWriter;
+
 /**
  * Created by lukas on 6/3/16.
  *
@@ -12,12 +27,22 @@ package com.snakei;
  *   - Battery
  *   - Settings
  * Todo:
+ *   - Wifi
  *      do_wifi_scan should be changed to getWifiInfo
- *      Exceptions should be raised
- *      How do we handle passing large dicts with values of different types
+ *   - Cellular network
+ *      there could be multiple networks
+ *        active network - currently connected to
+ *
+ *   Exceptions should be raised
+ *
+ *
+ *
+ *
  */
 public class MiscInfoService {
-    static final String TAG = "NetworkInfoService";
+    static final String TAG = "MiscInfoService";
+    ConnectivityManager connectivity_manager;
+    Context app_context;
 
     /* See Initialization on Demand Holder pattern */
     private static class MiscInfoServiceHolder {
@@ -30,14 +55,27 @@ public class MiscInfoService {
     }
 
 
+    public MiscInfoService() {
+        app_context = SensibilityApplication.getAppContext();
+        connectivity_manager = (ConnectivityManager) app_context.getSystemService(app_context.CONNECTIVITY_SERVICE);
+    }
+
     /*
      * ###################################################
      * Cellular
      * ###################################################
      */
-    public boolean isRoaming() {
-        return true;
-    }
+
+    /*
+     * We can have several networks
+     */
+//    public boolean isRoaming() {
+//        Network[] networks = connectivity_manager.getAllNetworks();
+//        for (Network network: networks) {
+//            NetworkInfo connectivity_manager.
+//        }
+//        return true;
+//    }
 
 //    /*
 //     * e.g. {‘network_operator’: 310260, ‘network_operator_name’: ‘T-Mobile’}.
@@ -140,12 +178,45 @@ public class MiscInfoService {
 //     * ###################################################
 //     */
 //
-//    /*
-//     * {'status': 3, 'temperature': 257, 'level': 99, 'battery_present': True, 'plugged': 2, 'health': 2, 'voltage': 4186, 'technology': 'Li-ion'}
-//     */
-//    public ?? getBatteryInfo() {
-//
-//    }
+    /*
+     * Returns JSON formatted string of misc battery info
+     *
+     * Constants can be found at
+     * https://developer.android.com/reference/android/os/BatteryManager.html
+     *
+     * e.g.: {'status': 3, 'temperature': 257, 'level': 99, 'battery_present': True,
+     * 'plugged': 2, 'health': 2, 'voltage': 4186, 'technology': 'Li-ion'}
+     */
+    public String getBatteryInfo() throws JSONException {
+        JSONObject battery_info_json = new JSONObject();
+
+        // Register a null receiver - immediately returns Intent
+        IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+        Intent battery_info = app_context.registerReceiver(null, ifilter);
+
+        // Retrieve values
+        int status = battery_info.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+        int temperature = battery_info.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1);
+        int level = battery_info.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        boolean present = battery_info.getExtras().getBoolean(BatteryManager.EXTRA_PRESENT, false);
+        int plugged = battery_info.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+        int health = battery_info.getIntExtra(BatteryManager.EXTRA_HEALTH, -1);
+        int voltage = battery_info.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1);
+        String technology = battery_info.getExtras().getString(BatteryManager.EXTRA_TECHNOLOGY, "N/A");
+
+        // Add values to JSON dict
+        battery_info_json.put("status",status);
+        battery_info_json.put("temperature", temperature);
+        battery_info_json.put("level", level);
+        battery_info_json.put("battery_present", present);
+        battery_info_json.put("plugged", plugged);
+        battery_info_json.put("health", health);
+        battery_info_json.put("voltage", voltage);
+        battery_info_json.put("technology", technology);
+
+        // Dump JSON to string and return
+        return battery_info.toString();
+    }
 //    /*
 //     * ###################################################
 //     * Settings
@@ -181,7 +252,4 @@ public class MiscInfoService {
 //
 //    }
 //
-//    public Object getAnyObject() {
-//        return "434";
-//    }
 }

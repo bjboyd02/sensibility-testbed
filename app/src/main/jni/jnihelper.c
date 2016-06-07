@@ -122,3 +122,33 @@ PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object, jmethodID method,
 
     return py_string;
 }
+
+PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...) {
+
+    jstring java_string;
+    va_list args;
+    va_start(args, method);
+    java_string = (*jni_env)->CallObjectMethodV(jni_env, object, method, args);
+    va_end(args);
+
+    if ((*jni_env)->ExceptionOccurred(jni_env)){
+        LOGI("jh_callJSONMethod: exception occurred");
+    }
+    if(java_string == NULL) {
+        LOGI("jh_callJSONMethod: returned NULL");
+    }
+
+    PyObject *obj = NULL;
+
+    if (java_string != NULL) {
+        // Convert Java string to C char*
+        const char *c_string = (*jni_env)->GetStringUTFChars(jni_env, java_string, 0);
+        // Convert C char* to Python string
+        obj = JSON_decode_c(c_string);
+        // Free memory and delete reference
+        (*jni_env)->ReleaseStringUTFChars(jni_env, java_string, c_string);
+    }
+    (*jni_env)->DeleteLocalRef(jni_env, java_string);
+
+    return obj;
+}

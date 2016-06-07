@@ -59,8 +59,8 @@ static PyMethodDef AndroidmediaMethods[] = {
 };
 
 static PyMethodDef AndroidmiscinfoMethods[] = {
-        {"jsontest", (PyCFunction) miscinfo_jsontest, METH_NOARGS,
-                        "Test JSON stuff."},
+        {"get_battery_info", (PyCFunction) miscinfo_get_battery_info, METH_NOARGS,
+                        "Get battery info."},
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
@@ -163,7 +163,8 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 //  LOGI("Stop Media-ing IN C!!!!");
 //  media_stop_media();
 
-
+  LOGI("Start MiscInfo-ing IN C!!!!");
+  miscinfo_start_miscinfo();
   char *filename = "test_miscinfo.py";
   char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
   strcpy(full_filename, files);

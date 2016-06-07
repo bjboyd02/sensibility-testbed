@@ -3,7 +3,7 @@
 //
 #include "media.h"
 
-struct media_cache {
+static struct media_cache {
     jclass class;
     jmethodID get_instance;
     jmethodID microphone_record;

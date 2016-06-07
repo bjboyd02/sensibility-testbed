@@ -8,6 +8,11 @@
 #include <jni.h>
 #include "snakei.h"
 #include "cjson.h"
+#include "jnihelper.h"
 
-PyObject* miscinfo_jsontest(PyObject *self);
+void miscinfo_start_miscinfo();
+//PyObject* miscinfo_jsontest(PyObject *self);
+PyObject* miscinfo_get_battery_info(PyObject *self);
+
+
 #endif //SENSIBILITY_TESTBED_MISCINFO_H
