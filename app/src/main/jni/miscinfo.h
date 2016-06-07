@@ -15,6 +15,7 @@ PyObject* miscinfo_get_battery_info(PyObject *self);
 PyObject* miscinfo_is_wifi_enabled(PyObject *self);
 PyObject* miscinfo_get_wifi_state(PyObject *self);
 PyObject* miscinfo_get_wifi_connection_info(PyObject *self);
+PyObject* miscinfo_get_wifi_scan_info(PyObject *self);
 
 
 #endif //SENSIBILITY_TESTBED_MISCINFO_H

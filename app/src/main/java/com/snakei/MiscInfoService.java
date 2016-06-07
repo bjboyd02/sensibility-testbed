@@ -1,22 +1,33 @@
 package com.snakei;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
+import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
+import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.util.Log;
 
 import com.sensibility_testbed.SensibilityApplication;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ObjectInput;
 import java.io.StringWriter;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  * Created by lukas on 6/3/16.
@@ -42,11 +53,13 @@ import java.io.StringWriter;
  *
  *
  */
-public class MiscInfoService {
+public class MiscInfoService extends BroadcastReceiver {
     static final String TAG = "MiscInfoService";
     ConnectivityManager connectivity_manager;
     WifiManager wifi_manager;
+    Object wifi_sync;
     Context app_context;
+
 
     /* See Initialization on Demand Holder pattern */
     private static class MiscInfoServiceHolder {
@@ -63,7 +76,9 @@ public class MiscInfoService {
         app_context = SensibilityApplication.getAppContext();
         connectivity_manager = (ConnectivityManager) app_context.getSystemService(app_context.CONNECTIVITY_SERVICE);
         wifi_manager = (WifiManager) app_context.getSystemService(app_context.WIFI_SERVICE);
+        wifi_sync = new Object();
     }
+
 
     /*
      * ###################################################
@@ -149,49 +164,75 @@ public class MiscInfoService {
      */
     public String getWifiConnectionInfo() throws JSONException {
         JSONObject wifi_info_json = new JSONObject();
-
         WifiInfo wifi_info = wifi_manager.getConnectionInfo();
 
-        String ssid = wifi_info.getSSID();
-        Boolean hidden_ssid = wifi_info.getHiddenSSID();
-        String bssid = wifi_info.getBSSID();
-        int rssi = wifi_info.getRssi();
-        String supplicant_state = wifi_info.getSupplicantState().name();
-        int link_speed = wifi_info.getLinkSpeed();
-        String mac_address = wifi_info.getMacAddress();
-        int ip_address = wifi_info.getIpAddress();
-        int network_id = wifi_info.getNetworkId();
-        int frequency = wifi_info.getFrequency();
-
-        wifi_info_json.put("ssid", ssid);
-        wifi_info_json.put("hidden_ssid", hidden_ssid);
-        wifi_info_json.put("bssid", bssid);
-        wifi_info_json.put("rssi", rssi);
-        wifi_info_json.put("supplicant_state", supplicant_state);
-        wifi_info_json.put("link_speed", link_speed);
-        wifi_info_json.put("mac_address", mac_address);
-        wifi_info_json.put("ip_address", ip_address);
-        wifi_info_json.put("network_id", network_id);
-        wifi_info_json.put("frequency", frequency);
+        wifi_info_json.put("ssid",  wifi_info.getSSID());
+        wifi_info_json.put("hidden_ssid", wifi_info.getHiddenSSID());
+        wifi_info_json.put("bssid", wifi_info.getBSSID());
+        wifi_info_json.put("rssi", wifi_info.getRssi());
+        wifi_info_json.put("supplicant_state", wifi_info.getSupplicantState().name());
+        wifi_info_json.put("link_speed", wifi_info.getLinkSpeed());
+        wifi_info_json.put("mac_address", wifi_info.getMacAddress());
+        wifi_info_json.put("ip_address", wifi_info.getIpAddress());
+        wifi_info_json.put("network_id", wifi_info.getNetworkId());
+        wifi_info_json.put("frequency", wifi_info.getFrequency());
 
         // Dump JSON to string and return
         return wifi_info_json.toString();
     }
-//
-//    /*
-//     * [{
-//     *     "ssid": network SSID (string),
-//     *     "bssid": network BSSID, i.e. MAC address (string),
-//     *     "frequency": frequency in MHz (int),
-//     *     "level": received signal strength in dBm (negative int),
-//     *     "capabilities": security features supported by the network (string)
-//     *   }, ...]
-//     * Todo:
-//     *      I think getWifiScanInfo would be a better name
-//     */
-//    public ?? doWifiScan() {
-//
-//    }
+
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        Log.i(TAG, "Scan returned something");
+        synchronized(wifi_sync) {
+            wifi_sync.notify();
+        }
+    }
+
+    /*
+     * [{
+     *     "ssid": network SSID (string),
+     *     "bssid": network BSSID, i.e. MAC address (string),
+     *     "frequency": frequency in MHz (int),
+     *     "level": received signal strength in dBm (negative int),
+     *     "capabilities": security features supported by the network (string)
+     *   }, ...]
+     * Todo:
+     *      I think getWifiScanInfo would be a better name
+     */
+    public String getWifiScanInfo() throws InterruptedException, JSONException {
+
+        // Register "onReceive" for scan results (gets called from main thread)
+        app_context.registerReceiver(this,
+                new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+
+        // If scan was started wait until onReceive notifies us via
+        // the wifi_sync object that scan results are available
+        if (wifi_manager.startScan()) {
+            synchronized (wifi_sync) {
+                wifi_sync.wait();
+                JSONArray wifi_json_array = new JSONArray();
+
+                // Scan results are available now
+                // Let's call them and convert them to JSON
+                for (ScanResult result : wifi_manager.getScanResults()) {
+                    JSONObject wifi_json = new JSONObject();
+                    wifi_json.put("bssid", result.BSSID);
+                    wifi_json.put("ssid", result.SSID);
+                    wifi_json.put("capabilities", result.capabilities);
+                    wifi_json.put("frequency", result.frequency);
+                    wifi_json.put("rssi", result.level);
+
+                    wifi_json_array.put(wifi_json);
+                }
+                return wifi_json_array.toString();
+            }
+        }
+        app_context.unregisterReceiver(this);
+
+        return null;
+    }
 //
 //    /*
 //     * ###################################################

@@ -9,8 +9,8 @@ l(repr(battery_info))
 l("Wifi enabled:")
 l(repr(miscinfo.get_wifi_state()))
 
+l("Wifi Connection info:")
+l(repr(miscinfo.get_wifi_connection_info()))
 
-l("Wifi info")
-for x in range(20):
-  l(repr(miscinfo.get_wifi_connection_info()))
-  time.sleep(1)
+l("Wifi Scan info:")
+l(repr(miscinfo.get_wifi_scan_info()))
