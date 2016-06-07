@@ -72,6 +72,7 @@ PyObject* jh_callBooleanMethod(JNIEnv* jni_env, jobject object, jmethodID method
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_callBooleanMethod: exception occurred");
+        Py_RETURN_NONE;
     }
 
     if (success) {
@@ -103,21 +104,20 @@ PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object, jmethodID method,
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_callStringMethod: exception occurred");
+        Py_RETURN_NONE;
     }
     if(java_string == NULL) {
         LOGI("jh_callStringMethod: returned NULL");
+        Py_RETURN_NONE;
     }
 
     PyObject *py_string = NULL;
-
-    if (java_string != NULL) {
-        // Convert Java string to C char*
-        const char *c_string = (*jni_env)->GetStringUTFChars(jni_env, java_string, 0);
-        // Convert C char* to Python string
-        py_string = PyString_FromString(c_string);
-        // Free memory and delete reference
-        (*jni_env)->ReleaseStringUTFChars(jni_env, java_string, c_string);
-    }
+    // Convert Java string to C char*
+    const char *c_string = (*jni_env)->GetStringUTFChars(jni_env, java_string, 0);
+    // Convert C char* to Python string
+    py_string = PyString_FromString(c_string);
+    // Free memory and delete reference
+    (*jni_env)->ReleaseStringUTFChars(jni_env, java_string, c_string);
     (*jni_env)->DeleteLocalRef(jni_env, java_string);
 
     return py_string;
@@ -133,28 +133,27 @@ PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object, jmethodID met
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_callJSONMethod: exception occurred");
+        Py_RETURN_NONE;
     }
     if(java_string == NULL) {
         LOGI("jh_callJSONMethod: returned NULL");
+        Py_RETURN_NONE;
     }
 
     PyObject *obj = NULL;
+    // Convert Java string to C const char*
+    const char *c_string_const = (*jni_env)->GetStringUTFChars(jni_env, java_string, 0);
 
-    if (java_string != NULL) {
-        // Convert Java string to C const char*
-        const char *c_string_const = (*jni_env)->GetStringUTFChars(jni_env, java_string, 0);
+    // Convert Java string to char*
+    char *c_string = malloc(strlen(c_string_const) + 1);
+    strcpy(c_string, c_string_const);
 
-        // Convert Java string to char*
-        char *c_string = malloc(strlen(c_string_const) + 1);
-        strcpy(c_string, c_string_const);
+    // Convert C char* to Python string
+    obj = JSON_decode_c(c_string);
 
-        // Convert C char* to Python string
-        obj = JSON_decode_c(c_string);
-
-        free(c_string);
-        // Free memory and delete reference
-        (*jni_env)->ReleaseStringUTFChars(jni_env, java_string, c_string_const);
-    }
+    free(c_string);
+    // Free memory and delete reference
+    (*jni_env)->ReleaseStringUTFChars(jni_env, java_string, c_string_const);
     (*jni_env)->DeleteLocalRef(jni_env, java_string);
 
     return obj;
