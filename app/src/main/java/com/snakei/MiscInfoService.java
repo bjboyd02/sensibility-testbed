@@ -143,7 +143,7 @@ public class MiscInfoService extends BroadcastReceiver {
         return sim_info_json.toString();
     }
 
-    public String getCellInfo
+//    public String getCellInfo
 //
 //    /*
 //     * e.g. {‘phone_state’: {‘incomingNumber’: ‘’, ‘state’: ‘idle’},
@@ -258,14 +258,14 @@ public class MiscInfoService extends BroadcastReceiver {
 
         return null;
     }
-//
-//    /*
-//     * ###################################################
-//     * Bluetooth
-//     * ###################################################
-//     */
-//
-//
+
+    /*
+     * ###################################################
+     * Bluetooth
+     * ###################################################
+     */
+
+
     /*
      * {'state': True, 'scan_mode': 3, 'local_name': 'GT-P1000'}
      */
@@ -375,31 +375,21 @@ public class MiscInfoService extends BroadcastReceiver {
     }
 
     /*
-     * {"media_volume": xx, "max_media_volume": xxx}
+     * {"media_volume": xx, "max_media_volume": xxx, "ringer_volume": xx, "max_ringer_volume": xxx}
      */
-    public String getMediaVolume() throws JSONException {
-        JSONObject media_volume_json = new JSONObject();
+    public String getVolumeInfo() throws JSONException {
+        JSONObject volume_json = new JSONObject();
 
-        media_volume_json.put("media_volume",
+        volume_json.put("media_volume",
                 audio_manager.getStreamVolume(AudioManager.STREAM_MUSIC));
-        media_volume_json.put("max_media_volume",
+        volume_json.put("max_media_volume",
                 audio_manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
 
-        return media_volume_json.toString();
-    }
-
-    /*
-     * {"ringer_volume": xx, "max_ringer_volume": xxx}
-     */
-    public String getRingerVolume() throws JSONException {
-        JSONObject ringer_volume_json = new JSONObject();
-
-        ringer_volume_json.put("ringer_volume",
+        volume_json.put("ringer_volume",
                 audio_manager.getStreamVolume(AudioManager.STREAM_RING));
-        ringer_volume_json.put("max_ringer_volume",
+        volume_json.put("max_ringer_volume",
                 audio_manager.getStreamMaxVolume(AudioManager.STREAM_RING));
 
-        return ringer_volume_json.toString();
+        return volume_json.toString();
     }
-
 }
