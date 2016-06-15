@@ -22,6 +22,19 @@ import android.os.BatteryManager;
 import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.telephony.CellIdentityCdma;
+import android.telephony.CellIdentityGsm;
+import android.telephony.CellIdentityLte;
+import android.telephony.CellIdentityWcdma;
+import android.telephony.CellInfo;
+import android.telephony.CellInfoCdma;
+import android.telephony.CellInfoGsm;
+import android.telephony.CellInfoLte;
+import android.telephony.CellInfoWcdma;
+import android.telephony.CellSignalStrengthCdma;
+import android.telephony.CellSignalStrengthGsm;
+import android.telephony.CellSignalStrengthLte;
+import android.telephony.CellSignalStrengthWcdma;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Display;
@@ -122,10 +135,7 @@ public class MiscInfoService {
             @Override
             public void onReceive(Context context, Intent intent) {
                 Log.i(TAG, "Bluetooth scan returned");
-
-
                 String action = intent.getAction();
-
                 if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                     // Bluetooth discovery has received info from a paged remote device
                     BluetoothDevice remote_device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
@@ -154,61 +164,178 @@ public class MiscInfoService {
     /*
      * We can have several networks
      */
-//    public boolean isRoaming() {
-//        Network[] networks = connectivity_manager.getAllNetworks();
-//        for (Network network: networks) {
-//            NetworkInfo connectivity_manager.
-//        }
-//        return true;
-//    }
+    public String getNetworkInfo() throws JSONException {
+        Network[] networks = connectivity_manager.getAllNetworks();
 
-//    /*
-//     * e.g. {‘network_operator’: 310260, ‘network_operator_name’: ‘T-Mobile’}.
-//     */
-//    public ?? getCellularProviderInfo() {
-//
-//    }
-//
-//    /*
-//     * e.g. {‘cellID’: {‘lac’: 32115, ‘cid’: 26742}, ‘neighboring_cell’: [{‘rssi’: 11, ‘cid’: 26741},
-//     * {‘rssi’: 9, ‘cid’: 40151}, {‘rssi’: 5, ‘cid’: 40153}]}.
-//     */
-//    public ?? getCellInfo() {
-//
-//
-//    }
-//
-//    /*
-//     * e.g. {‘SIM_operator’: 310260, ‘SIM_operator_name’: ‘’, ‘SIM_country_code’: ‘us’, ‘SIM_state’: ‘ready’}
-//     */
-//    public String getSimInfo() {
-//        JSONObject sim_info_json = new JSONObject();
-//
-//        telephony_manager.getSimState();
-//        telephony_manager.
-//
-//
-//        return sim_info_json.toString();
-//    }
+        if (networks.length > 0) {
+            JSONArray network_info_json_array = new JSONArray();
+            for (Network network : networks) {
+                JSONObject network_info_json = new JSONObject();
+                NetworkInfo network_info = connectivity_manager.getNetworkInfo(network);
+                network_info_json.put("detailed_state", network_info.getDetailedState().name()); // Enum
+                network_info_json.put("extra_info", network_info.getExtraInfo());
+                network_info_json.put("reason", network_info.getReason());
+                network_info_json.put("state", network_info.getState().name()); //Enum
+                network_info_json.put("subtype", network_info.getSubtype());
+                network_info_json.put("subtype_name", network_info.getSubtypeName());
+                network_info_json.put("type", network_info.getType());
+                network_info_json.put("type_name", network_info.getTypeName());
+                network_info_json.put("is_connected", network_info.isConnected());
+                network_info_json.put("is_available", network_info.isAvailable());
+                network_info_json.put("is_connected_or_connecting", network_info.isConnectedOrConnecting());
+                network_info_json.put("is_failover", network_info.isFailover());
+                network_info_json.put("is_roaming", network_info.isRoaming());
 
-//    public String getCellInfo
-//
-//    /*
-//     * e.g. {‘phone_state’: {‘incomingNumber’: ‘’, ‘state’: ‘idle’},
-//     * ‘phone_type’: ‘gsm’, ‘network_type’: 'edge'}. When no SIM card is available,
-//     * the phone info dict would be, e.g., {‘phone_state’: {}, ‘phone_type’: ‘gsm’, ‘network_type’: 'unknown'}
-//     */
-//    public ?? getPhoneInfo() {
-//
-//    }
-//
-//    /*
-//     * e.g. {"gsm_signal_strength": 8, "evdo_ecio": -1, "gsm_bit_error_rate": -1, "cdma_ecio": -1, "cdma_dbm": -1, "evdo_dbm": -1}
-//     */
-//    public ?? getCellularSignalStrengths() {
-//
-//    }
-//
+                network_info_json_array.put(network_info_json);
+            }
+            return network_info_json_array.toString();
+        }
+        return null;
+    }
+
+    /*
+     * e.g. {‘network_operator’: 310260, ‘network_operator_name’: ‘T-Mobile’}.
+     */
+    public String getCellularProviderInfo() throws JSONException {
+        JSONObject provider_info_json = new JSONObject();
+
+        provider_info_json.put("network_operator", telephony_manager.getNetworkOperator());
+        provider_info_json.put("network_operator_name",telephony_manager.getNetworkOperatorName());
+
+        return provider_info_json.toString();
+    }
+
+    /*
+     * Used to be:
+     * e.g. {‘cellID’: {‘lac’: 32115, ‘cid’: 26742}, ‘neighboring_cell’: [{‘rssi’: 11, ‘cid’: 26741},
+     * {‘rssi’: 9, ‘cid’: 40151}, {‘rssi’: 5, ‘cid’: 40153}]}.
+     */
+    public String getCellInfo() throws JSONException {
+
+        List<CellInfo> cell_infos = telephony_manager.getAllCellInfo();
+
+        if (cell_infos.size() > 0) {
+            JSONArray cell_info_json_array = new JSONArray();
+            for (CellInfo cell_info : cell_infos) {
+                JSONObject cell_info_json = new JSONObject();
+                cell_info_json.put("is_registered", cell_info.isRegistered());
+                if (cell_info instanceof CellInfoCdma) {
+
+                    // CDMA Signal Strength
+                    CellSignalStrengthCdma signal_strength = ((CellInfoCdma) cell_info).getCellSignalStrength();
+                    cell_info_json.put("asu_level", signal_strength.getAsuLevel());
+                    cell_info_json.put("cdma_dbm", signal_strength.getCdmaDbm());
+                    cell_info_json.put("cdma_level", signal_strength.getCdmaLevel());
+                    cell_info_json.put("dbm", signal_strength.getDbm());
+                    cell_info_json.put("evdo_dbm", signal_strength.getEvdoDbm());
+                    cell_info_json.put("evdo_ecio", signal_strength.getEvdoEcio());
+                    cell_info_json.put("evdo_level", signal_strength.getEvdoLevel());
+                    cell_info_json.put("evdo_snr", signal_strength.getEvdoSnr());
+                    cell_info_json.put("level", signal_strength.getLevel());
+
+                    //CDMA Cell Identity
+                    CellIdentityCdma cell_id = ((CellInfoCdma) cell_info).getCellIdentity();
+
+                    cell_info_json.put("base_station_id", cell_id.getBasestationId());
+                    cell_info_json.put("base_station_latitude", cell_id.getLatitude());
+                    cell_info_json.put("base_station_longitude", cell_id.getLongitude());
+                    cell_info_json.put("network_id", cell_id.getNetworkId());
+                    cell_info_json.put("system_id", cell_id.getSystemId());
+
+                } else if (cell_info instanceof CellInfoLte) {
+                    // LTE Signal Strength
+                    CellSignalStrengthLte signal_strength = ((CellInfoLte) cell_info).getCellSignalStrength();
+                    cell_info_json.put("dbm", signal_strength.getDbm());
+                    cell_info_json.put("asu_level", signal_strength.getAsuLevel());
+                    cell_info_json.put("level", signal_strength.getLevel());
+                    cell_info_json.put("timing_advance", signal_strength.getTimingAdvance());
+
+                    //LTE Cell Identity
+                    CellIdentityLte cell_id = ((CellInfoLte) cell_info).getCellIdentity();
+                    cell_info_json.put("ci", cell_id.getCi());
+                    cell_info_json.put("mcc", cell_id.getMcc());
+                    cell_info_json.put("mnc", cell_id.getMnc());
+                    cell_info_json.put("pci", cell_id.getPci());
+                    cell_info_json.put("tac", cell_id.getTac());
+
+                } else if (cell_info instanceof CellInfoGsm) {
+                    // GSM Signal Strength
+                    CellSignalStrengthGsm signal_strength = ((CellInfoGsm) cell_info).getCellSignalStrength();
+                    cell_info_json.put("asu_level", signal_strength.getAsuLevel());
+                    cell_info_json.put("dbm", signal_strength.getDbm());
+                    cell_info_json.put("level", signal_strength.getLevel());
+
+                    //GSM Cell Identity
+                    CellIdentityGsm cell_id = ((CellInfoGsm) cell_info).getCellIdentity();
+                    cell_info_json.put("mnc", cell_id.getMnc());
+                    cell_info_json.put("mcc", cell_id.getMcc());
+                    cell_info_json.put("cid", cell_id.getCid());
+                    cell_info_json.put("lac", cell_id.getLac());
+
+                } else if (cell_info instanceof CellInfoWcdma) {
+                    // WCDMA Signal Strength
+                    CellSignalStrengthWcdma signal_strength = ((CellInfoWcdma) cell_info).getCellSignalStrength();
+                    cell_info_json.put("asu_level", signal_strength.getAsuLevel());
+                    cell_info_json.put("dbm", signal_strength.getDbm());
+                    cell_info_json.put("level", signal_strength.getLevel());
+
+                    //WCDMA Cell Identity
+                    CellIdentityWcdma cell_id = ((CellInfoWcdma) cell_info).getCellIdentity();
+                    cell_info_json.put("psc", cell_id.getPsc());
+                    cell_info_json.put("cid", cell_id.getCid());
+                    cell_info_json.put("lac", cell_id.getLac());
+                    cell_info_json.put("mcc", cell_id.getMcc());
+                    cell_info_json.put("mnc", cell_id.getMnc());
+
+                } else {
+                    // XXX Throw an exception?
+                    Log.i(TAG, "Cell info of unknown Type");
+                    continue;
+                }
+                cell_info_json_array.put(cell_info_json);
+            }
+            return cell_info_json_array.toString();
+        }
+        return null;
+    }
+
+    /*
+     * e.g. {‘SIM_operator’: 310260, ‘SIM_operator_name’: ‘’, ‘SIM_country_code’: ‘us’, ‘SIM_state’: ‘ready’}
+     */
+    public String getSimInfo() throws JSONException {
+        JSONObject sim_info_json = new JSONObject();
+        sim_info_json.put("SIM_operator", telephony_manager.getSimOperator());
+        sim_info_json.put("SIM_state", telephony_manager.getSimState());
+        sim_info_json.put("SIM_country_code", telephony_manager.getSimCountryIso());
+        sim_info_json.put("SIM_operator_name", telephony_manager.getSimOperatorName());
+        sim_info_json.put("SIM_serial_number", telephony_manager.getSimSerialNumber());
+
+        return sim_info_json.toString();
+    }
+
+    /*
+     * Used to be:
+     * e.g. {‘phone_state’: {‘incomingNumber’: ‘’, ‘state’: ‘idle’},
+     * ‘phone_type’: ‘gsm’, ‘network_type’: 'edge'}. When no SIM card is available,
+     * the phone info dict would be, e.g., {‘phone_state’: {}, ‘phone_type’: ‘gsm’, ‘network_type’: 'unknown'}
+     *
+     */
+    public String getPhoneInfo() throws JSONException {
+        JSONObject phone_info_json = new JSONObject();
+
+        phone_info_json.put("subscriber_id", telephony_manager.getSubscriberId());
+        phone_info_json.put("call_state", telephony_manager.getCallState());
+        phone_info_json.put("data_activity", telephony_manager.getDataActivity());
+        phone_info_json.put("data_state", telephony_manager.getDataState());
+        phone_info_json.put("device_id", telephony_manager.getDeviceId());
+        phone_info_json.put("device_software_version", telephony_manager.getDeviceSoftwareVersion());
+        phone_info_json.put("network_type", telephony_manager.getNetworkType());
+        phone_info_json.put("phone_type", telephony_manager.getPhoneType());
+
+        return phone_info_json.toString();
+    }
+
+
     /*
      * ###################################################
      * WiFi
