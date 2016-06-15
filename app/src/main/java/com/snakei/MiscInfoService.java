@@ -1,9 +1,12 @@
 package com.snakei;
 
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.hardware.display.DisplayManager;
+import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
@@ -13,7 +16,9 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 import android.os.Handler;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.sensibility_testbed.SensibilityApplication;
@@ -55,10 +60,16 @@ import java.util.ListIterator;
  */
 public class MiscInfoService extends BroadcastReceiver {
     static final String TAG = "MiscInfoService";
+    Context app_context;
+    ContentResolver content_resolver;
     ConnectivityManager connectivity_manager;
+    TelephonyManager telephony_manager;
     WifiManager wifi_manager;
     Object wifi_sync;
-    Context app_context;
+    AudioManager audio_manager;
+    DisplayManager display_manager;
+
+
 
 
     /* See Initialization on Demand Holder pattern */
@@ -74,9 +85,13 @@ public class MiscInfoService extends BroadcastReceiver {
 
     public MiscInfoService() {
         app_context = SensibilityApplication.getAppContext();
+        content_resolver = app_context.getContentResolver();
         connectivity_manager = (ConnectivityManager) app_context.getSystemService(app_context.CONNECTIVITY_SERVICE);
+        telephony_manager = (TelephonyManager) app_context.getSystemService(app_context.TELEPHONY_SERVICE);
         wifi_manager = (WifiManager) app_context.getSystemService(app_context.WIFI_SERVICE);
         wifi_sync = new Object();
+        audio_manager = (AudioManager)app_context.getSystemService(app_context.AUDIO_SERVICE);
+        display_manager = (DisplayManager)app_context.getSystemService(app_context.DISPLAY_SERVICE);
     }
 
 
@@ -113,12 +128,20 @@ public class MiscInfoService extends BroadcastReceiver {
 //
 //    }
 //
-//    /*
-//     * e.g. {‘SIM_operator’: 310260, ‘SIM_operator_name’: ‘’, ‘SIM_country_code’: ‘us’, ‘SIM_state’: ‘ready’}
-//     */
-//    public ?? getSimInfo() {
-//
-//    }
+    /*
+     * e.g. {‘SIM_operator’: 310260, ‘SIM_operator_name’: ‘’, ‘SIM_country_code’: ‘us’, ‘SIM_state’: ‘ready’}
+     */
+    public String getSimInfo() {
+        JSONObject sim_info_json = new JSONObject();
+
+        telephony_manager.getSimState();
+        telephony_manager.
+
+
+        return sim_info_json.toString();
+    }
+
+    public String getCellInfo
 //
 //    /*
 //     * e.g. {‘phone_state’: {‘incomingNumber’: ‘’, ‘state’: ‘idle’},
@@ -241,19 +264,21 @@ public class MiscInfoService extends BroadcastReceiver {
 //     */
 //
 //
-//    /*
-//     * {'state': True, 'scan_mode': 3, 'local_name': 'GT-P1000'}
-//     */
-//    public ?? getBluetoothInfo() {
-//
-//    }
-//
-//    /*
-//     * ###################################################
-//     * Battery
-//     * ###################################################
-//     */
-//
+    /*
+     * {'state': True, 'scan_mode': 3, 'local_name': 'GT-P1000'}
+     */
+    public String getBluetoothInfo() {
+        JSONObject bluetooth_info_json = new JSONObject();
+
+        return bluetooth_info_json.toString();
+    }
+
+    /*
+     * ###################################################
+     * Battery
+     * ###################################################
+     */
+
     /*
      * Returns JSON formatted string of misc battery info
      *
@@ -293,39 +318,67 @@ public class MiscInfoService extends BroadcastReceiver {
         // Dump JSON to string and return
         return battery_info_json.toString();
     }
-//    /*
-//     * ###################################################
-//     * Settings
-//     * ###################################################
-//     */
-//
-//
-//    /*
-//     * {"airplane_mode": False, "ringer_silent_mode": True, "vibrate_mode": {'ringer_vibrate': True, 'notification_vibrate': False}}
-//     */
-//    public ?? getModeSettings() {
-//
-//    }
-//
-//    /*
-//     *  {"screen_on": True, "screen_brightness": 200, "screen_timeout": 60}.
-//     */
-//    public ?? getScreenSettings() {
-//
-//    }
-//
-//    /*
-//     * {"media_volume": xx, "max_media_volume": xxx}
-//     */
-//    public ?? getMediaVolume() {
-//
-//    }
-//
-//    /*
-//     * {"ringer_volume": xx, "max_ringer_volume": xxx}
-//     */
-//    public ?? getRingerVolume() {
-//
-//    }
-//
+    /*
+     * ###################################################
+     * Settings
+     * ###################################################
+     */
+
+    /*
+     * {"airplane_mode": False, "ringer_mode": True}
+     */
+    public String getModeSettings() throws Settings.SettingNotFoundException, JSONException {
+        JSONObject mode_settings_json = new JSONObject();
+        boolean airplane_mode = android.provider.Settings.System.getString(content_resolver,
+                Settings.Global.AIRPLANE_MODE_ON)  == Settings.Global.AIRPLANE_MODE_ON;
+        int ringer_mode = audio_manager.getRingerMode();
+
+        mode_settings_json.put("airplane_mode", airplane_mode);
+        mode_settings_json.put("ringer_mode", ringer_mode);
+
+        return mode_settings_json.toString();
+    }
+
+    /*
+     *  {"screen_on": True, "screen_brightness": 200, "screen_timeout": 60}.
+     */
+    public String getScreenSettings() throws JSONException {
+        JSONObject screen_settings = new JSONObject();
+
+        screen_settings.put("screen_on",);
+        screen_settings.put("screen_brightness",);
+        screen_settings.put("screen_timeout",);
+
+
+        return screen_settings.toString();
+    }
+
+    /*
+     * {"media_volume": xx, "max_media_volume": xxx}
+     */
+    public String getMediaVolume() throws JSONException {
+        JSONObject media_volume_json = new JSONObject();
+
+        media_volume_json.put("media_volume",
+                audio_manager.getStreamVolume(AudioManager.STREAM_MUSIC));
+        media_volume_json.put("max_media_volume",
+                audio_manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
+
+        return media_volume_json.toString();
+    }
+
+    /*
+     * {"ringer_volume": xx, "max_ringer_volume": xxx}
+     */
+    public String getRingerVolume() throws JSONException {
+        JSONObject ringer_volume_json = new JSONObject();
+
+        ringer_volume_json.put("ringer_volume",
+                audio_manager.getStreamVolume(AudioManager.STREAM_RING));
+        ringer_volume_json.put("max_ringer_volume",
+                audio_manager.getStreamMaxVolume(AudioManager.STREAM_RING));
+
+        return ringer_volume_json.toString();
+    }
+
 }
