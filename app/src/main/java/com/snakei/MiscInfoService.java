@@ -5,6 +5,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Point;
 import android.hardware.display.DisplayManager;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
@@ -20,6 +21,7 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.view.Display;
 
 import com.sensibility_testbed.SensibilityApplication;
 
@@ -342,15 +344,34 @@ public class MiscInfoService extends BroadcastReceiver {
     /*
      *  {"screen_on": True, "screen_brightness": 200, "screen_timeout": 60}.
      */
-    public String getScreenSettings() throws JSONException {
-        JSONObject screen_settings = new JSONObject();
+    public String getDisplayInfo() throws JSONException {
+        JSONObject screen_settings_json = new JSONObject();
+        Display display = display_manager.getDisplay(Display.DEFAULT_DISPLAY);
+        Point size = new Point();
 
-        screen_settings.put("screen_on",);
-        screen_settings.put("screen_brightness",);
-        screen_settings.put("screen_timeout",);
+        String name = display.getName();
+        int state = display.getState();
+        int rotation = display.getRotation();
+        display.getSize(size);
 
+        String brightness = android.provider.Settings.System.getString(content_resolver,
+                Settings.System.SCREEN_BRIGHTNESS);
+        String brightness_mode = android.provider.Settings.System.getString(content_resolver,
+                Settings.System.SCREEN_BRIGHTNESS_MODE);
+        String timeout = android.provider.Settings.System.getString(content_resolver,
+                Settings.System.SCREEN_OFF_TIMEOUT);
 
-        return screen_settings.toString();
+        screen_settings_json.put("name", name);
+        screen_settings_json.put("state", state);
+        screen_settings_json.put("rotation", rotation);
+        screen_settings_json.put("size_x", size.x);
+        screen_settings_json.put("size_y",  size.y);
+
+        screen_settings_json.put("brightness", brightness);
+        screen_settings_json.put("brightness_mode", brightness_mode);
+        screen_settings_json.put("timeout", timeout);
+
+        return screen_settings_json.toString();
     }
 
     /*
