@@ -1,5 +1,8 @@
 package com.snakei;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -31,6 +34,7 @@ import org.json.JSONObject;
 
 import java.io.ObjectInput;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -55,23 +59,23 @@ import java.util.ListIterator;
  *        active network - currently connected to
  *
  *   Exceptions should be raised
- *
- *
- *
- *
  */
-public class MiscInfoService extends BroadcastReceiver {
+public class MiscInfoService {
     static final String TAG = "MiscInfoService";
     Context app_context;
     ContentResolver content_resolver;
     ConnectivityManager connectivity_manager;
     TelephonyManager telephony_manager;
     WifiManager wifi_manager;
+    BroadcastReceiver wifi_broadcast_receiver;
     Object wifi_sync;
     AudioManager audio_manager;
     DisplayManager display_manager;
-
-
+    BluetoothManager bluetooth_manager;
+    BluetoothAdapter bluetooth_adapter;
+    Object bluetooth_sync;
+    BroadcastReceiver bluetooth_broadcast_receiver;
+    ArrayList<BluetoothDevice> scanned_bluetooth_devices;
 
 
     /* See Initialization on Demand Holder pattern */
@@ -90,10 +94,54 @@ public class MiscInfoService extends BroadcastReceiver {
         content_resolver = app_context.getContentResolver();
         connectivity_manager = (ConnectivityManager) app_context.getSystemService(app_context.CONNECTIVITY_SERVICE);
         telephony_manager = (TelephonyManager) app_context.getSystemService(app_context.TELEPHONY_SERVICE);
+
         wifi_manager = (WifiManager) app_context.getSystemService(app_context.WIFI_SERVICE);
         wifi_sync = new Object();
+        wifi_broadcast_receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.i(TAG, "Wifi scan returned");
+                synchronized(wifi_sync) {
+                    wifi_sync.notify();
+                }
+            }
+        };
+
         audio_manager = (AudioManager)app_context.getSystemService(app_context.AUDIO_SERVICE);
         display_manager = (DisplayManager)app_context.getSystemService(app_context.DISPLAY_SERVICE);
+
+        bluetooth_manager = (BluetoothManager)app_context.getSystemService(app_context.BLUETOOTH_SERVICE);
+        bluetooth_adapter = bluetooth_manager.getAdapter();
+        bluetooth_sync = new Object();
+        bluetooth_broadcast_receiver = new BroadcastReceiver() {
+
+            // This BroadcastReceiver will receive bluetooth discovery actions
+            // for page requests (ACTION_FOUND) and when discovery and all page
+            // requests have finished (ACTION_DISCOVERY_FINISHED)
+
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.i(TAG, "Bluetooth scan returned");
+
+
+                String action = intent.getAction();
+
+                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                    // Bluetooth discovery has received info from a paged remote device
+                    BluetoothDevice remote_device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    scanned_bluetooth_devices.add(remote_device);
+
+                } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                    // Bluetooth discovery has finished, there won't be any more page requests
+                    // Notify scan function to stop waiting and return values
+                    synchronized (bluetooth_sync){
+                        bluetooth_sync.notify();
+                    }
+                }
+
+
+            }
+        };
     }
 
 
@@ -130,18 +178,18 @@ public class MiscInfoService extends BroadcastReceiver {
 //
 //    }
 //
-    /*
-     * e.g. {‘SIM_operator’: 310260, ‘SIM_operator_name’: ‘’, ‘SIM_country_code’: ‘us’, ‘SIM_state’: ‘ready’}
-     */
-    public String getSimInfo() {
-        JSONObject sim_info_json = new JSONObject();
-
-        telephony_manager.getSimState();
-        telephony_manager.
-
-
-        return sim_info_json.toString();
-    }
+//    /*
+//     * e.g. {‘SIM_operator’: 310260, ‘SIM_operator_name’: ‘’, ‘SIM_country_code’: ‘us’, ‘SIM_state’: ‘ready’}
+//     */
+//    public String getSimInfo() {
+//        JSONObject sim_info_json = new JSONObject();
+//
+//        telephony_manager.getSimState();
+//        telephony_manager.
+//
+//
+//        return sim_info_json.toString();
+//    }
 
 //    public String getCellInfo
 //
@@ -206,15 +254,6 @@ public class MiscInfoService extends BroadcastReceiver {
         return wifi_info_json.toString();
     }
 
-
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        Log.i(TAG, "Scan returned something");
-        synchronized(wifi_sync) {
-            wifi_sync.notify();
-        }
-    }
-
     /*
      * [{
      *     "ssid": network SSID (string),
@@ -229,7 +268,7 @@ public class MiscInfoService extends BroadcastReceiver {
     public String getWifiScanInfo() throws InterruptedException, JSONException {
 
         // Register "onReceive" for scan results (gets called from main thread)
-        app_context.registerReceiver(this,
+        app_context.registerReceiver(wifi_broadcast_receiver,
                 new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
 
         // If scan was started wait until onReceive notifies us via
@@ -254,7 +293,7 @@ public class MiscInfoService extends BroadcastReceiver {
                 return wifi_json_array.toString();
             }
         }
-        app_context.unregisterReceiver(this);
+        app_context.unregisterReceiver(wifi_broadcast_receiver);
 
         return null;
     }
@@ -264,15 +303,77 @@ public class MiscInfoService extends BroadcastReceiver {
      * Bluetooth
      * ###################################################
      */
-
-
     /*
-     * {'state': True, 'scan_mode': 3, 'local_name': 'GT-P1000'}
+     * {'state': True, 'scan_mode': 3, 'local_name': 'GT-P1000, 'local_address' : "XX:XX:XX:XX:XX:XX"}
      */
-    public String getBluetoothInfo() {
+    public String getBluetoothInfo() throws JSONException {
         JSONObject bluetooth_info_json = new JSONObject();
+        BluetoothAdapter bluetooth_adapter = bluetooth_manager.getAdapter();
+
+        bluetooth_info_json.put("state", bluetooth_adapter.getState());
+        bluetooth_info_json.put("scan_mode", bluetooth_adapter.getScanMode());
+        bluetooth_info_json.put("local_name", bluetooth_adapter.getName());
+        bluetooth_info_json.put("local_address", bluetooth_adapter.getAddress());
+
+        bluetooth_adapter.getClass();
 
         return bluetooth_info_json.toString();
+    }
+
+    /*
+     * Start bluetooth discovery and wait until it has returned.
+     *
+     * Discovery usually involves an inquiry scan of about 12 seconds, followed by a page scan
+     * for each found device.
+     *
+     * Returns a list of remote bluetooth devices:
+     * [{
+     *      "address": MAC address
+     *      "name":
+     *      "bond_state": BOND_NONE=10 | BOND_BONDING=11 | BOND_BONDED=12
+     *      "type": DEVICE_TYPE_CLASSIC=1 | DEVICE_TYPE_LE=2 | DEVICE_TYPE_DUAL=3 | DEVICE_TYPE_UNKNOWN=0
+     * }, ...]
+     *
+     */
+
+    public String getBluetoothScanInfo() throws JSONException, InterruptedException {
+
+        // Register receiver for page scan result
+        // and inquire scan finished
+        IntentFilter ifilter = new IntentFilter();
+        ifilter.addAction(BluetoothDevice.ACTION_FOUND);
+        ifilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        app_context.registerReceiver(bluetooth_broadcast_receiver, ifilter);
+
+        // Initialize list to which the broadcast receiver will append
+        // paged bluetooth devices
+        // XXX: Think about caching scan results for a specified amount of time
+        scanned_bluetooth_devices = new ArrayList<BluetoothDevice>();
+
+        // Start discovery and wait until it is finished
+        if (bluetooth_adapter.startDiscovery()) {
+            synchronized(bluetooth_sync) {
+                bluetooth_sync.wait();
+                // If we have discovered some devices
+                // transform infos to JSON and return as String
+                if (scanned_bluetooth_devices.size() > 0) {
+                    JSONArray bluetooth_json_array = new JSONArray();
+                    for (BluetoothDevice remote_device : scanned_bluetooth_devices) {
+                        JSONObject bluetooth_json = new JSONObject();
+                        bluetooth_json.put("address", remote_device.getAddress());
+                        bluetooth_json.put("name", remote_device.getName());
+                        bluetooth_json.put("bond_state", remote_device.getBondState());
+                        bluetooth_json.put("type", remote_device.getType());
+
+                        bluetooth_json_array.put(bluetooth_json);
+                    }
+                    return bluetooth_json_array.toString();
+                }
+            }
+        }
+        app_context.unregisterReceiver(bluetooth_broadcast_receiver);
+
+        return null;
     }
 
     /*

@@ -8,8 +8,6 @@ androidlog_log(PyObject *self, PyObject *python_string)
   Py_RETURN_NONE;  // I.e., `return Py_None;` with reference counting
 }
 
-
-
 /* Describe to Python how the method should be called */
 static PyMethodDef AndroidlogMethods[] = {
   {"log", androidlog_log, METH_O,
@@ -68,6 +66,10 @@ static PyMethodDef AndroidmiscinfoMethods[] = {
         {"get_wifi_connection_info", (PyCFunction) miscinfo_get_wifi_connection_info, METH_NOARGS,
                 "Get info about the Wifi currently connected to."},
         {"get_wifi_scan_info", (PyCFunction) miscinfo_get_wifi_scan_info, METH_NOARGS,
+                "Scan nearby access points and return info."},
+        {"get_bluetooth_info", (PyCFunction) miscinfo_get_bluetooth_info, METH_NOARGS,
+                "Scan nearby access points and return info."},
+        {"get_bluetooth_scan_info", (PyCFunction) miscinfo_get_bluetooth_scan_info, METH_NOARGS,
                 "Scan nearby access points and return info."},
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };

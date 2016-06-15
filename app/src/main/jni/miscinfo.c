@@ -12,6 +12,8 @@ static struct miscinfo_cache {
     jmethodID get_wifi_connection_info;
     jmethodID get_battery_info;
     jmethodID get_wifi_scan_info;
+    jmethodID get_bluetooth_info;
+    jmethodID get_bluetooth_scan_info;
 } m_cached;
 
 void miscinfo_start_miscinfo() {
@@ -26,13 +28,41 @@ void miscinfo_start_miscinfo() {
     jmethodID get_wifi_state = jh_getMethod(jni_env, class, "getWifiState", "()I");
     jmethodID get_wifi_connection_info = jh_getMethod(jni_env, class, "getWifiConnectionInfo", "()Ljava/lang/String;");
     jmethodID get_wifi_scan_info = jh_getMethod(jni_env, class, "getWifiScanInfo", "()Ljava/lang/String;");
+    jmethodID get_bluetooth_info = jh_getMethod(jni_env, class, "getBluetoothInfo", "()Ljava/lang/String;");
+    jmethodID get_bluetooth_scan_info = jh_getMethod(jni_env, class, "getBluetoothScanInfo", "()Ljava/lang/String;");
     jmethodID get_battery_info = jh_getMethod(jni_env, class, "getBatteryInfo", "()Ljava/lang/String;");
 
     m_cached = (struct miscinfo_cache){.class = class, .get_instance = get_instance,
             .is_wifi_enabled = is_wifi_enabled, .get_wifi_state = get_wifi_state,
             .get_wifi_connection_info = get_wifi_connection_info,
             .get_wifi_scan_info = get_wifi_scan_info,
+            .get_bluetooth_scan_info = get_bluetooth_scan_info,
+            .get_bluetooth_info = get_bluetooth_info,
             .get_battery_info = get_battery_info};
+}
+
+PyObject* miscinfo_get_bluetooth_info(PyObject *self) {
+    JNIEnv *jni_env;
+    // Use the cached JVM pointer to get a new environment
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    jobject instance = jh_getInstance(jni_env, m_cached.class, m_cached.get_instance);
+    PyObject* wifi_info = jh_callJsonStringMethod(jni_env, instance, m_cached.get_bluetooth_info);
+
+    (*jni_env)->DeleteLocalRef(jni_env, instance);
+
+    return wifi_info;
+}
+
+PyObject* miscinfo_get_bluetooth_scan_info(PyObject *self) {
+    JNIEnv *jni_env;
+    // Use the cached JVM pointer to get a new environment
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    jobject instance = jh_getInstance(jni_env, m_cached.class, m_cached.get_instance);
+    PyObject* wifi_info = jh_callJsonStringMethod(jni_env, instance, m_cached.get_bluetooth_scan_info);
+
+    (*jni_env)->DeleteLocalRef(jni_env, instance);
+
+    return wifi_info;
 }
 
 PyObject* miscinfo_is_wifi_enabled(PyObject *self) {
