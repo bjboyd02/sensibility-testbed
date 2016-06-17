@@ -109,26 +109,26 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 //  LOGI("Stop Locating IN C!!!!");
 //  location_stop_location();
 
-//  LOGI("Start Media-ing IN C!!!!");
-//  initmedia();
-//  media_start_media();
-//  char *filename = "test_media.py";
-//  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-//  strcpy(full_filename, files);
-//  strcat(full_filename, filename);
-//  LOGI("PyRun File: %s", full_filename);
-//  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
-//  LOGI("Stop Media-ing IN C!!!!");
-//  media_stop_media();
-
-  LOGI("Init and start MiscInfo-ing IN C!!!!");
-  initmiscinfo();
-  char *filename = "test_miscinfo.py";
+  LOGI("Start Media-ing IN C!!!!");
+  initmedia();
+  media_start_media();
+  char *filename = "test_media.py";
   char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
   strcpy(full_filename, files);
   strcat(full_filename, filename);
   LOGI("PyRun File: %s", full_filename);
   LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
+  LOGI("Stop Media-ing IN C!!!!");
+  media_stop_media();
+
+//  LOGI("Init and start MiscInfo-ing IN C!!!!");
+//  initmiscinfo();
+//  char *filename = "test_miscinfo.py";
+//  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+//  strcpy(full_filename, files);
+//  strcat(full_filename, filename);
+//  LOGI("PyRun File: %s", full_filename);
+//  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
 
 
   LOGI("Before Py_Finalize...");

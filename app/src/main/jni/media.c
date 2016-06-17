@@ -6,6 +6,8 @@
 static struct media_cache {
     jclass class;
     jmethodID get_instance;
+    jmethodID stop_media;
+    jmethodID start_media;
     jmethodID microphone_record;
     jmethodID tts_speak;
     jmethodID is_tts_speaking;
@@ -13,44 +15,14 @@ static struct media_cache {
 } m_cached;
 
 void media_start_media() {
-    JNIEnv* jni_env;
-
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
-    jclass class = jh_getClass(jni_env, "com/snakei/MediaService");
-
-    jmethodID get_instance = jh_getGetter(jni_env, class, "()Lcom/snakei/MediaService;");
-    jobject instance = jh_getInstance(jni_env, class, get_instance);
-
-    m_cached = (struct media_cache){
-            .class = class, .get_instance = get_instance,
-            .microphone_record = jh_getMethod(jni_env, class, "microphoneRecord", "(Ljava/lang/String;I)V"),
-            .tts_speak = jh_getMethod(jni_env, class, "ttsSpeak", "(Ljava/lang/String;)I"),
-            .is_tts_speaking = jh_getMethod(jni_env, class, "isTtsSpeaking", "()Z"),
-            .is_media_playing = jh_getMethod(jni_env, class, "isMediaPlaying", "()Z")};
-
-    jmethodID start_media = jh_getMethod(jni_env, class, "start_media", "()V");
-    jh_callVoidMethod(jni_env, instance, start_media);
-
-    // XXX: Only detach if AttachCurrentThread wasn't a no-op
-    //(*cached_vm)->DetachCurrentThread(cached_vm);
-    (*jni_env)->DeleteLocalRef(jni_env, instance);
+    jh_call(m_cached.class, m_cached.get_instance, jh_callVoidMethod, m_cached.start_media);
 }
 
 void media_stop_media() {
-    JNIEnv* jni_env;
-
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
-    jobject instance = jh_getInstance(jni_env, m_cached.class, m_cached.get_instance);
-    jmethodID stop_media = jh_getMethod(jni_env, m_cached.class, "stop_media", "()V");
-    jh_callVoidMethod(jni_env, instance, stop_media);
-
-    // XXX: Only detach if AttachCurrentThread wasn't a no-op
-    //(*cached_vm)->DetachCurrentThread(cached_vm);
-    (*jni_env)->DeleteLocalRef(jni_env, instance);
+    jh_call(m_cached.class, m_cached.get_instance, jh_callVoidMethod, m_cached.stop_media);
 }
 
 PyObject* media_tts_speak(PyObject *self, PyObject *args) {
-    JNIEnv *jni_env;
     char *text;
     jstring java_text;
 
@@ -58,62 +30,73 @@ PyObject* media_tts_speak(PyObject *self, PyObject *args) {
         LOGI("Wrong arguments. I guess I should raise an Exception.");
         Py_RETURN_NONE;
     }
-    // Use the cached JVM pointer to get a new environment
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    LOGI("#######################1");
+    jstring java_file_name = jh_getJavaString(text);
+    LOGI("#######################2");
+    PyObject* success = jh_call(m_cached.class, m_cached.get_instance, jh_callIntMethod,
+                                m_cached.tts_speak, java_text);
+    LOGI("#######################3");
 
-    // Convert C string to Java string
-    java_text = (*jni_env)->NewStringUTF(jni_env, text);
 
-    jobject instance = jh_getInstance(jni_env, m_cached.class, m_cached.get_instance);
-    PyObject* success = jh_callIntMethod(jni_env, instance, m_cached.tts_speak, java_text);
-
-    (*jni_env)->DeleteLocalRef(jni_env, instance);
-    (*jni_env)->DeleteLocalRef(jni_env, java_text);
-
+    // XXX: do we have to delete the string reference?
+    // We shouldn't have to, that's why it is called local, BUT
     return success;
 }
 
 PyObject* media_microphone_record(PyObject *self, PyObject *args) {
-    JNIEnv *jni_env;
     char *file_name;
     int duration;
-    jstring java_file_name;
 
     if (!PyArg_ParseTuple(args, "si", &file_name, &duration)){
         LOGI("Wrong arguments. I guess I should raise an Exception.");
         Py_RETURN_NONE;
     }
 
-    // Use the cached JVM pointer to get a new environment
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    jstring java_file_name = jh_getJavaString(file_name);
+    jh_call(m_cached.class, m_cached.get_instance,
+                      jh_callVoidMethod, m_cached.microphone_record,
+                      java_file_name, (jint) duration);
 
-    // Convert C string to Java string
-    java_file_name = (*jni_env)->NewStringUTF(jni_env, file_name);
-
-    jobject instance = jh_getInstance(jni_env, m_cached.class, m_cached.get_instance);
-    jh_callVoidMethod(jni_env, instance, m_cached.microphone_record, java_file_name, (jint) duration);
-
-    (*jni_env)->DeleteLocalRef(jni_env, instance);
-    (*jni_env)->DeleteLocalRef(jni_env, java_file_name);
+    // XXX: do we have to delete the string reference?
+    // We shouldn't have to, that's why it is called local, BUT
 }
 
 PyObject* media_is_media_playing(PyObject *self) {
-    JNIEnv *jni_env;
-    // Use the cached JVM pointer to get a new environment
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
-    jobject instance = jh_getInstance(jni_env, m_cached.class, m_cached.get_instance);
-    PyObject* is_playing  = jh_callBooleanMethod(jni_env, instance, m_cached.is_media_playing);
-    (*jni_env)->DeleteLocalRef(jni_env, instance);
-    return is_playing;
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callBooleanMethod, m_cached.is_media_playing);
 }
 
 PyObject* media_is_tts_speaking(PyObject *self) {
-    JNIEnv *jni_env;
-    // Use the cached JVM pointer to get a new environment
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
-    jobject instance = jh_getInstance(jni_env, m_cached.class, m_cached.get_instance);
-    PyObject* is_speaking  = jh_callBooleanMethod(jni_env, instance, m_cached.is_tts_speaking);
-    (*jni_env)->DeleteLocalRef(jni_env, instance);
-    return is_speaking;
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callBooleanMethod, m_cached.is_tts_speaking);
 }
 
+static PyMethodDef AndroidMediaMethods[] = {
+        {"tts_speak", (PyCFunction) media_tts_speak, METH_VARARGS,
+                        "Text-to-speech"},
+        {"microphone_record", (PyCFunction) media_microphone_record, METH_VARARGS,
+                        "Record audio"},
+        {"is_tts_speaking", (PyCFunction) media_is_tts_speaking, METH_NOARGS,
+                        "Returns true if TTS is currently speaking or about to speak, false otherwise."},
+        {"is_media_playing", (PyCFunction) media_is_media_playing, METH_NOARGS,
+                        "Returns true if TTS is currently speaking or about to speak, false otherwise."},
+        {NULL, NULL, 0, NULL} // This is the end-of-array marker
+};
+
+//PyMODINIT_FUNC initmedia(void) {
+void initmedia() {
+    Py_InitModule("media", AndroidMediaMethods);
+    jclass class = jh_getClass( "com/snakei/MediaService");
+
+    m_cached = (struct media_cache){
+            .class = class,
+            .start_media = jh_getMethod(class, "start_media", "()V"),
+            .stop_media = jh_getMethod(class, "stop_media", "()V"),
+            .get_instance = jh_getGetter(class, "()Lcom/snakei/MediaService;"),
+            .microphone_record = jh_getMethod(class, "microphoneRecord",
+                                              "(Ljava/lang/String;I)V"),
+            .tts_speak = jh_getMethod(class,"ttsSpeak",
+                                      "(Ljava/lang/String;)I"),
+            .is_tts_speaking = jh_getMethod(class, "isTtsSpeaking", "()Z"),
+            .is_media_playing = jh_getMethod(class, "isMediaPlaying", "()Z")};
+}

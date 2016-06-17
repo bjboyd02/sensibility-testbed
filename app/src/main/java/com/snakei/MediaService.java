@@ -100,16 +100,6 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
         return audio_manager.isMusicActive();
     }
 
-    /*
-     * Todo:
-     *      Do we really need this???
-     *      And if so, what kind of information are we interested in?
-     */
-//    public MediaPlayInfo getMediaPlayInfo() {
-//
-//        return media_play_info;
-//    }
-
 
     /*
      * Checks if TTS is speaking
@@ -119,7 +109,10 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
      */
 
     public boolean isTtsSpeaking() {
-        return tts.isSpeaking();
+        if (tts_initialized) {
+            return tts.isSpeaking();
+        }
+        return false;
     }
     /*
      * Adds method to TTS queue for playback.

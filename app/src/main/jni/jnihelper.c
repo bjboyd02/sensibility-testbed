@@ -72,8 +72,6 @@ jstring jh_getJavaString(char *string) {
     return (*jni_env)->NewStringUTF(jni_env, string);
 }
 
-
-
 /*
  * #######################################################
  * Don't call the subsequent functions directly
@@ -112,11 +110,13 @@ PyObject* jh_callBooleanMethod(JNIEnv* jni_env, jobject object, jmethodID method
     }
 }
 PyObject* jh_callIntMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...) {
+    LOGI("########7");
+//    va_list args;
+//    va_start(args, method);
+//    int retval = (*jni_env)->CallIntMethodV(jni_env, object, method, args);
+//    va_end(args);
+//    LOGI("########8");
 
-    va_list args;
-    va_start(args, method);
-    int retval = (*jni_env)->CallIntMethodV(jni_env, object, method, args);
-    va_end(args);
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_callIntMethod: exception occurred");
@@ -198,14 +198,12 @@ PyObject* jh_call(jclass class, jmethodID get_instance,
 
     // Get the instance
     jobject instance = jh_getInstance(class, get_instance);
-
     // Call the JNI function in
     PyObject* info;
     va_list args;
     va_start(args, cached_method);
     info = (*jh_call)(jni_env, instance, cached_method, args);
     va_end(args);
-
     (*jni_env)->DeleteLocalRef(jni_env, instance);
 
     return info;
