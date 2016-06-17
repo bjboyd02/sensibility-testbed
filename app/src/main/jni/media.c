@@ -12,7 +12,6 @@ static struct media_cache {
     jmethodID is_media_playing;
 } m_cached;
 
-
 void media_start_media() {
     JNIEnv* jni_env;
 
@@ -22,17 +21,14 @@ void media_start_media() {
     jmethodID get_instance = jh_getGetter(jni_env, class, "()Lcom/snakei/MediaService;");
     jobject instance = jh_getInstance(jni_env, class, get_instance);
 
+    m_cached = (struct media_cache){
+            .class = class, .get_instance = get_instance,
+            .microphone_record = jh_getMethod(jni_env, class, "microphoneRecord", "(Ljava/lang/String;I)V"),
+            .tts_speak = jh_getMethod(jni_env, class, "ttsSpeak", "(Ljava/lang/String;)I"),
+            .is_tts_speaking = jh_getMethod(jni_env, class, "isTtsSpeaking", "()Z"),
+            .is_media_playing = jh_getMethod(jni_env, class, "isMediaPlaying", "()Z")};
+
     jmethodID start_media = jh_getMethod(jni_env, class, "start_media", "()V");
-
-    jmethodID microphone_record = jh_getMethod(jni_env, class, "microphoneRecord", "(Ljava/lang/String;I)V");
-    jmethodID tts_speak = jh_getMethod(jni_env, class, "ttsSpeak", "(Ljava/lang/String;)I");
-    jmethodID is_tts_speaking = jh_getMethod(jni_env, class, "isTtsSpeaking", "()Z");
-    jmethodID is_media_playing = jh_getMethod(jni_env, class, "isMediaPlaying", "()Z");
-
-    m_cached = (struct media_cache){.class = class, .get_instance = get_instance,
-            .microphone_record = microphone_record, .tts_speak = tts_speak,
-            .is_tts_speaking = is_tts_speaking, .is_media_playing = is_media_playing};
-
     jh_callVoidMethod(jni_env, instance, start_media);
 
     // XXX: Only detach if AttachCurrentThread wasn't a no-op
@@ -52,7 +48,6 @@ void media_stop_media() {
     //(*cached_vm)->DetachCurrentThread(cached_vm);
     (*jni_env)->DeleteLocalRef(jni_env, instance);
 }
-
 
 PyObject* media_tts_speak(PyObject *self, PyObject *args) {
     JNIEnv *jni_env;
