@@ -20,41 +20,29 @@ static PyMethodDef AndroidlogMethods[] = {
 // Only functions taking two PyObject* arguments are PyCFunction
 // where this is not the case we need to cast
 // Todo: write descriptions
-static PyMethodDef AndroidsensorMethods[] = {
-  {"get_sensor_list", (PyCFunction) sensor_get_sensor_list, METH_NOARGS,
-    "Get a list of sensor info dictionaries."},
-  {"get_acceleration", (PyCFunction) sensor_get_acceleration, METH_NOARGS,
-          "Get list of accelerator values. [sample ts, poll ts, x, y, z]"},
-  {"get_magnetic_field", (PyCFunction) sensor_get_magnetic_field, METH_NOARGS,
-          "Get list of magnetic field values ... "},
-  {"get_proximity", (PyCFunction) sensor_get_proximity, METH_NOARGS,
-          "...."},
-  {"get_light", (PyCFunction) sensor_get_light, METH_NOARGS,
-          "...."},
-  {NULL, NULL, 0, NULL} // This is the end-of-array marker
-};
+//static PyMethodDef AndroidsensorMethods[] = {
+//  {"get_sensor_list", (PyCFunction) sensor_get_sensor_list, METH_NOARGS,
+//    "Get a list of sensor info dictionaries."},
+//  {"get_acceleration", (PyCFunction) sensor_get_acceleration, METH_NOARGS,
+//          "Get list of accelerator values. [sample ts, poll ts, x, y, z]"},
+//  {"get_magnetic_field", (PyCFunction) sensor_get_magnetic_field, METH_NOARGS,
+//          "Get list of magnetic field values ... "},
+//  {"get_proximity", (PyCFunction) sensor_get_proximity, METH_NOARGS,
+//          "...."},
+//  {"get_light", (PyCFunction) sensor_get_light, METH_NOARGS,
+//          "...."},
+//  {NULL, NULL, 0, NULL} // This is the end-of-array marker
+//};
 
-static PyMethodDef AndroidlocationMethods[] = {
-        {"get_location", (PyCFunction) location_get_location, METH_NOARGS,
-                        "Get locations from GPS, Network and Fused"},
-        {"get_lastknown_location", (PyCFunction) location_get_lastknown_location, METH_NOARGS,
-                "Get last known locations from GPS, Network and Fused"},
-        {"get_geolocation", (PyCFunction) location_get_geolocation, METH_VARARGS,
-                "Get address(es) from latitude and longitude"},
-        {NULL, NULL, 0, NULL} // This is the end-of-array marker
-};
-
-static PyMethodDef AndroidmediaMethods[] = {
-        {"tts_speak", (PyCFunction) media_tts_speak, METH_VARARGS,
-                        "Text-to-speech"},
-        {"microphone_record", (PyCFunction) media_microphone_record, METH_VARARGS,
-                "Record audio"},
-        {"is_tts_speaking", (PyCFunction) media_is_tts_speaking, METH_NOARGS,
-                "Returns true if TTS is currently speaking or about to speak, false otherwise."},
-        {"is_media_playing", (PyCFunction) media_is_media_playing, METH_NOARGS,
-                "Returns true if TTS is currently speaking or about to speak, false otherwise."},
-        {NULL, NULL, 0, NULL} // This is the end-of-array marker
-};
+//static PyMethodDef AndroidlocationMethods[] = {
+//        {"get_location", (PyCFunction) location_get_location, METH_NOARGS,
+//                        "Get locations from GPS, Network and Fused"},
+//        {"get_lastknown_location", (PyCFunction) location_get_lastknown_location, METH_NOARGS,
+//                "Get last known locations from GPS, Network and Fused"},
+//        {"get_geolocation", (PyCFunction) location_get_geolocation, METH_VARARGS,
+//                "Get address(es) from latitude and longitude"},
+//        {NULL, NULL, 0, NULL} // This is the end-of-array marker
+//};
 
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_files, jstring python_arguments) {
   char* home = (char*) (*env)->GetStringUTFChars(env, python_home, NULL);
@@ -90,26 +78,6 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
   Py_InitModule("androidlog", AndroidlogMethods);
   LOGI("androidlog initted");
 
-  LOGI("Initializing sensors module");
-  Py_InitModule("sensor", AndroidsensorMethods);
-  LOGI("androidsensors initted");
-
-  LOGI("Initializing location module");
-  Py_InitModule("location", AndroidlocationMethods);
-  LOGI("androidlocation initted");
-
-  LOGI("Initializing media module");
-  Py_InitModule("media", AndroidmediaMethods);
-  LOGI("androidmedia initted");
-
-
-  //LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog, sensor\nl = androidlog.log2\ns = sensor.get_sensor_list\nl('check out these lovely sensors: ' +  repr(s()))"));
-//LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog, sensor\nl = androidlog.log2\ns = sensor.get_sensor_list\nl('check out these lovely sensors: ' +  repr(s()))"));
-  //LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl(str(locals()))"));
-//  LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog\nl = androidlog.log2\nl('Ooh yeah!!!!!!!!!')\ntry:\n  import os\nexcept Exception, e:\n  l(repr(e))\nl('still k')\nl(os.getlogin())\n")); //l(str(os.getresuid()))\nl(os.getgroups())\nl(str(os.getresgid()))\n") );
-  //try:\n  l('How?')\n  f = open('/sdcard/Android/data/com.sensibility_testbed/files/blip', 'w')\nexcept Exception, e:\n  l(repr(e))\nelse:\n  f.write('It worketh!!!\\n')\nl('Done.')\n") );
-
-  LOGI("Now do the python file(s)!!!");
 
 
 //  LOGI("Start Sensing IN C!!!!");
@@ -142,6 +110,7 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 //  location_stop_location();
 
 //  LOGI("Start Media-ing IN C!!!!");
+//  initmedia();
 //  media_start_media();
 //  char *filename = "test_media.py";
 //  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));

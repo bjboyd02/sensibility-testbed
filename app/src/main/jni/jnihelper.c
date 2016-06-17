@@ -4,9 +4,13 @@
 
 #include "jnihelper.h"
 
-jclass jh_getClass(JNIEnv* jni_env, const char *class_name) {
+jclass jh_getClass(const char *class_name) {
+    JNIEnv *jni_env;
     jclass class;
+
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
     class = (*jni_env)->FindClass(jni_env, class_name);
+
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_getClass: exception occurred");
     }
@@ -16,8 +20,11 @@ jclass jh_getClass(JNIEnv* jni_env, const char *class_name) {
     return class;
 }
 
-jmethodID jh_getGetter(JNIEnv* jni_env, jclass class, const char *type_signature) {
+jmethodID jh_getGetter(jclass class, const char *type_signature) {
+    JNIEnv *jni_env;
     jmethodID getter;
+
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
     getter = (*jni_env)->GetStaticMethodID(jni_env, class, "getInstance", type_signature);
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_getGetter: exception occurred");
@@ -28,8 +35,11 @@ jmethodID jh_getGetter(JNIEnv* jni_env, jclass class, const char *type_signature
     return getter;
 }
 
-jmethodID jh_getMethod(JNIEnv* jni_env, jclass class, const char *method_name, const char *type_signature) {
+jmethodID jh_getMethod(jclass class, const char *method_name, const char *type_signature) {
+    JNIEnv *jni_env;
     jmethodID method;
+
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
     method = (*jni_env)->GetMethodID(jni_env, class, method_name, type_signature);
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_getMethod: exception occurred - %s", method_name);
@@ -40,8 +50,11 @@ jmethodID jh_getMethod(JNIEnv* jni_env, jclass class, const char *method_name, c
     return method;
 }
 
-jobject jh_getInstance(JNIEnv* jni_env, jclass class, jmethodID getter) {
+jobject jh_getInstance(jclass class, jmethodID getter) {
+    JNIEnv *jni_env;
     jobject object;
+
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
     object = (*jni_env)->CallStaticObjectMethod(jni_env, class, getter);
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
@@ -52,7 +65,24 @@ jobject jh_getInstance(JNIEnv* jni_env, jclass class, jmethodID getter) {
     }
     return object;
 }
-void jh_callVoidMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...) {
+
+jstring jh_getJavaString(char *string) {
+    JNIEnv *jni_env;
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    return (*jni_env)->NewStringUTF(jni_env, string);
+}
+
+
+
+/*
+ * #######################################################
+ * Don't call the subsequent functions directly
+ * Use the jh_call() wrapper
+ * #######################################################
+ */
+
+
+PyObject* jh_callVoidMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...) {
     va_list args;
     va_start(args, method);
     (*jni_env)->CallVoidMethodV(jni_env, object, method, args);
@@ -164,11 +194,10 @@ PyObject* jh_call(jclass class, jmethodID get_instance,
                   PyObject* (*jh_call)(JNIEnv*, jobject, jmethodID, ...), jmethodID cached_method, ...) {
 
     JNIEnv *jni_env;
-    // Use the cached JVM pointer to get a new environment
     (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
 
     // Get the instance
-    jobject instance = jh_getInstance(jni_env, class, get_instance);
+    jobject instance = jh_getInstance(class, get_instance);
 
     // Call the JNI function in
     PyObject* info;
