@@ -11,7 +11,7 @@
 #include "jnihelper.h"
 #include "python2.7/object.h"
 
-void miscinfo_start_miscinfo();
+void initmiscinfo();
 
 PyObject* miscinfo_is_wifi_enabled(PyObject *self);
 PyObject* miscinfo_get_wifi_state(PyObject *self);
@@ -28,6 +28,7 @@ PyObject* miscinfo_get_mode_settings(PyObject *self);
 PyObject* miscinfo_get_display_info(PyObject *self);
 PyObject* miscinfo_get_volume_info(PyObject *self);
 PyObject* miscinfo_get_battery_info(PyObject *self);
+
 
 
 

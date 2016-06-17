@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include "snakei.h"
 #include "outputs.h"
 #include "sensors.h"
 #include "location.h"

@@ -56,40 +56,6 @@ static PyMethodDef AndroidmediaMethods[] = {
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
-static PyMethodDef AndroidmiscinfoMethods[] = {
-        {"is_wifi_enabled", (PyCFunction) miscinfo_is_wifi_enabled, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_wifi_state", (PyCFunction) miscinfo_get_wifi_state, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_wifi_connection_info", (PyCFunction) miscinfo_get_wifi_connection_info, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_wifi_scan_info", (PyCFunction) miscinfo_get_wifi_scan_info, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_bluetooth_info", (PyCFunction) miscinfo_get_bluetooth_info, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_bluetooth_scan_info", (PyCFunction) miscinfo_get_bluetooth_scan_info, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_network_info", (PyCFunction) miscinfo_get_network_info, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_cellular_provider_info", (PyCFunction) miscinfo_get_cellular_provider_info, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_cell_info", (PyCFunction) miscinfo_get_cell_info, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_sim_info", (PyCFunction) miscinfo_get_sim_info, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_phone_info", (PyCFunction) miscinfo_get_phone_info, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_mode_settings", (PyCFunction) miscinfo_get_mode_settings, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_display_info", (PyCFunction) miscinfo_get_display_info, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_volume_info", (PyCFunction) miscinfo_get_volume_info, METH_NOARGS,
-                "XXXXXXXXX"},
-        {"get_battery_info", (PyCFunction) miscinfo_get_battery_info, METH_NOARGS,
-                "XXXXXXXXX"},
-        {NULL, NULL, 0, NULL} // This is the end-of-array marker
-};
-
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_files, jstring python_arguments) {
   char* home = (char*) (*env)->GetStringUTFChars(env, python_home, NULL);
   char* path = (char*) (*env)->GetStringUTFChars(env, python_path, NULL);
@@ -136,9 +102,6 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
   Py_InitModule("media", AndroidmediaMethods);
   LOGI("androidmedia initted");
 
-  LOGI("Initializing miscinfo module");
-  Py_InitModule("miscinfo", AndroidmiscinfoMethods);
-  LOGI("androidmiscinfo initted");
 
   //LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog, sensor\nl = androidlog.log2\ns = sensor.get_sensor_list\nl('check out these lovely sensors: ' +  repr(s()))"));
 //LOGI("PyRun string returns %i", Verbose_PyRun_SimpleString("import androidlog, sensor\nl = androidlog.log2\ns = sensor.get_sensor_list\nl('check out these lovely sensors: ' +  repr(s()))"));
@@ -189,8 +152,8 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 //  LOGI("Stop Media-ing IN C!!!!");
 //  media_stop_media();
 
-  LOGI("Start MiscInfo-ing IN C!!!!");
-  miscinfo_start_miscinfo();
+  LOGI("Init and start MiscInfo-ing IN C!!!!");
+  initmiscinfo();
   char *filename = "test_miscinfo.py";
   char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
   strcpy(full_filename, files);
@@ -203,7 +166,5 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
   Py_Finalize();
 
   LOGI("Done. Bye!");
-
-
 };
 
