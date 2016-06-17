@@ -158,3 +158,26 @@ PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object, jmethodID met
 
     return obj;
 }
+
+
+PyObject* jh_call(jclass class, jmethodID get_instance,
+                  PyObject* (*jh_call)(JNIEnv*, jobject, jmethodID, ...), jmethodID cached_method, ...) {
+
+    JNIEnv *jni_env;
+    // Use the cached JVM pointer to get a new environment
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+
+    // Get the instance
+    jobject instance = jh_getInstance(jni_env, class, get_instance);
+
+    // Call the JNI function in
+    PyObject* info;
+    va_list args;
+    va_start(args, cached_method);
+    info = (*jh_call)(jni_env, instance, cached_method, args);
+    va_end(args);
+
+    (*jni_env)->DeleteLocalRef(jni_env, instance);
+
+    return info;
+}

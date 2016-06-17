@@ -24,83 +24,78 @@ static struct miscinfo_cache {
     jmethodID get_volume_info;
 } m_cached;
 
-PyObject* _miscinfo_get_info(PyObject* (*jh_call)(JNIEnv*, jobject, jmethodID, ...), jmethodID cached_method, ...) {
-    JNIEnv *jni_env;
-    // Use the cached JVM pointer to get a new environment
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
-
-    // Get the instance
-    jobject instance = jh_getInstance(jni_env, m_cached.class, m_cached.get_instance);
-
-    // Call the JNI function in
-    PyObject* info;
-    va_list args;
-    va_start(args, cached_method);
-    info = (*jh_call)(jni_env, instance, cached_method, args);
-    va_end(args);
-
-    (*jni_env)->DeleteLocalRef(jni_env, instance);
-
-    return info;
-}
-
 PyObject* miscinfo_get_bluetooth_info(PyObject *self) {
-    return _miscinfo_get_info(jh_callJsonStringMethod, m_cached.get_bluetooth_info);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callJsonStringMethod, m_cached.get_bluetooth_info);
 }
 
 PyObject* miscinfo_get_bluetooth_scan_info(PyObject *self) {
-    return _miscinfo_get_info(jh_callJsonStringMethod, m_cached.get_bluetooth_scan_info);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callJsonStringMethod, m_cached.get_bluetooth_scan_info);
 }
 
 PyObject* miscinfo_is_wifi_enabled(PyObject *self) {
-    return _miscinfo_get_info(jh_callBooleanMethod, m_cached.is_wifi_enabled);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callBooleanMethod, m_cached.is_wifi_enabled);
 }
 
 PyObject* miscinfo_get_wifi_state(PyObject *self) {
-    return _miscinfo_get_info(jh_callIntMethod, m_cached.get_wifi_state);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callIntMethod, m_cached.get_wifi_state);
 }
 PyObject* miscinfo_get_wifi_connection_info(PyObject *self) {
-    return _miscinfo_get_info(jh_callJsonStringMethod, m_cached.get_wifi_connection_info);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callJsonStringMethod, m_cached.get_wifi_connection_info);
 }
 
 PyObject* miscinfo_get_wifi_scan_info(PyObject *self) {
-    return _miscinfo_get_info(jh_callJsonStringMethod, m_cached.get_wifi_scan_info);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callJsonStringMethod, m_cached.get_wifi_scan_info);
 }
 
 PyObject* miscinfo_get_network_info(PyObject *self) {
-    return _miscinfo_get_info(jh_callJsonStringMethod, m_cached.get_network_info);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callJsonStringMethod, m_cached.get_network_info);
 }
 
 PyObject* miscinfo_get_cellular_provider_info(PyObject *self) {
-    return _miscinfo_get_info(jh_callJsonStringMethod, m_cached.get_cellular_provider_info);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callJsonStringMethod, m_cached.get_cellular_provider_info);
 }
 
 PyObject* miscinfo_get_cell_info(PyObject *self) {
-    return _miscinfo_get_info(jh_callJsonStringMethod, m_cached.get_cell_info);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callJsonStringMethod, m_cached.get_cell_info);
 }
 
 PyObject* miscinfo_get_sim_info(PyObject *self) {
-    return _miscinfo_get_info(jh_callJsonStringMethod, m_cached.get_sim_info);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callJsonStringMethod, m_cached.get_sim_info);
 }
 
 PyObject* miscinfo_get_phone_info(PyObject *self) {
-    return _miscinfo_get_info(jh_callJsonStringMethod, m_cached.get_phone_info);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callJsonStringMethod, m_cached.get_phone_info);
 }
 
 PyObject* miscinfo_get_mode_settings(PyObject *self) {
-    return _miscinfo_get_info(jh_callJsonStringMethod, m_cached.get_mode_settings);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callJsonStringMethod, m_cached.get_mode_settings);
 }
 
 PyObject* miscinfo_get_display_info(PyObject *self) {
-    return _miscinfo_get_info(jh_callJsonStringMethod, m_cached.get_display_info);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callJsonStringMethod, m_cached.get_display_info);
 }
 
 PyObject* miscinfo_get_volume_info(PyObject *self) {
-    return _miscinfo_get_info(jh_callJsonStringMethod, m_cached.get_volume_info);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callJsonStringMethod, m_cached.get_volume_info);
 }
 
 PyObject* miscinfo_get_battery_info(PyObject *self) {
-    return _miscinfo_get_info(jh_callJsonStringMethod, m_cached.get_battery_info);
+    return jh_call(m_cached.class, m_cached.get_instance,
+                   jh_callJsonStringMethod, m_cached.get_battery_info);
 }
 
 static PyMethodDef AndroidMiscinfoMethods[] = {
