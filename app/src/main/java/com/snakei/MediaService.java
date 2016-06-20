@@ -34,11 +34,10 @@ import java.util.UUID;
  *
  *   Skips media info function for the moment (do we really need this?)
  */
-public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.OnInfoListener {
+public class MediaService implements TextToSpeech.OnInitListener {
     static final String TAG = "MediaService";
 
     AudioManager audio_manager;
-    private MediaRecorder recorder;
     private TextToSpeech tts;
     private boolean tts_initialized = false;
     private int queue_mode = TextToSpeech.QUEUE_FLUSH;
@@ -62,38 +61,45 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
     public void stop_media() {
         tts_initialized = false;
         tts.shutdown();
-        //recorder.release();
     }
 
     /*
      * Records from the default microphone to a file at
-     * passed `file_name` for a given `duration` (ms) if the
-     * duration is exceeded, recording stops and automatically
-     * and `onInfo` receives a message
-     * `MEDIA_RECORDER_INFO_MAX_DURATION_REACHED`
+     * passed `file_name` for a given `duration` (ms).
+     * This is blocking operation.
      *
-     * Todo:
-     *      Think about initialization and freeing of resource
-     *         Should this be done in start_media, stop_media?
+     * The function creates, prepares and starts a new MediaRecorder
+     * Then it suspends the calling thread for the specified time
+     * (recording is performed on another thread) and releases the
+     * resource once it is finished.
      *
-     *      There are a lot of things that can be parametrized
-     *      e.g. Format, Encoder, ...
+     * Reasoning:
+     *      This strategy is preferred over non-blocking, because Android
+     *      makes it hard to determine the current state of a MediaRecorder
+     *      which in turn makes proper resource handling (release when finished)
+     *      difficult.
      *
+     * Possible non-blocking approach
+     *      For a non blocking approach we could use a recording session duration:
+     *          recorder.setMaxDuration(int max_duration_ms) or a custom timer
+     *      together with info or error listener:
+     *          recorder.setOnInfoListener(OnInfoListener) or
+     *          recorder.setOnerrorListener(OnErrorListener)
+     *
+     * There are a lot of things that can be parametrized
+     *     e.g. Format, Encoder, ...
      */
-    public void microphoneRecord(String file_name, int duration) {
-        Log.i(TAG, String.format("Trying to record to file: %s", file_name));
-        recorder = new MediaRecorder();
+    public void microphoneRecord(String file_name, int duration) throws InterruptedException, IOException {
+        MediaRecorder recorder = new MediaRecorder();
         recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
         recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
         recorder.setOutputFile(file_name);
-        recorder.setMaxDuration(duration);
-        try {
-            recorder.prepare();
-        } catch (IOException e) {
-            Log.i(TAG, "prepare failed()");
-        }
+        recorder.prepare();
         recorder.start();
+        Thread.sleep(duration);
+        recorder.stop();
+        recorder.release();
     }
 
     public boolean isMediaPlaying() {
@@ -183,16 +189,5 @@ public class MediaService implements TextToSpeech.OnInitListener, MediaRecorder.
         if (status == TextToSpeech.SUCCESS) {
             tts_initialized = true;
         }
-    }
-
-    /*
-     * ###################################################
-     * Media Recorder Info Callback
-     * e.g. gets called when maximum record time is reached
-     * ###################################################
-     */
-    @Override
-    public void onInfo(MediaRecorder mr, int what, int extra) {
-        Log.i(TAG, String.format("Info: %d", what));
     }
 }
