@@ -86,6 +86,8 @@ PyObject* jh_callVoidMethod(JNIEnv* jni_env, jobject object, jmethodID method, v
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_callVoidMethod: exception occurred");
     }
+
+    Py_RETURN_NONE;
 }
 
 PyObject* jh_callBooleanMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args) {
@@ -109,6 +111,7 @@ PyObject* jh_callIntMethod(JNIEnv* jni_env, jobject object, jmethodID method, va
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_callIntMethod: exception occurred");
+        Py_RETURN_NONE;
     }
     return Py_BuildValue("i", retval);
 }
@@ -183,14 +186,14 @@ PyObject* jh_call(jclass class, jmethodID get_instance,
     // Get the instance
     jobject instance = jh_getInstance(class, get_instance);
     // Call the JNI function in
-    PyObject* info;
+    PyObject* result;
     va_list args;
     va_start(args, cached_method);
-    info = (*jh_call)(jni_env, instance, cached_method, args);
+    result = (*jh_call)(jni_env, instance, cached_method, args);
     va_end(args);
     (*jni_env)->DeleteLocalRef(jni_env, instance);
 
-    return info;
+    return result;
 }
 
 
