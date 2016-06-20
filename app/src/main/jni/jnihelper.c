@@ -80,23 +80,17 @@ jstring jh_getJavaString(char *string) {
  */
 
 
-PyObject* jh_callVoidMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...) {
-    va_list args;
-    va_start(args, method);
+PyObject* jh_callVoidMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args) {
     (*jni_env)->CallVoidMethodV(jni_env, object, method, args);
-    va_end(args);
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_callVoidMethod: exception occurred");
     }
 }
 
-PyObject* jh_callBooleanMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...) {
+PyObject* jh_callBooleanMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args) {
 
-    va_list args;
-    va_start(args, method);
     jboolean success = (*jni_env)->CallBooleanMethodV(jni_env, object, method, args);
-    va_end(args);
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_callBooleanMethod: exception occurred");
@@ -109,28 +103,19 @@ PyObject* jh_callBooleanMethod(JNIEnv* jni_env, jobject object, jmethodID method
         Py_RETURN_FALSE;
     }
 }
-PyObject* jh_callIntMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...) {
-    LOGI("########7");
-//    va_list args;
-//    va_start(args, method);
-//    int retval = (*jni_env)->CallIntMethodV(jni_env, object, method, args);
-//    va_end(args);
-//    LOGI("########8");
 
+PyObject* jh_callIntMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args) {
+    int retval = (*jni_env)->CallIntMethodV(jni_env, object, method, args);
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_callIntMethod: exception occurred");
     }
     return Py_BuildValue("i", retval);
-
 }
-PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...) {
+PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args) {
 
     jstring java_string;
-    va_list args;
-    va_start(args, method);
     java_string = (*jni_env)->CallObjectMethodV(jni_env, object, method, args);
-    va_end(args);
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_callStringMethod: exception occurred");
@@ -153,13 +138,10 @@ PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object, jmethodID method,
     return py_string;
 }
 
-PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object, jmethodID method, ...) {
+PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args) {
 
     jstring java_string;
-    va_list args;
-    va_start(args, method);
     java_string = (*jni_env)->CallObjectMethodV(jni_env, object, method, args);
-    va_end(args);
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
         LOGI("jh_callJSONMethod: exception occurred");
@@ -191,7 +173,9 @@ PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object, jmethodID met
 
 
 PyObject* jh_call(jclass class, jmethodID get_instance,
-                  PyObject* (*jh_call)(JNIEnv*, jobject, jmethodID, ...), jmethodID cached_method, ...) {
+                  PyObject* (*jh_call)(JNIEnv*, jobject, jmethodID, va_list),
+                  jmethodID cached_method, ...) {
+
 
     JNIEnv *jni_env;
     (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
@@ -208,3 +192,6 @@ PyObject* jh_call(jclass class, jmethodID get_instance,
 
     return info;
 }
+
+
+

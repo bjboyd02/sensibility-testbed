@@ -30,12 +30,9 @@ PyObject* media_tts_speak(PyObject *self, PyObject *args) {
         LOGI("Wrong arguments. I guess I should raise an Exception.");
         Py_RETURN_NONE;
     }
-    LOGI("#######################1");
-    jstring java_file_name = jh_getJavaString(text);
-    LOGI("#######################2");
+    java_text = jh_getJavaString(text);
     PyObject* success = jh_call(m_cached.class, m_cached.get_instance, jh_callIntMethod,
                                 m_cached.tts_speak, java_text);
-    LOGI("#######################3");
 
 
     // XXX: do we have to delete the string reference?
