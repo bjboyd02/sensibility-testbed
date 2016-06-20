@@ -4,6 +4,7 @@ import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
@@ -34,12 +35,14 @@ import java.util.UUID;
  *
  *   Skips media info function for the moment (do we really need this?)
  */
-public class MediaService implements TextToSpeech.OnInitListener {
+public class MediaService  {
     static final String TAG = "MediaService";
 
-    AudioManager audio_manager;
+    private Context app_context;
+    private AudioManager audio_manager;
     private TextToSpeech tts;
     private boolean tts_initialized = false;
+    private Object tts_sync;
     private int queue_mode = TextToSpeech.QUEUE_FLUSH;
 
     /* See Initialization on Demand Holder pattern */
@@ -52,15 +55,31 @@ public class MediaService implements TextToSpeech.OnInitListener {
         return MediaServiceHolder.instance;
     }
 
-    public void start_media() {
-        Context app_context = SensibilityApplication.getAppContext();
-        tts = new TextToSpeech(app_context, this);
+    public MediaService() {
+        app_context = SensibilityApplication.getAppContext();
         audio_manager = (AudioManager)app_context.getSystemService(Context.AUDIO_SERVICE);
-
+        tts_sync = new Object();
     }
+
+    public void start_media() {
+        tts = new TextToSpeech(app_context,new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status == TextToSpeech.SUCCESS) {
+                    synchronized (tts_sync) {
+                        tts_initialized = true;
+                        tts_sync.notify();
+                    }
+                }
+            }
+        });
+    }
+
     public void stop_media() {
         tts_initialized = false;
-        tts.shutdown();
+        if(tts != null) {
+            tts.shutdown();
+        }
     }
 
     /*
@@ -84,7 +103,7 @@ public class MediaService implements TextToSpeech.OnInitListener {
      *          recorder.setMaxDuration(int max_duration_ms) or a custom timer
      *      together with info or error listener:
      *          recorder.setOnInfoListener(OnInfoListener) or
-     *          recorder.setOnerrorListener(OnErrorListener)
+     *          recorder.setOnErrorListener(OnErrorListener)
      *
      * There are a lot of things that can be parametrized
      *     e.g. Format, Encoder, ...
@@ -106,10 +125,9 @@ public class MediaService implements TextToSpeech.OnInitListener {
         return audio_manager.isMusicActive();
     }
 
-
     /*
      * Checks if TTS is speaking
-     * Apparently also returns TRUE if something
+     * Also returns TRUE if something
      * is in the queue but utterance has not
      * started yet.
      */
@@ -120,74 +138,39 @@ public class MediaService implements TextToSpeech.OnInitListener {
         }
         return false;
     }
-    /*
-     * Adds method to TTS queue for playback.
-     *
-     * Todo:
-     *      Should we return right away when the message was added to the queue
-     *      or should we wait until the message was spoken?
 
+    /*
+     * Text-To-Speech
+     * Non-blocking operation
+     *
+     * Reasoning:
+     *     Initializing tts engine only once eliminates long initialization
+     *     time (~8 seconds on developer device) for subsequent calls to ttsSpeak
+     * Caveats:
+     *     Have to call start_media before using ttsSpeak and stop_media to release resources
+     *     Concurrent calls to ttsSpeak will cancel each other
+     *
      * Further possible parameters
-     * Queue Mode:
-     *   QUEUE_ADD - add to tts queue and play when ready
-     *   QUEUE_FLUSH - flush queue and play immedeatly
-     * KEY_PARAM_STREAM
-     * KEY_PARAM_VOLUME
-     * KEY_PARAM_PAN
-     * Engine specific parameters
+     *   Queue Modes:
+     *      QUEUE_ADD - add to tts queue and play when ready
+     *      QUEUE_FLUSH - flush queue and play immediately
+     *   KEY_PARAM_STREAM
+     *   KEY_PARAM_VOLUME
+     *   KEY_PARAM_PAN
+     *   Engine specific parameters
      */
     public int ttsSpeak(String message) throws InterruptedException {
 
-        Log.i(TAG, String.format("In java we received: '%s'", message));
         if (tts != null) {
-            while (true) {
-                if (tts_initialized)
-                    break;
-                Log.i(TAG, "Waiting for TTS to init");
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            synchronized (tts_sync) {
+                if (!tts_initialized) {
+                    tts_sync.wait();
                 }
+                UUID utterance_id = UUID.randomUUID();
+                return  tts.speak(message, queue_mode, null, utterance_id.toString());
             }
-            UUID utterance_id = UUID.randomUUID();
-
-            // XXX: UtteranceProgressListern is not really needed
-            // This is just handy for debugging
-            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-                @Override
-                public void onStart(String utteranceId) {
-                    Log.i(TAG, "Start uttering");
-                }
-
-                @Override
-                public void onDone(String utteranceId) {
-                    Log.i(TAG, "Done uttering");
-                }
-
-                @Override
-                public void onError(String utteranceId) {
-                    Log.i(TAG, "Error while uttering");
-                }
-            });
-
-            int retval = tts.speak(message, queue_mode, null, utterance_id.toString());
-            Log.i(TAG, String.format("speak returned: %d", retval));
-            return retval;
         }
+        // Something went wrong
         return -1;
-    }
-
-    /*
-     * ###################################################
-     * Text To Speech Initialization callback
-     * ###################################################
-     */
-    @Override
-    public void onInit(int status) {
-        Log.i(TAG, String.format("On TTS init: %d ", status));
-        if (status == TextToSpeech.SUCCESS) {
-            tts_initialized = true;
-        }
     }
 }

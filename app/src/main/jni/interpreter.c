@@ -112,7 +112,7 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
   LOGI("Start Media-ing IN C!!!!");
   initmedia();
   media_start_media();
-  char *filename = "test_media.py";
+  char *filename = "test_tts.py";
   char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
   strcpy(full_filename, files);
   strcat(full_filename, filename);
