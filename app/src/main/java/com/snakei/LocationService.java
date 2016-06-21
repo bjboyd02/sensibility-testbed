@@ -4,6 +4,7 @@ import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
@@ -18,6 +19,10 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import com.sensibility_testbed.SensibilityApplication;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -78,13 +83,10 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
     // needs Google Play Service
     private Geocoder geocoder;
 
-    private Location location_gps;
-    private Location location_network;
-    private Location location_fused;
-
-    private double[] location_values_gps;
-    private double[] location_values_network;
-    private double[] location_values_fused;
+    // Serialized location JSON object for each provider
+    private String location_gps_jsons;
+    private String location_network_jsons;
+    private String location_fused_jsons;
 
     /* See Initialization on Demand Holder pattern */
     private static class LocationServiceHolder {
@@ -120,7 +122,7 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
         // and network.
         // Sensibility API currently returns values from all three providers
         Log.i(TAG, "Register GPS Location Update Listener...");
-        location_manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this, Looper.getMainLooper());
+
         Log.i(TAG, "Register Network Location Update Listener...");
         location_manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this, Looper.getMainLooper());
 
@@ -159,37 +161,36 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
         }
     }
 
-    public double[] getLocationValuesGPS() {
+    public String getLocationValuesGPS() {
         Log.i(TAG, "Polling gps locations");
-        return location_values_gps;
+        return location_gps_jsons;
     }
-    public double[] getLocationValuesNetwork() {
+    public String getLocationValuesNetwork() {
         Log.i(TAG, "Polling network locations");
-        return location_values_network;
+        return location_network_jsons;
     }
-    public double[] getLocationValuesFused() {
+    public String getLocationValuesFused() {
         Log.i(TAG, "Polling google locations");
-        return location_values_fused;
+        return location_fused_jsons;
     }
 
-    public double[] getLastKnownLocationValuesGPS() {
+    public String getLastKnownLocationValuesGPS() throws JSONException {
         Log.i(TAG, "Polling gps last known locations");
         Location location = location_manager.getLastKnownLocation("gps");
-        return _convert_location(location);
+        return jsonifys_location(location);
     }
-    public double[] getLastKnownLocationValuesNetwork() {
+    public String getLastKnownLocationValuesNetwork() throws JSONException {
         Log.i(TAG, "Polling network last known locations");
         Location location = location_manager.getLastKnownLocation("network");
-        return _convert_location(location);
+        return jsonifys_location(location);
     }
-    public double[] getLastKnownLocationValuesFused() {
+    public String getLastKnownLocationValuesFused() throws JSONException {
         Log.i(TAG, "Polling fused last known locations");
         if (google_api_client.isConnected()) {
             Location location = LocationServices.FusedLocationApi.getLastLocation(google_api_client);
-            return _convert_location(location);
-        } else {
-            return null;
+            return jsonifys_location(location);
         }
+        return null;
     }
 
     /*
@@ -197,85 +198,120 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
      * Todo:
      *   Better failure handling
      */
-    public Address[] getGeoLocation(double latitude, double longitude, int max_results) {
-        Log.i(TAG, String.format("Get address(es) for location -- lat: %f, lon: %f, max: %d", latitude, longitude, max_results));
+    public String getGeoLocation(double latitude, double longitude, int max_results) throws
+            IOException, IllegalArgumentException, JSONException {
+        Log.i(TAG, String.format("Get address(es) for location -- lat: %f, lon: %f, max: %d",
+                latitude, longitude, max_results));
+
         List<Address> addresses = null;
-        Address[] addresses_array = null;
         if (google_api_client.isConnected() &&
-                location_fused != null && geocoder.isPresent()) {
-            try {
-                addresses = geocoder.getFromLocation(
-                        latitude,
-                        longitude,
-                        max_results);
-            } catch (IOException ioException) {
-                Log.i(TAG, ioException.getMessage());
-            } catch (IllegalArgumentException illegalArgumentException) {
-                Log.i(TAG, illegalArgumentException.getMessage());
-            }
+                geocoder.isPresent()) {
+            addresses = geocoder.getFromLocation(
+                    latitude,
+                    longitude,
+                    max_results);
         } else {
             Log.i(TAG, "Did not perform reverse geocoding");
         }
-        if (addresses != null) {
-            addresses_array = new Address[addresses.size()];
-            addresses.toArray(addresses_array);
-            for (Address address: addresses  ) {
-//                Log.i(TAG, address.getAdminArea());
-//                Log.i(TAG, address.getCountryCode());
-//                Log.i(TAG, address.getCountryName());
-//                Log.i(TAG, address.getFeatureName());
-//                Log.i(TAG, address.getLocality());
-//                Log.i(TAG, address.getPhone());
-//                Log.i(TAG, address.getPostalCode());
-//                Log.i(TAG, address.getPremises());
-//                Log.i(TAG, address.getSubAdminArea());
-//                Log.i(TAG, address.getSubLocality());
-//                Log.i(TAG, address.getSubThoroughfare());
-//                Log.i(TAG, address.getThoroughfare());
-//                Log.i(TAG, address.getUrl());
 
-//                for (int i = 0; i < address.getMaxAddressLineIndex(); i++){
-//                    Log.i(TAG, address.getAddressLine(i));
-//                }
+        if (addresses != null) {
+            JSONArray addresses_json = new JSONArray();
+            for (Address address: addresses  ) {
+                JSONObject address_json = new JSONObject();
+                address_json.put("admin_area", address.getAdminArea());
+                address_json.put("country_code", address.getCountryCode());
+                address_json.put("country_name", address.getCountryName());
+                address_json.put("feature_name", address.getFeatureName());
+                address_json.put("locality", address.getLocality());
+                address_json.put("phone", address.getPhone());
+                address_json.put("postal_code", address.getPostalCode());
+                address_json.put("premises", address.getPremises());
+                address_json.put("sub_admin_area", address.getSubAdminArea());
+                address_json.put("sub_locality", address.getSubLocality());
+                address_json.put("sub_thoroughfare", address.getSubThoroughfare());
+                address_json.put("thoroughfare", address.getThoroughfare());
+                address_json.put("url", address.getUrl());
+                int address_line_cnt = address.getMaxAddressLineIndex();
+                if (address_line_cnt > 0) {
+                    JSONArray address_lines_json = new JSONArray();
+                    for (int i = 0; i < address.getMaxAddressLineIndex(); i++){
+                        address_lines_json.put(address.getAddressLine(i));
+                    }
+                    address_json.put("lines", address_lines_json);
+                }
+                addresses_json.put(address_json);
             }
-        } else {
-            Log.i(TAG, "Did not get any addresses");
+            return addresses_json.toString();
         }
-        return addresses_array;
+
+        Log.i(TAG, "Did not get any addresses");
+        return null;
     }
 
-    /*
-     * Helper method that converts a Locatoin object to a double array
-     *
-     * XXX
-     * I don't like all the (double) casting, but maybe it does not matter
-     * - In case of floats it needs additional memory
-     * - In case of longs it loses precision
-     *
-     * Would storing all the actual values to some object and
-     * calling them from C in a complicated way
-     * (for each value at least three method calls) be doing
-     * it the right way?
-     */
-    private double[] _convert_location(Location location) {
-        if (location == null)
-            return null;
+//    /*
+//     * Helper method that converts a Locatoin object to a double array
+//     *
+//     * XXX
+//     * I don't like all the (double) casting, but maybe it does not matter
+//     * - In case of floats it needs additional memory
+//     * - In case of longs it loses precision
+//     *
+//     * Would storing all the actual values to some object and
+//     * calling them from C in a complicated way
+//     * (for each value at least three method calls) be doing
+//     * it the right way?
+//     */
+//    private double[] _convert_location(Location location) {
+//        if (location == null)
+//            return null;
+//
+//        double[] result = new double[8];
+//        result[0] = (double) System.currentTimeMillis();
+//        result[1] = (double) location.getTime(); // long
+//        result[2] = (double) location.getAccuracy(); // float
+//        result[3] = location.getAltitude();
+//        result[4] = (double) location.getBearing(); //float
+//        // XXX Do we want this?
+//        // location.getElapsedRealtimeNanos();
+//        result[5] = location.getLatitude();
+//        result[6] = location.getLongitude();
+//        result[7] = (double) location.getSpeed(); // float
+//
+//        // XXX Could contain # of gps satellite. Interested?
+//        // location.getExtras()
+//        return result;
+//    }
 
-        double[] result = new double[8];
-        result[0] = (double) System.currentTimeMillis();
-        result[1] = (double) location.getTime(); // long
-        result[2] = (double) location.getAccuracy(); // float
-        result[3] = location.getAltitude();
-        result[4] = (double) location.getBearing(); //float
-        // XXX Do we want this?
-        // location.getElapsedRealtimeNanos();
-        result[5] = location.getLatitude();
-        result[6] = location.getLongitude();
-        result[7] = (double) location.getSpeed(); // float
 
-        // XXX Could contain # of gps satellite. Interested?
-        // location.getExtras()
-        return result;
+    private JSONObject jsonify_location(Location location) throws JSONException {
+        JSONObject location_json = new JSONObject();
+
+        location_json.put("time_polled", System.currentTimeMillis());
+        location_json.put("time_sample", location.getTime());
+        location_json.put("accuracy", location.getAccuracy());
+        location_json.put("altitude", location.getAltitude());
+        location_json.put("bearing", location.getBearing());
+        location_json.put("latitude", location.getLatitude());
+        location_json.put("longitude", location.getLongitude());
+        location_json.put("speed", location.getSpeed());
+        Bundle extras = location.getExtras();
+
+        // Provider specific extra information
+        if (extras != null) {
+            JSONObject extras_json = new JSONObject();
+            for (String key : extras.keySet()) {
+                // Use wrap to also stringify in case the value is an unexpected Object
+                extras_json.put(key, JSONObject.wrap(extras.get(key)));
+            }
+            if (extras_json.length() > 0) {
+                location_json.put("extras", extras_json);
+            }
+        }
+        return location_json;
+    }
+
+    private String jsonifys_location(Location location) throws JSONException {
+        return jsonify_location(location).toString();
     }
 
     /*
@@ -311,19 +347,22 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
      */
     @Override
     public void onLocationChanged(Location location) {
+        String location_jsons = null;
+        try {
+            location_jsons = jsonify_location(location);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
         if (location.getProvider().equals(LocationManager.GPS_PROVIDER)) {
             Log.i(TAG, "Received location GPS");
-            location_values_gps = _convert_location(location);
-            location_gps = location;
+            location_gps_jsons = location_jsons;
         } else if (location.getProvider().equals(LocationManager.NETWORK_PROVIDER)) {
             Log.i(TAG, "Received location Network");
-            location_values_network = _convert_location(location);
-            location_network = location;
+            location_network_jsons = location_jsons;
         } else if (location.getProvider().equals("fused")) {
             Log.i(TAG, "Received location Fused");
-            location_values_fused = _convert_location(location);
-            location_fused = location;
+            location_fused_jsons = location_jsons;
         } else {
             Log.i(TAG, String.format("Received location from unknown Provider: %s", location.getProvider()));
         }
