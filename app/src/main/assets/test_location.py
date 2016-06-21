@@ -2,20 +2,24 @@ import androidlog, location, sys, time
 l = androidlog.log2
 l('Lets do the location')
 while True:
+    time.sleep(2)
     loc = location.get_location()
-    # l("Location: " + str(loc))
-    # lkloc = location.get_lastknown_location()
-    # l("Last Known Location: " + str(lkloc))
-    # time.sleep(0.5)
+    l("Location: " + str(loc))
+    time.sleep(2)
+    lkloc = location.get_lastknown_location()
+    l("Last Known Location: " + str(lkloc))
+    time.sleep(2)
+    if not loc:
+        continue
 
     fused = loc.get("fused")
-    if (fused):
-        lon = fused.get("longitude")
-        lat = fused.get("latitude")
-        l("Get address for - lon: " + str(lon) + ", lat: " + str(lat))
-        address = location.get_geolocation(lat, lon, 2)
-        l(repr(address))
+    if not fused:
+        continue
 
-    time.sleep(2)
+    lon = fused.get("longitude")
+    lat = fused.get("latitude")
+    l("Get address for - lon: " + str(lon) + ", lat: " + str(lat))
+    address = location.get_geolocation(lat, lon, 2)
+    l(repr(address))
 
 l('KTHXBI')

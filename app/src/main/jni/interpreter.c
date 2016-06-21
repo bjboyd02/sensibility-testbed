@@ -34,16 +34,6 @@ static PyMethodDef AndroidlogMethods[] = {
 //  {NULL, NULL, 0, NULL} // This is the end-of-array marker
 //};
 
-//static PyMethodDef AndroidlocationMethods[] = {
-//        {"get_location", (PyCFunction) location_get_location, METH_NOARGS,
-//                        "Get locations from GPS, Network and Fused"},
-//        {"get_lastknown_location", (PyCFunction) location_get_lastknown_location, METH_NOARGS,
-//                "Get last known locations from GPS, Network and Fused"},
-//        {"get_geolocation", (PyCFunction) location_get_geolocation, METH_VARARGS,
-//                "Get address(es) from latitude and longitude"},
-//        {NULL, NULL, 0, NULL} // This is the end-of-array marker
-//};
-
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_files, jstring python_arguments) {
   char* home = (char*) (*env)->GetStringUTFChars(env, python_home, NULL);
   char* path = (char*) (*env)->GetStringUTFChars(env, python_path, NULL);
@@ -98,28 +88,29 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 //  sensor_stop_sensing(14);
 //  sensor_stop_sensing(9);
 
-//  LOGI("Start Locating IN C!!!!");
-//  location_start_location();
-//  char *filename = "test_location_file.py";
-//  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-//  strcpy(full_filename, files);
-//  strcat(full_filename, filename);
-//  LOGI("PyRun File: %s", full_filename);
-//  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
-//  LOGI("Stop Locating IN C!!!!");
-//  location_stop_location();
-
-  LOGI("Start Media-ing IN C!!!!");
-  initmedia();
-  media_start_media();
-  char *filename = "test_tts.py";
+  LOGI("Start Locating IN C!!!!");
+  initlocation();
+  location_start_location();
+  char *filename = "test_location.py";
   char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
   strcpy(full_filename, files);
   strcat(full_filename, filename);
   LOGI("PyRun File: %s", full_filename);
   LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
-  LOGI("Stop Media-ing IN C!!!!");
-  media_stop_media();
+  LOGI("Stop Locating IN C!!!!");
+  location_stop_location();
+
+//  LOGI("Start Media-ing IN C!!!!");
+//  initmedia();
+//  media_start_media();
+//  char *filename = "test_media.py";
+//  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+//  strcpy(full_filename, files);
+//  strcat(full_filename, filename);
+//  LOGI("PyRun File: %s", full_filename);
+//  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename), filename);
+//  LOGI("Stop Media-ing IN C!!!!");
+//  media_stop_media();
 
 //  LOGI("Init and start MiscInfo-ing IN C!!!!");
 //  initmiscinfo();

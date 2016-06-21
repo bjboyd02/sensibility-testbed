@@ -68,10 +68,10 @@ import java.util.Locale;
  *
  */
 
+
 public class LocationService implements ConnectionCallbacks, OnConnectionFailedListener,
         android.location.LocationListener, com.google.android.gms.location.LocationListener {
     static final String TAG = "LocationService";
-
     // Used to start/stop listener on network and gps location provider
     private LocationManager location_manager;
 
@@ -83,10 +83,10 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
     // needs Google Play Service
     private Geocoder geocoder;
 
-    // Serialized location JSON object for each provider
-    private String location_gps_jsons;
-    private String location_network_jsons;
-    private String location_fused_jsons;
+    // Location JSON object for each provider
+    private JSONObject location_gps_json;
+    private JSONObject location_network_json;
+    private JSONObject location_fused_json;
 
     /* See Initialization on Demand Holder pattern */
     private static class LocationServiceHolder {
@@ -114,6 +114,7 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
      *
      * Todo: return meaningful code
      */
+
     public void start_location() {
         // We could use one, both or PASSIVE_PROVIDER instead
         // There is no use in listening for PASSIVE_PROVIDER if one of the other two is registered
@@ -121,13 +122,13 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
         // If they can we can too, furthermore we need the same permissions for passive as for gps
         // and network.
         // Sensibility API currently returns values from all three providers
-        Log.i(TAG, "Register GPS Location Update Listener...");
+//        Log.i(TAG, "Register GPS Location Update Listener...");
 
-        Log.i(TAG, "Register Network Location Update Listener...");
+//        Log.i(TAG, "Register Network Location Update Listener...");
         location_manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this, Looper.getMainLooper());
 
         // Create Google Play Service client and connect
-        Log.i(TAG, "Connecting to Google Play Service");
+//        Log.i(TAG, "Connecting to Google Play Service");
         google_api_client = new GoogleApiClient.Builder(SensibilityApplication.getAppContext())
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -161,34 +162,50 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
         }
     }
 
-    public String getLocationValuesGPS() {
-        Log.i(TAG, "Polling gps locations");
-        return location_gps_jsons;
-    }
-    public String getLocationValuesNetwork() {
-        Log.i(TAG, "Polling network locations");
-        return location_network_jsons;
-    }
-    public String getLocationValuesFused() {
-        Log.i(TAG, "Polling google locations");
-        return location_fused_jsons;
+    public String getLocation() throws JSONException {
+        JSONObject locations_json = new JSONObject();
+        if (location_gps_json != null) {
+            locations_json.put("gps", location_gps_json);
+        }
+        if (location_network_json != null) {
+            locations_json.put("network", location_network_json);
+        }
+        if (location_fused_json != null) {
+            locations_json.put("fused", location_fused_json);
+        }
+
+        if (locations_json.length() > 0) {
+            return locations_json.toString();
+        }
+        return null;
     }
 
-    public String getLastKnownLocationValuesGPS() throws JSONException {
-        Log.i(TAG, "Polling gps last known locations");
-        Location location = location_manager.getLastKnownLocation("gps");
-        return jsonifys_location(location);
-    }
-    public String getLastKnownLocationValuesNetwork() throws JSONException {
-        Log.i(TAG, "Polling network last known locations");
-        Location location = location_manager.getLastKnownLocation("network");
-        return jsonifys_location(location);
-    }
-    public String getLastKnownLocationValuesFused() throws JSONException {
-        Log.i(TAG, "Polling fused last known locations");
+    public String getLastKnownLocation() throws JSONException {
+
+        JSONObject locations_json = new JSONObject();
+        Location location_gps = null;
+        Location location_network = null;
+        Location location_fused = null;
+
+        location_gps = location_manager.getLastKnownLocation("gps");
+        if (location_gps != null) {
+            locations_json.put("gps", jsonify_location(location_gps));
+        }
+
+        location_network = location_manager.getLastKnownLocation("network");
+        if (location_network != null) {
+            locations_json.put("network", jsonify_location(location_network));
+        }
+
         if (google_api_client.isConnected()) {
-            Location location = LocationServices.FusedLocationApi.getLastLocation(google_api_client);
-            return jsonifys_location(location);
+            location_fused = LocationServices.FusedLocationApi.getLastLocation(google_api_client);
+            if (location_fused != null) {
+                locations_json.put("fused", jsonify_location(location_fused));
+            }
+        }
+
+        if (locations_json.length() > 0) {
+            return locations_json.toString();
         }
         return null;
     }
@@ -200,8 +217,8 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
      */
     public String getGeoLocation(double latitude, double longitude, int max_results) throws
             IOException, IllegalArgumentException, JSONException {
-        Log.i(TAG, String.format("Get address(es) for location -- lat: %f, lon: %f, max: %d",
-                latitude, longitude, max_results));
+//        Log.i(TAG, String.format("Get address(es) for location -- lat: %f, lon: %f, max: %d",
+//                latitude, longitude, max_results));
 
         List<Address> addresses = null;
         if (google_api_client.isConnected() &&
@@ -210,9 +227,10 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
                     latitude,
                     longitude,
                     max_results);
-        } else {
-            Log.i(TAG, "Did not perform reverse geocoding");
         }
+//        else {
+//            Log.i(TAG, "Did not perform reverse geocoding");
+//        }
 
         if (addresses != null) {
             JSONArray addresses_json = new JSONArray();
@@ -244,44 +262,9 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
             return addresses_json.toString();
         }
 
-        Log.i(TAG, "Did not get any addresses");
+//        Log.i(TAG, "Did not get any addresses");
         return null;
     }
-
-//    /*
-//     * Helper method that converts a Locatoin object to a double array
-//     *
-//     * XXX
-//     * I don't like all the (double) casting, but maybe it does not matter
-//     * - In case of floats it needs additional memory
-//     * - In case of longs it loses precision
-//     *
-//     * Would storing all the actual values to some object and
-//     * calling them from C in a complicated way
-//     * (for each value at least three method calls) be doing
-//     * it the right way?
-//     */
-//    private double[] _convert_location(Location location) {
-//        if (location == null)
-//            return null;
-//
-//        double[] result = new double[8];
-//        result[0] = (double) System.currentTimeMillis();
-//        result[1] = (double) location.getTime(); // long
-//        result[2] = (double) location.getAccuracy(); // float
-//        result[3] = location.getAltitude();
-//        result[4] = (double) location.getBearing(); //float
-//        // XXX Do we want this?
-//        // location.getElapsedRealtimeNanos();
-//        result[5] = location.getLatitude();
-//        result[6] = location.getLongitude();
-//        result[7] = (double) location.getSpeed(); // float
-//
-//        // XXX Could contain # of gps satellite. Interested?
-//        // location.getExtras()
-//        return result;
-//    }
-
 
     private JSONObject jsonify_location(Location location) throws JSONException {
         JSONObject location_json = new JSONObject();
@@ -308,10 +291,6 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
             }
         }
         return location_json;
-    }
-
-    private String jsonifys_location(Location location) throws JSONException {
-        return jsonify_location(location).toString();
     }
 
     /*
@@ -347,22 +326,22 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
      */
     @Override
     public void onLocationChanged(Location location) {
-        String location_jsons = null;
+        JSONObject location_json = null;
         try {
-            location_jsons = jsonify_location(location);
+            location_json = jsonify_location(location);
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
         if (location.getProvider().equals(LocationManager.GPS_PROVIDER)) {
-            Log.i(TAG, "Received location GPS");
-            location_gps_jsons = location_jsons;
+//            Log.i(TAG, "Received location GPS");
+            location_gps_json = location_json;
         } else if (location.getProvider().equals(LocationManager.NETWORK_PROVIDER)) {
-            Log.i(TAG, "Received location Network");
-            location_network_jsons = location_jsons;
+//            Log.i(TAG, "Received location Network");
+            location_network_json = location_json;
         } else if (location.getProvider().equals("fused")) {
-            Log.i(TAG, "Received location Fused");
-            location_fused_jsons = location_jsons;
+//            Log.i(TAG, "Received location Fused");
+            location_fused_json = location_json;
         } else {
             Log.i(TAG, String.format("Received location from unknown Provider: %s", location.getProvider()));
         }
@@ -390,7 +369,7 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
      */
     @Override
     public void onConnected(Bundle connectionHint) {
-        Log.i(TAG, "Connected to google");
+//        Log.i(TAG, "Connected to google");
         LocationServices.FusedLocationApi
                 .requestLocationUpdates(google_api_client, google_location_request, this, Looper.getMainLooper());
     }

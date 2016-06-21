@@ -11,6 +11,7 @@
 #include "snakei.h"
 #include "jnihelper.h"
 
+void initlocation();
 void location_start_location();
 void location_stop_location();
 PyObject* location_get_location();
