@@ -7,6 +7,7 @@
 
 #include <jni.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include "snakei.h"
 #include "cjson.h"
 
