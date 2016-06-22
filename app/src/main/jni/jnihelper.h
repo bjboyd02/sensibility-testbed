@@ -21,7 +21,6 @@ jstring jh_getJavaString(char *string);
 PyObject* jh_callVoidMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args);
 PyObject* jh_callBooleanMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args);
 PyObject* jh_callIntMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args);
-PyObject* jh_callIntMethod2(JNIEnv* jni_env, jobject object, jmethodID method, va_list args);
 PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args);
 PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args);
 PyObject* jh_call(jclass class, jmethodID get_instance,

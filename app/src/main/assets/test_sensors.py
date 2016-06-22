@@ -2,17 +2,30 @@ import androidlog, sensor, sys, time
 l = androidlog.log2
 l('Lets get some sensor info')
 
-for sensor_info in sensor.get_sensor_list():
-  l(repr(sensor_info))
+l("Sensor Info")
+l(repr(sensor.get_sensor_list()))
 
 l('Oh, wow, lovely sensors, why not poll them?')
-l('Lets start with some of the existing sensors...')
 
-for i in xrange(512):
-  l('Accelerometer: ' + repr(sensor.get_acceleration()))
-  #l('Magnetic field: ' + repr(sensor.get_magnetic_field()))
-  #l('Proximity: ' + repr(sensor.get_proximity()))
-  #l('Light: ' + repr(sensor.get_light()))
+for x in range(10):
+    l("Acceleration:            " + repr(sensor.get_acceleration()))
+    l("Temperature:             " + repr(sensor.get_ambient_temperature()))
+    l("Game Rotation:           " + repr(sensor.get_game_rotation_vector()))
+    l("Geomagnetic Rotation:    " + repr(sensor.get_geomagnetic_rotation_vector()))
+    l("Gravity:                 " + repr(sensor.get_gravity()))
+    l("Gyroscope:               " + repr(sensor.get_gyroscope()))
+    l("Gyro Uncalibrated:       " + repr(sensor.get_gyroscope_uncalibrated()))
+    l("Heart Rate:              " + repr(sensor.get_heart_rate()))
+    l("Get light:               " + repr(sensor.get_light()))
+    l("Linear Acceleration:     " + repr(sensor.get_linear_acceleration()))
+    l("Magnetic field:          " + repr(sensor.get_magnetic_field()))
+    l("Magnetic Uncalibrated:   " + repr(sensor.get_magnetic_field_uncalibrated()))
+    l("Pressure:                " + repr(sensor.get_pressure()))
+    l("Proximity:               " + repr(sensor.get_proximity()))
+    l("Humidity:                " + repr(sensor.get_relative_humidity()))
+    l("Rotation:                " + repr(sensor.get_rotation_vector()))
+    l("Step counter:            " + repr(sensor.get_step_counter()))
+    time.sleep(0.5)
 
 
 l('Bye, bye!')

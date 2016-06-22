@@ -9,6 +9,11 @@ import android.hardware.SensorManager;
 import android.nfc.Tag;
 import android.os.IBinder;
 import android.util.Log;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,7 +62,6 @@ public class SensorService implements SensorEventListener  {
     // If we change them here, we have to change them there as well
     // Look for functions that get passed integers and compare them
     // with below constants
-
     static final int CUSTOM_TYPE_ACCELEROMETER = 1;
     static final int CUSTOM_TYPE_AMBIENT_TEMPERATURE = 2;
     static final int CUSTOM_TYPE_GAME_ROTATION_VECTOR = 3;
@@ -106,23 +110,23 @@ public class SensorService implements SensorEventListener  {
     // a previously registered ``onSensorChange''
     // New arrays overwrite older
     // Data is eventually returned to C/Python when called
-    private double[] accelerometer_data;
-    private double[] ambient_temperature_data;
-    private double[] game_rotation_vector_data;
-    private double[] geomagnetic_rotation_vector_data;
-    private double[] gravity_data;
-    private double[] gyroscope_data;
-    private double[] gyroscope_uncalibrated_data;
-    private double[] heart_rate_data;
-    private double[] light_data;
-    private double[] linear_acceleration_data;
-    private double[] magnetic_field_data;
-    private double[] magnetic_field_uncalibrated_data;
-    private double[] pressure_data;
-    private double[] proximity_data;
-    private double[] relative_humidity_data;
-    private double[] rotation_vector_data;
-    private double[] step_counter_data;
+    private JSONArray accelerometer_json;
+    private JSONArray ambient_temperature_json;
+    private JSONArray game_rotation_vector_json;
+    private JSONArray geomagnetic_rotation_vector_json;
+    private JSONArray gravity_json;
+    private JSONArray gyroscope_json;
+    private JSONArray gyroscope_uncalibrated_json;
+    private JSONArray heart_rate_json;
+    private JSONArray light_json;
+    private JSONArray linear_acceleration_json;
+    private JSONArray magnetic_field_json;
+    private JSONArray magnetic_field_uncalibrated_json;
+    private JSONArray pressure_json;
+    private JSONArray proximity_json;
+    private JSONArray relative_humidity_json;
+    private JSONArray rotation_vector_json;
+    private JSONArray step_counter_json;
 
     /* See Initialization on Demand Holder pattern */
     private static class SensorServiceHolder {
@@ -168,76 +172,147 @@ public class SensorService implements SensorEventListener  {
     /*
      * Fetches the list of Sensors supported on the device
      */
-    public Sensor[] get_sensor_list() {
-        List<Sensor> sensorList = sensor_manager.getSensorList(Sensor.TYPE_ALL);
-        //Transform list to built-in array, because C knows Java arrays
-        Sensor[] sensorArray = new Sensor[sensorList.size()];
-        sensorList.toArray(sensorArray);
-        return sensorArray;
+    public String getSensorList() throws JSONException {
+        List<Sensor> sensors = sensor_manager.getSensorList(Sensor.TYPE_ALL);
+        if (sensors.size() > 0) {
+            JSONArray sensors_json = new JSONArray();
+            for (Sensor sensor : sensors) {
+                JSONObject sensor_json = new JSONObject();
+                sensor_json.put("fifo_max_event_count", sensor.getFifoMaxEventCount());
+                sensor_json.put("fifo_reserved_event_count", sensor.getFifoReservedEventCount());
+                sensor_json.put("max_delay", sensor.getMaxDelay());
+                sensor_json.put("max_range", sensor.getMaximumRange());
+                sensor_json.put("min_delay", sensor.getMinDelay());
+                sensor_json.put("name", sensor.getName());
+                sensor_json.put("power", sensor.getPower());
+                sensor_json.put("reporting_mode", sensor.getReportingMode());
+                sensor_json.put("resolution", sensor.getResolution());
+                sensor_json.put("string_type", sensor.getStringType());
+                sensor_json.put("type", sensor.getType());
+                sensor_json.put("vendor", sensor.getVendor());
+                sensor_json.put("version", sensor.getVersion());
+                sensor_json.put("is_wakeup_sensor", sensor.isWakeUpSensor());
+
+                sensors_json.put(sensor_json);
+            }
+            return sensors_json.toString();
+        }
+        return null;
     }
 
     /*
      * Subsequent calls require preceding call to ``start_sensing''
      */
-    public double[] getAcceleration() {
-        return accelerometer_data;
+    public String getAcceleration() {
+        if (accelerometer_json != null) {
+            return accelerometer_json.toString();
+        }
+        return null;
     }
-    public double[] getAmbientTemperature() {
-        return ambient_temperature_data;
+    public String getAmbientTemperature() {
+        if (ambient_temperature_json != null) {
+            return ambient_temperature_json.toString();
+        }
+        return null;
     }
-    public double[] getGameRotationVector() {
-        return game_rotation_vector_data;
+    public String getGameRotationVector() {
+        if (game_rotation_vector_json != null) {
+            return game_rotation_vector_json.toString();
+        }
+        return null;
     }
-    public double[] getGeomagneticRotationVector() {
-        return geomagnetic_rotation_vector_data;
+    public String getGeomagneticRotationVector() {
+        if (geomagnetic_rotation_vector_json != null) {
+            return geomagnetic_rotation_vector_json.toString();
+        }
+        return null;
     }
-    public double[] getGravity() {
-        return gravity_data;
+    public String getGravity() {
+        if (gravity_json != null) {
+            return gravity_json.toString();
+        }
+        return null;
     }
-    public double[] getGyroscope() {
-        return gyroscope_data;
+    public String getGyroscope() {
+        if (gyroscope_json != null) {
+            return gyroscope_json.toString();
+        }
+        return null;
     }
-    public double[] getGyroscopeUncalibrated() {
-        return gyroscope_uncalibrated_data;
+    public String getGyroscopeUncalibrated() {
+        if (gyroscope_uncalibrated_json != null) {
+            return gyroscope_uncalibrated_json.toString();
+        }
+        return null;
     }
-    public double[] getHeartRate() {
-        return heart_rate_data;
+    public String getHeartRate() {
+        if (heart_rate_json != null) {
+            return heart_rate_json.toString();
+        }
+        return null;
     }
-    public double[] getLight() {
-        return light_data;
+    public String getLight() {
+        if (light_json != null) {
+            return light_json.toString();
+        }
+        return null;
     }
-    public double[] getLinearAcceleration() {
-        return linear_acceleration_data;
+    public String getLinearAcceleration() {
+        if (linear_acceleration_json != null) {
+            return linear_acceleration_json.toString();
+        }
+        return null;
     }
-    public double[] getMagneticField() {
-        return magnetic_field_data;
+    public String getMagneticField() {
+        if (magnetic_field_json != null) {
+            return magnetic_field_json.toString();
+        }
+        return null;
     }
-    public double[] getMagneticFieldUncalibrated() {
-        return magnetic_field_uncalibrated_data;
+    public String getMagneticFieldUncalibrated() {
+        if (magnetic_field_uncalibrated_json != null) {
+            return magnetic_field_uncalibrated_json.toString();
+        }
+        return null;
     }
-    public double[] getPressure() {
-        return pressure_data;
+    public String getPressure() {
+        if (pressure_json != null) {
+            return pressure_json.toString();
+        }
+        return null;
     }
-    public double[] getProximity() {
-        return proximity_data;
+    public String getProximity() {
+        if (proximity_json != null) {
+            return proximity_json.toString();
+        }
+        return null;
     }
-    public double[] getRelativeHumidity() {
-        return relative_humidity_data;
+    public String getRelativeHumidity() {
+        if (relative_humidity_json != null) {
+            return relative_humidity_json.toString();
+        }
+        return null;
     }
-    public double[] getRotationVector() {
-        return rotation_vector_data;
+    public String getRotationVector() {
+        if (rotation_vector_json != null) {
+            return rotation_vector_json.toString();
+        }
+        return null;
     }
-    public double[] getStepCounter() {
-        return step_counter_data;
+    public String getStepCounter() {
+        if (step_counter_json != null) {
+            return step_counter_json.toString();
+        }
+        return null;
     }
 
     /*
      * Register EventListener for a sensor of a specific type
      */
-    public int start_sensing(int sensor_type) {
+    public void start_sensing(int sensor_type) {
 //        Log.i(TAG, "Starting sensor");
 
-        Sensor tmp_sensor;
+        Sensor tmp_sensor = null;
 
         if (sensor_type == CUSTOM_TYPE_ACCELEROMETER) {
             tmp_sensor = accelerometer;
@@ -274,22 +349,16 @@ public class SensorService implements SensorEventListener  {
         } else if (sensor_type == CUSTOM_TYPE_STEP_COUNTER) {
             tmp_sensor = step_counter;
         } else {
-            tmp_sensor = null;
+            Log.i(TAG, "Sensor does not exist or app has not the necessary permissions.");
         }
 
         // Existing sensor should available because they were created in this class' constructor
         // If a Sensor is not available this means it doesn't exist at all on the device or we
         // don't have the necessary permissions
-        if (tmp_sensor == null) {
-            Log.i(TAG, "Sensor does not exist or app has not the necessary permissions.");
-            // XXX What should we return if the sensor does not exist?
-            return 0;
-        }
         // Apparently android checks that listener are only registered once
-        if (sensor_manager.registerListener(this, tmp_sensor, SensorManager.SENSOR_DELAY_NORMAL))
-            return 1;
-        else
-            return 0;
+        if (tmp_sensor != null) {
+            sensor_manager.registerListener(this, tmp_sensor, SensorManager.SENSOR_DELAY_NORMAL);
+        }
     }
     /*
      * Unregister EventListener for a sensor of a specific type
@@ -297,10 +366,10 @@ public class SensorService implements SensorEventListener  {
      * Todo:
      *      Only unregister if nobody else is using it
      */
-    public int stop_sensing(int sensor_type) {
+    public void stop_sensing(int sensor_type) {
 //        Log.i(TAG, "Unregistering sensor");
 
-        Sensor tmp_sensor;
+        Sensor tmp_sensor = null;
         if (sensor_type == CUSTOM_TYPE_ACCELEROMETER) {
             tmp_sensor = accelerometer;
         } else if (sensor_type == CUSTOM_TYPE_AMBIENT_TEMPERATURE) {
@@ -336,17 +405,12 @@ public class SensorService implements SensorEventListener  {
         } else if (sensor_type == CUSTOM_TYPE_STEP_COUNTER) {
             tmp_sensor = step_counter;
         } else {
-            tmp_sensor = null;
-        }
-        if (tmp_sensor == null) {
+            // XXX: Maybe raise an exception here
             Log.i(TAG, "Can't unregister a Sensor that does not exist.");
-            // XXX: What should we return if the sensor does not exist?
-            return 0;
         }
-        sensor_manager.unregisterListener(this, tmp_sensor);
-        // XXX: don't just return 1, check if really unregistered
-        return 1;
-
+        if (tmp_sensor != null) {
+            sensor_manager.unregisterListener(this, tmp_sensor);
+        }
     }
 
     /*
@@ -367,59 +431,60 @@ public class SensorService implements SensorEventListener  {
     public void onSensorChanged(SensorEvent event) {
 
         // Having one data type makes it easier to give it back to C
-        // Double should be okay for time and sensor values
-        double[] result = new double[event.values.length + 2];
-        // Losing precision here
-        result[0] = (double) System.currentTimeMillis();
-        // Losing even more precision here
-        result[1] = (double) event.timestamp / 1000000;
+        JSONArray result = new JSONArray();
+
+        result.put(System.currentTimeMillis());
+        result.put(event.timestamp / 1000000);
 
         // Note: we always get float arrays but the length varies
         // from Sensor to Sensor
         for (int i = 0; i < event.values.length; i++){
-            result[i+2] = (double) event.values[i];
+            try {
+                result.put(event.values[i]);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
 
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            accelerometer_data = result;
+            accelerometer_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE){
-            ambient_temperature_data = result;
+            ambient_temperature_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_GAME_ROTATION_VECTOR){
-            game_rotation_vector_data = result;
+            game_rotation_vector_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR){
-            geomagnetic_rotation_vector_data = result;
+            geomagnetic_rotation_vector_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_GRAVITY){
-            gravity_data = result;
+            gravity_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
-            gyroscope_data = result;
+            gyroscope_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE_UNCALIBRATED){
-            gyroscope_uncalibrated_data = result;
+            gyroscope_uncalibrated_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_HEART_RATE){
-            heart_rate_data = result;
+            heart_rate_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_LIGHT){
-            light_data = result;
+            light_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){
-            linear_acceleration_data = result;
+            linear_acceleration_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD){
-            magnetic_field_data = result;
+            magnetic_field_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED){
-            magnetic_field_uncalibrated_data = result;
+            magnetic_field_uncalibrated_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_PRESSURE){
-            pressure_data = result;
+            pressure_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_PROXIMITY){
-            proximity_data = result;
+            proximity_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY){
-            relative_humidity_data = result;
+            relative_humidity_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR){
-            rotation_vector_data = result;
+            rotation_vector_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_STEP_COUNTER) {
-            step_counter_data = result;
+            step_counter_json = result;
         }
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
     }
 
 }

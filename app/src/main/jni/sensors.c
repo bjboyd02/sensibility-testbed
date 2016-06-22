@@ -1,84 +1,4 @@
 #include "sensors.h"
-
-/*
- *
- * Python extension to get a list of sensor info
- * for each available sensor.
- *
- * Returns
- *  [{"name" : <name>, "vendor":<vendor>, ...},..]
- *
- * TODO:
- *      call rest of Android Sensor info methods
- */
-
-PyObject* sensor_get_sensor_list(PyObject *self) {
-
-    JNIEnv* jni_env;
-    jclass sensor_service_class;
-    jmethodID sensor_service_getter;
-    jobject sensor_service_object;
-    jmethodID sensor_service_method;
-
-    // Use the cached JVM pointer to get a new environment
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
-
-    // Find SensorService class and get singleton instance
-    sensor_service_class = (*jni_env)->FindClass(jni_env, "com/snakei/SensorService");
-    sensor_service_getter = (*jni_env)->GetStaticMethodID(jni_env, sensor_service_class, "getInstance", "()Lcom/snakei/SensorService;");
-    sensor_service_object = (*jni_env)->CallStaticObjectMethod(jni_env, sensor_service_class, sensor_service_getter);
-
-    // Find SensorService method to get a list of Android Sensors
-    sensor_service_method = (*jni_env)->GetMethodID(jni_env, sensor_service_class, "get_sensor_list", "()[Landroid/hardware/Sensor;");
-    jobjectArray sensor_list = (*jni_env)->CallObjectMethod(jni_env, sensor_service_object, sensor_service_method);
-    int sensor_list_count = (*jni_env)->GetArrayLength(jni_env, sensor_list);
-//    LOGI("C says we have %i sensors", (*jni_env)->GetArrayLength(jni_env, sensor_list));
-
-    // For each sensor,
-    // call its info functions and save them to a python dict
-    PyObject *py_sensor_list = PyList_New(sensor_list_count);
-    PyObject *py_sensor_info;
-    jclass sensor_class = (*jni_env)->FindClass(jni_env, "android/hardware/Sensor");
-    int i;
-    for (i = 0; i < sensor_list_count; i++) {
-        py_sensor_info = PyDict_New();
-        jobject sensor = (*jni_env)->GetObjectArrayElement(jni_env, sensor_list, i);
-
-        // Find and call Sensor get name method
-        jmethodID sensor_method = (*jni_env)->GetMethodID(jni_env, sensor_class, "getName", "()Ljava/lang/String;");
-        jstring java_sensor_name = (*jni_env)->CallObjectMethod(jni_env, sensor, sensor_method);
-
-        // Convert java string to c char
-        const char *sensor_name = (*jni_env)->GetStringUTFChars(jni_env, java_sensor_name, 0);
-
-        // Create dict entry for the name
-        PyDict_SetItemString(py_sensor_info, "name", PyString_FromString(sensor_name));
-
-        // Release the chars!!!!
-        (*jni_env)->ReleaseStringUTFChars(jni_env, java_sensor_name, sensor_name);
-
-        (*jni_env)->DeleteLocalRef(jni_env, sensor);
-        (*jni_env)->DeleteLocalRef(jni_env, java_sensor_name);
-
-        // XXX Todo do the same for all the other sensor info
-        // ...
-
-        // Add info dict to python sensor list
-        PyList_SetItem(py_sensor_list, i, py_sensor_info);
-    }
-
-    // XXX: Only detach if AttachCurrentThread wasn't a no-op
-    //(*cached_vm)->DetachCurrentThread(cached_vm);
-
-    // Delete local references
-    (*jni_env)->DeleteLocalRef(jni_env, sensor_service_object);
-    (*jni_env)->DeleteLocalRef(jni_env, sensor_list);
-    (*jni_env)->DeleteLocalRef(jni_env, sensor_class);
-    (*jni_env)->DeleteLocalRef(jni_env, sensor_service_class);
-
-    return py_sensor_list;
-}
-
 /*
  * Python Extension(s) to get actual sensor values
  *  e.g. Accelerometer
@@ -111,145 +31,227 @@ PyObject* sensor_get_sensor_list(PyObject *self) {
  *
  */
 
-int _start_or_stop_sensing(const char *sensor_service_method_name, int sensor_type) {
-    JNIEnv* jni_env;
-    jclass sensor_service_class;
-    jmethodID sensor_service_getter;
-    jobject sensor_service_object;
-    jmethodID sensor_service_method;
-
-    // Use the cached JVM pointer to get a new environment
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
-    // Find SensorService class and get singleton instance
-    sensor_service_class = (*jni_env)->FindClass(jni_env, "com/snakei/SensorService");
-    sensor_service_getter = (*jni_env)->GetStaticMethodID(jni_env, sensor_service_class, "getInstance", "()Lcom/snakei/SensorService;");
-    sensor_service_object = (*jni_env)->CallStaticObjectMethod(jni_env, sensor_service_class, sensor_service_getter);
-
-    // XXX: We'll need to pass an argument, on which sensor we want to start or stop sensing
-    sensor_service_method = (*jni_env)->GetMethodID(jni_env, sensor_service_class, sensor_service_method_name, "(I)I");
-    int success = (int) (*jni_env)->CallBooleanMethod(jni_env, sensor_service_object, sensor_service_method, sensor_type);
-    // XXX: Only detach if AttachCurrentThread wasn't a no-op
-    //(*cached_vm)->DetachCurrentThread(cached_vm);
-
-    // Delete local references
-    (*jni_env)->DeleteLocalRef(jni_env, sensor_service_object);
-    (*jni_env)->DeleteLocalRef(jni_env, sensor_service_class);
-
-    return success;
-}
-
-PyObject* _get_sensor_values(const char *sensor_service_method_name) {
-//    LOGI("Get sensor values...");
-    JNIEnv* jni_env;
-    jclass sensor_service_class;
-    jmethodID sensor_service_getter;
-    jobject sensor_service_object;
-    jmethodID sensor_service_method;
-
-    // Use the cached JVM pointer to get a new environment
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
-
-    // Find SensorService class and get singleton instance
-    sensor_service_class = (*jni_env)->FindClass(jni_env, "com/snakei/SensorService");
-    sensor_service_getter = (*jni_env)->GetStaticMethodID(jni_env, sensor_service_class, "getInstance", "()Lcom/snakei/SensorService;");
-    sensor_service_object = (*jni_env)->CallStaticObjectMethod(jni_env, sensor_service_class, sensor_service_getter);
-
-    sensor_service_method = (*jni_env)->GetMethodID(jni_env, sensor_service_class, sensor_service_method_name, "()[D");
-    jdoubleArray sensor_values = (jdoubleArray) (*jni_env)->CallObjectMethod(jni_env, sensor_service_object, sensor_service_method);
-
-    if (sensor_values == NULL) {
-        (*jni_env)->DeleteLocalRef(jni_env, sensor_service_object);
-        (*jni_env)->DeleteLocalRef(jni_env, sensor_values);
-        (*jni_env)->DeleteLocalRef(jni_env, sensor_service_class);
-        LOGI("NULL");
-        Py_RETURN_NONE;
-    }
-
-    int sensor_values_cnt = (*jni_env)->GetArrayLength(jni_env, sensor_values);
-    jdouble *sensor_values_ptr = (*jni_env)->GetDoubleArrayElements(jni_env, sensor_values, 0);
-
-    PyObject *py_sensor_values = PyList_New(sensor_values_cnt);
-    int i = 0;
-    for (i = 0; i < sensor_values_cnt; i++) {
-        PyList_SetItem(py_sensor_values, i, Py_BuildValue("d", sensor_values_ptr[i]));
-    }
-
-    (*jni_env)->ReleaseDoubleArrayElements(jni_env, sensor_values, sensor_values_ptr, 0);
-
-    // XXX: Only detach if AttachCurrentThread wasn't a no-op
-    //(*cached_vm)->DetachCurrentThread(cached_vm);
-
-    // Delete local references
-    (*jni_env)->DeleteLocalRef(jni_env, sensor_service_object);
-    (*jni_env)->DeleteLocalRef(jni_env, sensor_values);
-    (*jni_env)->DeleteLocalRef(jni_env, sensor_service_class);
-
-    return py_sensor_values;
-}
-
-PyObject* sensor_get_acceleration(PyObject *self) {
-    return _get_sensor_values("getAcceleration");
-}
-PyObject* sensor_get_ambient_temperature(PyObject *self) {
-    return _get_sensor_values("getAmbientTemperature");
-}
-PyObject* sensor_get_game_rotation_vector(PyObject *self) {
-    return _get_sensor_values("getGameRotationVector");
-}
-PyObject* sensor_get_geomagnetic_rotation_vector(PyObject *self) {
-    return _get_sensor_values("getGeomagneticRotationVector");
-}
-PyObject* sensor_get_gravity(PyObject *self) {
-    return _get_sensor_values("getGravity");
-}
-PyObject* sensor_get_gyroscope(PyObject *self) {
-    return _get_sensor_values("getGyroscope");
-}
-PyObject* sensor_get_gyroscope_uncalibrated(PyObject *self) {
-    return _get_sensor_values("gyroscope_uncalibrated_event");
-}
-PyObject* sensor_get_heart_rate(PyObject *self) {
-    return _get_sensor_values("getHeartRate");
-}
-PyObject* sensor_get_light(PyObject *self) {
-    return _get_sensor_values("getLight");
-}
-PyObject* sensor_get_linear_acceleration(PyObject *self) {
-    return _get_sensor_values("getLinearAcceleration");
-}
-PyObject* sensor_get_magnetic_field(PyObject *self) {
-    return _get_sensor_values("getMagneticField");
-}
-PyObject* sensor_get_magnetic_field_uncalibrated(PyObject *self) {
-    return _get_sensor_values("getMagneticFieldUncalibrated");
-}
-PyObject* sensor_get_pressure(PyObject *self) {
-    return _get_sensor_values("getPressure");
-}
-PyObject* sensor_get_proximity(PyObject *self) {
-    return _get_sensor_values("getProximity");
-}
-PyObject* sensor_get_relative_humidity(PyObject *self) {
-    return _get_sensor_values("getRelativeHumidity");
-}
-PyObject* sensor_get_rotation_vector(PyObject *self) {
-    return _get_sensor_values("getRotationVector");
-}
-PyObject* sensor_get_step_counter(PyObject *self) {
-    return _get_sensor_values("getStepCounter");
-}
+static struct sensor_cache {
+    jclass class;
+    jmethodID get_instance;
+    jmethodID start_sensing;
+    jmethodID stop_sensing;
+    jmethodID get_sensor_list;
+    jmethodID get_acceleration;
+    jmethodID get_ambient_temperature;
+    jmethodID get_game_rotation_vector;
+    jmethodID get_geomagnetic_rotation_vector;
+    jmethodID get_gravity;
+    jmethodID get_gyroscope;
+    jmethodID get_gyroscope_uncalibrated;
+    jmethodID get_heart_rate;
+    jmethodID get_light;
+    jmethodID get_linear_acceleration;
+    jmethodID get_magnetic_field;
+    jmethodID get_magnetic_field_uncalibrated;
+    jmethodID get_pressure;
+    jmethodID get_proximity;
+    jmethodID get_relative_humidity;
+    jmethodID get_rotation_vector;
+    jmethodID get_step_counter;
+} m_cached;
 
 /*
  * Start a sensor by registering a SensorEventHandler in Java
  */
-int sensor_start_sensing(int sensor_type) {
+void sensor_start_sensing(int sensor_type) {
 //    LOGI("Let's fire the sensor up...");
-    return _start_or_stop_sensing("start_sensing", sensor_type);
+    jh_call(m_cached.class, m_cached.get_instance, jh_callVoidMethod,
+                   m_cached.start_sensing, (jint) sensor_type);
 }
 /*
- * Stop a sensor by unregistering a SensorEventHandler in Java
+ * Stop a sensor by un-registering a SensorEventHandler in Java
  */
-int sensor_stop_sensing(int sensor_type) {
+void sensor_stop_sensing(int sensor_type) {
 //    LOGI("Let's shut down the sensor...");
-    return _start_or_stop_sensing("stop_sensing", sensor_type);
+    jh_call(m_cached.class, m_cached.get_instance, jh_callVoidMethod,
+                   m_cached.stop_sensing, (jint) sensor_type);
+}
+
+/*
+ *
+ * Python extension to get a list of sensor info
+ * for each available sensor.
+ *
+ * Returns
+ *  [{"name" : <name>, "vendor":<vendor>, ...},..]
+ *
+ */
+
+PyObject* sensor_get_sensor_list(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+            m_cached.get_sensor_list);
+}
+
+PyObject* sensor_get_acceleration(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_acceleration);
+}
+
+PyObject* sensor_get_ambient_temperature(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_ambient_temperature);
+}
+
+PyObject* sensor_get_game_rotation_vector(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_game_rotation_vector);
+}
+
+PyObject* sensor_get_geomagnetic_rotation_vector(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_geomagnetic_rotation_vector);
+}
+
+PyObject* sensor_get_gravity(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_gravity);
+}
+
+PyObject* sensor_get_gyroscope(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_gyroscope);
+}
+
+PyObject* sensor_get_gyroscope_uncalibrated(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_gyroscope_uncalibrated);
+}
+
+PyObject* sensor_get_heart_rate(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_heart_rate);
+}
+
+PyObject* sensor_get_light(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_light);
+}
+PyObject* sensor_get_linear_acceleration(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_linear_acceleration);
+}
+
+PyObject* sensor_get_magnetic_field(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_magnetic_field);
+}
+
+PyObject* sensor_get_magnetic_field_uncalibrated(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_magnetic_field_uncalibrated);
+}
+
+PyObject* sensor_get_pressure(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_pressure);
+}
+
+PyObject* sensor_get_proximity(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_proximity);
+}
+
+PyObject* sensor_get_relative_humidity(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_relative_humidity);
+}
+
+PyObject* sensor_get_rotation_vector(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_rotation_vector);
+}
+
+PyObject* sensor_get_step_counter(PyObject *self) {
+    return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
+                   m_cached.get_step_counter);
+}
+
+
+// Only functions taking two PyObject* arguments are PyCFunction
+// where this is not the case we need to cast
+// Todo: write descriptions
+static PyMethodDef AndroidSensorMethods[] = {
+        {"get_sensor_list", (PyCFunction) sensor_get_sensor_list, METH_NOARGS,
+         "Get a list of sensor info dictionaries."},
+        {"get_acceleration", (PyCFunction) sensor_get_acceleration, METH_NOARGS,
+         "Get list of accelerator values. [sample ts, poll ts, x, y, z]"},
+        {"get_ambient_temperature", (PyCFunction) sensor_get_ambient_temperature, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_game_rotation_vector", (PyCFunction) sensor_get_game_rotation_vector, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_geomagnetic_rotation_vector", (PyCFunction) sensor_get_geomagnetic_rotation_vector, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_gravity", (PyCFunction) sensor_get_gravity, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_gyroscope", (PyCFunction) sensor_get_gyroscope, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_gyroscope_uncalibrated", (PyCFunction) sensor_get_gyroscope_uncalibrated, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_heart_rate", (PyCFunction) sensor_get_heart_rate, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_light", (PyCFunction) sensor_get_light, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_linear_acceleration", (PyCFunction) sensor_get_linear_acceleration, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_magnetic_field", (PyCFunction) sensor_get_magnetic_field, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_magnetic_field_uncalibrated", (PyCFunction) sensor_get_magnetic_field_uncalibrated, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_pressure", (PyCFunction) sensor_get_pressure, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_proximity", (PyCFunction) sensor_get_proximity, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_relative_humidity", (PyCFunction) sensor_get_relative_humidity, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_rotation_vector", (PyCFunction) sensor_get_rotation_vector, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {"get_step_counter", (PyCFunction) sensor_get_step_counter, METH_NOARGS,
+         "XXXXXXXXXXXXXXXXXXXXXx"},
+        {NULL, NULL, 0, NULL} // This is the end-of-array marker
+};
+
+
+//PyMODINIT_FUNC initsensor(void) {
+void initsensor() {
+    Py_InitModule("sensor", AndroidSensorMethods);
+    jclass class = jh_getClass( "com/snakei/SensorService");
+
+    m_cached = (struct sensor_cache){
+            .class = class,
+            .get_instance = jh_getGetter(class, "()Lcom/snakei/SensorService;"),
+            .start_sensing = jh_getMethod(class, "start_sensing", "(I)V"),
+            .stop_sensing = jh_getMethod(class, "stop_sensing", "(I)V"),
+            .get_sensor_list = jh_getMethod(class, "getSensorList", "()Ljava/lang/String;"),
+            .get_acceleration = jh_getMethod(class, "getAcceleration", "()Ljava/lang/String;"),
+            .get_ambient_temperature = jh_getMethod(class, "getAmbientTemperature",
+                                                    "()Ljava/lang/String;"),
+            .get_game_rotation_vector = jh_getMethod(class, "getGameRotationVector",
+                                                     "()Ljava/lang/String;"),
+            .get_geomagnetic_rotation_vector = jh_getMethod(class, "getGeomagneticRotationVector",
+                                                            "()Ljava/lang/String;"),
+            .get_gravity = jh_getMethod(class, "getGravity", "()Ljava/lang/String;"),
+            .get_gyroscope = jh_getMethod(class, "getGyroscope", "()Ljava/lang/String;"),
+            .get_gyroscope_uncalibrated = jh_getMethod(class, "getGyroscopeUncalibrated",
+                                                       "()Ljava/lang/String;"),
+            .get_heart_rate = jh_getMethod(class, "getHeartRate", "()Ljava/lang/String;"),
+            .get_light = jh_getMethod(class, "getLight", "()Ljava/lang/String;"),
+            .get_linear_acceleration = jh_getMethod(class, "getLinearAcceleration",
+                                                    "()Ljava/lang/String;"),
+            .get_magnetic_field = jh_getMethod(class, "getMagneticField",
+                                               "()Ljava/lang/String;"),
+            .get_magnetic_field_uncalibrated = jh_getMethod(class, "getMagneticFieldUncalibrated",
+                                                            "()Ljava/lang/String;"),
+            .get_pressure = jh_getMethod(class, "getPressure", "()Ljava/lang/String;"),
+            .get_proximity = jh_getMethod(class, "getProximity", "()Ljava/lang/String;"),
+            .get_relative_humidity = jh_getMethod(class, "getRelativeHumidity",
+                                                  "()Ljava/lang/String;"),
+            .get_rotation_vector = jh_getMethod(class, "getRotationVector",
+                                                "()Ljava/lang/String;"),
+            .get_step_counter = jh_getMethod(class, "getStepCounter", "()Ljava/lang/String;")};
 }
