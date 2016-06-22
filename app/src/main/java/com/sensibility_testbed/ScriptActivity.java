@@ -976,7 +976,7 @@ public class ScriptActivity extends Activity {
 //              OutputStream os = new FileOutputStream(f);
 //
 //
-//              os.write("import androidlog\nl = androidlog.log2\nl('k')\nimport os\nl('still k')\nl(os.getlogin())\n".getBytes());
+//              os.write("import androidlog\nl = androidlog.log\nl('k')\nimport os\nl('still k')\nl(os.getlogin())\n".getBytes());
 //              os.flush();
 //              os.close();
 //          } catch (Exception e){

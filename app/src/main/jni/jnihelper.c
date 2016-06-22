@@ -51,6 +51,22 @@ jmethodID jh_getMethod(jclass class, const char *method_name, const char *type_s
     return method;
 }
 
+jmethodID jh_getStaticMethod(jclass class, const char *method_name, const char *type_signature) {
+    JNIEnv *jni_env;
+    jmethodID method;
+
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    method = (*jni_env)->GetStaticMethodID(jni_env, class, method_name, type_signature);
+    if ((*jni_env)->ExceptionOccurred(jni_env)){
+        LOGI("jh_getStaticMethod: exception occurred - %s", method_name);
+    }
+    if (method == NULL) {
+        LOGI("jh_getStaticMethod: returned NULL");
+    }
+    return method;
+}
+
+
 jobject jh_getInstance(jclass class, jmethodID getter) {
     JNIEnv *jni_env;
     jobject object;
@@ -73,12 +89,11 @@ jstring jh_getJavaString(char *string) {
     return (*jni_env)->NewStringUTF(jni_env, string);
 }
 
-/*
- * #######################################################
- * Don't call the subsequent functions directly
- * Use the jh_call() wrapper
- * #######################################################
- */
+void jh_deleteReference(jobject obj) {
+    JNIEnv *jni_env;
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    (*jni_env)->DeleteLocalRef(jni_env, obj);
+}
 
 int _handle_errors(JNIEnv* jni_env, const char *where) {
     jthrowable error = (*jni_env)->ExceptionOccurred(jni_env);
@@ -100,6 +115,16 @@ int _handle_errors(JNIEnv* jni_env, const char *where) {
     }
     return 0;
 }
+
+
+/*
+ * #######################################################
+ * Don't call the subsequent functions directly
+ * Use the jh_call() wrapper
+ * #######################################################
+ */
+
+
 
 PyObject* jh_callVoidMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args) {
 
@@ -216,5 +241,23 @@ PyObject* jh_call(jclass class, jmethodID get_instance,
     return result;
 }
 
+
+PyObject* jh_callStaticVoid(jclass class, jmethodID cached_method, ...) {
+
+    JNIEnv *jni_env;
+    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+
+    va_list args;
+    va_start(args, cached_method);
+    (*jni_env)->CallStaticVoidMethodV(jni_env, class,
+                                     cached_method, args);
+    va_end(args);
+
+    if (_handle_errors(jni_env, "jh_callStaticVoid: exception occurred")) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
 
 

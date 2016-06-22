@@ -31,13 +31,11 @@ PyObject* media_tts_speak(PyObject *self, PyObject *args) {
         Py_RETURN_NONE;
     }
     java_text = jh_getJavaString(text);
-    PyObject* success = jh_call(m_cached.class, m_cached.get_instance, jh_callIntMethod,
+    PyObject* result = jh_call(m_cached.class, m_cached.get_instance, jh_callIntMethod,
                                 m_cached.tts_speak, java_text);
 
-
-    // XXX: do we have to delete the string reference?
-    // We shouldn't have to, that's why it is called local, BUT
-    return success;
+    jh_deleteReference((jobject) java_text);
+    return result;
 }
 
 PyObject* media_microphone_record(PyObject *self, PyObject *args) {
@@ -50,12 +48,12 @@ PyObject* media_microphone_record(PyObject *self, PyObject *args) {
     }
 
     jstring java_file_name = jh_getJavaString(file_name);
-    jh_call(m_cached.class, m_cached.get_instance,
+    PyObject* result = jh_call(m_cached.class, m_cached.get_instance,
                       jh_callVoidMethod, m_cached.microphone_record,
                       java_file_name, (jint) duration);
 
-    // XXX: do we have to delete the string reference?
-    // We shouldn't have to, that's why it is called local, BUT
+    jh_deleteReference((jobject) file_name);
+    return result;
 }
 
 PyObject* media_is_media_playing(PyObject *self) {

@@ -24,22 +24,15 @@ import com.sensibility_testbed.SensibilityApplication;
  */
 //public class OutputService extends Service {
 public class OutputService {
-//    @Override
-//    public int onStartCommand(Intent intent, int flags, int startId) {
-//        // TODO I assume that my methods will be available for calling into directly
-//        // TODO Therefor I don't set up anything
-//        return START_STICKY;
-//    }
-
+    static final String TAG = "OutputService";
     public static Toast toast;
 
-    public static void logMessage(final String message) {
+    public static void logMessage(final String message) throws Exception {
         // This logs into the debug log...
-        Log.i("######## Foo: ", message);
+        Log.i(TAG, message);
 
         //Also log to UI
         //XXX useful for e.g. GPS debugging where I have to carry the phone around
-
         final Context app_context = SensibilityApplication.getAppContext();
         // UI activity needs to run on the UI Thread (MainLooper)
         final Handler handler = new Handler(app_context.getMainLooper());
@@ -53,11 +46,4 @@ public class OutputService {
             }
         });
     }
-
-
-//    @Override
-//    public IBinder onBind(Intent intent) {
-//        // Don't provide means to bind this service
-//        return null;
-//    }
 }

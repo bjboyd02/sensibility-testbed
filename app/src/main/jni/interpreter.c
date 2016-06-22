@@ -1,22 +1,5 @@
 #include "interpreter.h"
 
-/* Python-callable wrapper for LOGI */
-static PyObject*
-androidlog_log(PyObject *self, PyObject *python_string)
-{
-  LOGI("%s", PyString_AsString(python_string));
-  Py_RETURN_NONE;  // I.e., `return Py_None;` with reference counting
-}
-
-/* Describe to Python how the method should be called */
-static PyMethodDef AndroidlogMethods[] = {
-  {"log", androidlog_log, METH_O,
-    "Log an informational string to the Android log."},
-  {"log2", androidlog_log2, METH_O,
-    "Log an informational string through JNI."},
-  {NULL, NULL, 0, NULL} // This is the end-of-array marker
-};
-
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_files, jstring python_arguments) {
   char* home = (char*) (*env)->GetStringUTFChars(env, python_home, NULL);
   char* path = (char*) (*env)->GetStringUTFChars(env, python_path, NULL);
@@ -47,11 +30,7 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
   LOGI("Platform %s", Py_GetPlatform());
   LOGI("PythonHome %s", Py_GetPythonHome());
 
-  LOGI("Initializing androidlog module");
-  Py_InitModule("androidlog", AndroidlogMethods);
-  LOGI("androidlog initted");
-
-
+  initandroidlog();
 
   LOGI("Start Sensing IN C!!!!");
   initsensor();
@@ -88,7 +67,7 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEn
 //  LOGI("Start Media-ing IN C!!!!");
 //  initmedia();
 //  media_start_media();
-//  char *filename = "test_media.py";
+//  char *filename = "test_tts.py";
 //  char *full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
 //  strcpy(full_filename, files);
 //  strcat(full_filename, filename);

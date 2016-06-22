@@ -1,5 +1,5 @@
 import androidlog, location, sys, time
-l = androidlog.log2
+l = androidlog.log
 
 path = "/sdcard/locations/"
 filename = "locations_" + str(time.time())

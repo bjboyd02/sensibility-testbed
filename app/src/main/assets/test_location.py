@@ -1,5 +1,5 @@
 import androidlog, location, sys, time
-l = androidlog.log2
+l = androidlog.log
 l('Lets do the location')
 while True:
     time.sleep(2)

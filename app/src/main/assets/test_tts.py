@@ -1,5 +1,5 @@
 import androidlog, media, sys, time
-l = androidlog.log2
+l = androidlog.log
 l('Lets do the media')
 text = """Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
 tempor incididunt ut labore et dolore magna aliqua."""
@@ -14,7 +14,5 @@ def speak(msg):
 speak(text)
 speak("Shake your money make-AH")
 speak("Take him to the bridge")
-
-
 
 l('KTHXBI')

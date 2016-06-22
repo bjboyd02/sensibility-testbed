@@ -1,5 +1,5 @@
 import androidlog
-l = androidlog.log2
+l = androidlog.log
 
 try:
   import time

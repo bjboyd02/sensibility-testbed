@@ -1,5 +1,5 @@
 import androidlog, media, sys, time
-l = androidlog.log2
+l = androidlog.log
 
 # while True:
 #	if media.is_media_playing():

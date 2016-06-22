@@ -1,5 +1,5 @@
 import androidlog, miscinfo, sys, time
-l = androidlog.log2
+l = androidlog.log
 
 l("Do the info....")
 
