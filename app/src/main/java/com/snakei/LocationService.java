@@ -4,13 +4,12 @@ import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
-import android.content.pm.PackageManager;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
@@ -25,53 +24,45 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
 
 /**
- * Created by lukas on 5/4/16.
+ * Created by lukas.puehringer@nyu.edu
+ * on 5/4/16.
  *
- * Pseudo Service that facades Android Location Services
+ * A pseudo Service class that facades Android location services
+ *
+ * Provides methods to start and stop location services, poll updated
+ * location information for different providers, poll last known location
+ * information for different providers and perform reverse geocoding
+ *
+ * Currently provides three location providers
+ * GPS and Network (Android Location API) and Fused (Google Play Services)
+ *
+ * Revers geocoding uses Google Play Services and requires an internet connection
+ *
+ * Location and address objects are returned as serialized JSON
  *
  * This class is a Singleton using the thread safe
  * Java Initialization on Demand Holder pattern
- * (cf. SensorService.java for explanation)
- * XXX: Maybe we can generalize some common aspects of
- * all the "Sensor" code (Real android sensors, location, cell, wifi,...)
- * Try now, DRY later!
+ * (cf. SensorService.java for more info )
  *
- * Python user wants:
- *      get_location() // This should always be the last known location
- *      get_geolocation() // Reverse geocoding
- *
- * We have to:
- *      Decide whether we use Android Location API (android.location) or
- *      Google Location Services API (Google Play Services)
- *          for reverse geocoding we need Google Play Services
- *      Decide which provider we use (GPS, Network, Passive)
- *      How we handle varying accuracy
- *      Starting/Stopping Location Services
- *      Setting the Interval
- *          Keep battery drain in mind
- *
- * For now:
- *      Use Android Location API for locations
- *      Use Google location Services for reverse geocoding
- *      Use both GPS and Network provider
- *      Provide polling methods for each provider, combine them in c
- *      (Return last known location if
- *          it exists AND a user calls get_location AND
- *          no location update has been received by our listener yet)
- *      (Provide listener starting and stopping to C code)
+ * Todo:
+ *   Maybe we can generalize some common aspects of all the facades
+ *     (Real sensors, location, media, miscinfo,...)
+ *   Decide how to handle resource allocation and release in multi-threading environments
+ *     Keep battery drain in mind
  *
  */
 
 
 public class LocationService implements ConnectionCallbacks, OnConnectionFailedListener,
         android.location.LocationListener, com.google.android.gms.location.LocationListener {
+
     static final String TAG = "LocationService";
+
     // Used to start/stop listener on network and gps location provider
     private LocationManager location_manager;
 
@@ -79,8 +70,7 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
     private GoogleApiClient google_api_client;
     // Used to define accuracy and frequency of Google Play Services location updates
     private LocationRequest google_location_request;
-    // Used to transform lat/long to addresses or vice-versa
-    // needs Google Play Service
+    // Used to transform lat/long to addresses or vice-versa (requires Google Play Service)
     private Geocoder geocoder;
 
     // Location JSON object for each provider
@@ -88,21 +78,31 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
     private JSONObject location_network_json;
     private JSONObject location_fused_json;
 
+
     /* See Initialization on Demand Holder pattern */
     private static class LocationServiceHolder {
         private static final LocationService instance = new LocationService();
     }
 
-    /* Classic Singleton Instance Getter */
+
+    /* Singleton Instance Getter */
     public static LocationService getInstance(){
         return LocationServiceHolder.instance;
     }
 
+
+    /*
+     * Singleton Constructor
+     *
+     * Fetches context from static application function
+     * Initializes Android location manager and Google Play Service objects
+     *
+     */
     private LocationService() {
         Context app_context = SensibilityApplication.getAppContext();
         location_manager = (LocationManager)app_context.getSystemService(app_context.LOCATION_SERVICE);
 
-        // Set Google Play Service Qos Paramters to "real-time"
+        // Set Google Play Service QoS parameters to "real-time"
         google_location_request = new LocationRequest();
         google_location_request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         google_location_request.setInterval(5);
@@ -110,25 +110,27 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
         geocoder = new Geocoder(app_context, Locale.getDefault());
     }
     /*
-     * Register location update listeners
+     * Registers location update listeners for GPS and network provider and connects to
+     * Google API client
      *
-     * Todo: return meaningful code
+     * The connection callback function is implemented
+     * by the LocationService class (see below). Upon connection it will also register a location
+     * update listener.
+     *
      */
 
     public void start_location() {
-        // We could use one, both or PASSIVE_PROVIDER instead
         // There is no use in listening for PASSIVE_PROVIDER if one of the other two is registered
         // It only retrieves values if any other app is listening to a gps or network provider
         // If they can we can too, furthermore we need the same permissions for passive as for gps
         // and network.
-        // Sensibility API currently returns values from all three providers
-//        Log.i(TAG, "Register GPS Location Update Listener...");
-
-//        Log.i(TAG, "Register Network Location Update Listener...");
-        location_manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this, Looper.getMainLooper());
+        // Current Sensibility API returns values from all three providers
+        location_manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0,
+            this, Looper.getMainLooper());
+        location_manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0,
+            this, Looper.getMainLooper());
 
         // Create Google Play Service client and connect
-//        Log.i(TAG, "Connecting to Google Play Service");
         google_api_client = new GoogleApiClient.Builder(SensibilityApplication.getAppContext())
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -139,11 +141,10 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
     }
 
     /*
-     * Unregister Android location update listeners
-     * Unregister Google Play Service location update listeners
-     * Disconnect from Google Play Service
+     * Unregisters Android location update listeners
+     * Unregisters Google Play Service location update listeners
+     * Disconnects from Google Play Service
      *
-     * Todo: return meaningful code
      */
     public void stop_location() {
 
@@ -154,7 +155,8 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
             google_api_client.blockingConnect();
             google_api_client.disconnect();
         }
-        // Disconnect from Google Api Only if we are conncted
+
+        // Disconnect from Google Api Only if we are connected
         if(google_api_client.isConnected()) {
             // If listener is not registered this has no effects
             LocationServices.FusedLocationApi.removeLocationUpdates(google_api_client, this);
@@ -162,6 +164,13 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
         }
     }
 
+  /*
+   * Returns location information for each available provider
+   *
+   * @return  String serialized JSON Object or null
+   * e.g.:
+   *
+   */
     public String getLocation() throws JSONException {
         JSONObject locations_json = new JSONObject();
         if (location_gps_json != null) {
