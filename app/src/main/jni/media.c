@@ -31,7 +31,7 @@ PyObject* media_tts_speak(PyObject *self, PyObject *args) {
         Py_RETURN_NONE;
     }
     java_text = jh_getJavaString(text);
-    PyObject* result = jh_call(m_cached.class, m_cached.get_instance, jh_callIntMethod,
+    PyObject* result = jh_call(m_cached.class, m_cached.get_instance, jh_callVoidMethod,
                                 m_cached.tts_speak, java_text);
 
     jh_deleteReference((jobject) java_text);
@@ -91,7 +91,7 @@ void initmedia() {
             .microphone_record = jh_getMethod(class, "microphoneRecord",
                                               "(Ljava/lang/String;I)V"),
             .tts_speak = jh_getMethod(class,"ttsSpeak",
-                                      "(Ljava/lang/String;)I"),
+                                      "(Ljava/lang/String;)V"),
             .is_tts_speaking = jh_getMethod(class, "isTtsSpeaking", "()Z"),
             .is_media_playing = jh_getMethod(class, "isMediaPlaying", "()Z")};
 }
