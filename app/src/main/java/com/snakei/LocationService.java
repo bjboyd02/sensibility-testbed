@@ -7,17 +7,17 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-
-import com.sensibility_testbed.SensibilityApplication;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+import com.sensibility_testbed.SensibilityApplication;
 
 /**
  * Created by lukas.puehringer@nyu.edu
@@ -58,8 +59,8 @@ import java.util.Locale;
  */
 
 
-public class LocationService implements ConnectionCallbacks, OnConnectionFailedListener,
-        android.location.LocationListener, com.google.android.gms.location.LocationListener {
+public class LocationService implements android.location.LocationListener,
+        com.google.android.gms.location.LocationListener {
 
     static final String TAG = "LocationService";
 
@@ -70,6 +71,12 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
     private GoogleApiClient google_api_client;
     // Used to define accuracy and frequency of Google Play Services location updates
     private LocationRequest google_location_request;
+
+    // We need to make those class members to be able to unregister them in their own
+    // callback functions
+    private ConnectionCallbacks google_api_connection_callbacks;
+    private OnConnectionFailedListener google_api_connection_failed_callbacks;
+
     // Used to transform lat/long to addresses or vice-versa (requires Google Play Service)
     private Geocoder geocoder;
 
@@ -109,6 +116,8 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
 
         geocoder = new Geocoder(app_context, Locale.getDefault());
     }
+
+
     /*
      * Registers location update listeners for GPS and network provider and connects to
      * Google API client
@@ -118,7 +127,6 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
      * update listener.
      *
      */
-
     public void start_location() {
         // There is no use in listening for PASSIVE_PROVIDER if one of the other two is registered
         // It only retrieves values if any other app is listening to a gps or network provider
@@ -126,19 +134,71 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
         // and network.
         // Current Sensibility API returns values from all three providers
         location_manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0,
-            this, Looper.getMainLooper());
+                this, Looper.getMainLooper());
         location_manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0,
-            this, Looper.getMainLooper());
+                this, Looper.getMainLooper());
 
-        // Create Google Play Service client and connect
+        // Store a copy of this to use in
+        // inner classes ConnectionCallbacks, OnConnectionFailedListener
+        final LocationService _this = this;
+
+        // Initialize here and pass to google_api_client builder later
+        google_api_connection_callbacks = new ConnectionCallbacks() {
+            @Override
+            public void onConnected(@Nullable Bundle bundle) {
+                LocationServices.FusedLocationApi
+                        .requestLocationUpdates(_this.google_api_client,
+                        _this.google_location_request, _this, Looper.getMainLooper());
+
+                // Once connected we can unregister the connection listener and connection
+                // failed listener
+                _this.google_api_client.unregisterConnectionCallbacks(this);
+
+                // Only gets here after call to google_api_client.connect() which happens
+                // after google_api_connection_failed_callbacks is initialized
+                // but the compiler doesn't know this and wants us to check
+                if (_this.google_api_connection_failed_callbacks != null) {
+                    _this.google_api_client.unregisterConnectionFailedListener(
+                            google_api_connection_failed_callbacks);
+                }
+            }
+            @Override
+            public void onConnectionSuspended(int i) {
+            }
+        };
+
+        // Initialize here and pass to google_api_client builder later
+        google_api_connection_failed_callbacks = new OnConnectionFailedListener() {
+            @Override
+            public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+                // XXX: This happens asynchronously, so we won't be able to tell the user
+                // but s/he will figure out sooner or later when s/he wants to use the Google API
+                Log.wtf(TAG, String.format("Connection failed with code: %d. " +
+                        "Check com.google.android.gms.common.ConnectionResult constants",
+                        connectionResult.getErrorCode()));
+
+                // Once failed we can unregister the connection listener and connection
+                // failed listener
+                _this.google_api_client.unregisterConnectionCallbacks(
+                        google_api_connection_callbacks);
+                _this.google_api_client.unregisterConnectionFailedListener(this);
+            }
+        };
+
+
+        // Create Google Play Service API client using its builder and pass
+        // it the above created connection/failure listener ...
         google_api_client = new GoogleApiClient.Builder(SensibilityApplication.getAppContext())
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
+                .addConnectionCallbacks(google_api_connection_callbacks)
+                .addOnConnectionFailedListener(google_api_connection_failed_callbacks)
                 .addApi(LocationServices.API)
                 .build();
 
+        // ... and finally try connect to the API
         google_api_client.connect();
     }
+
 
     /*
      * Unregisters Android location update listeners
@@ -164,13 +224,54 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
         }
     }
 
-  /*
-   * Returns location information for each available provider
-   *
-   * @return  String serialized JSON Object or null
-   * e.g.:
-   *
-   */
+
+    /*
+     * Returns last location update received by LocationService for
+     * each available provider: fused, network and gps
+     *
+     * @return  String serialized JSON Object or null
+     * e.g.:
+     * {
+     * 'fused':{
+     *   'bearing':0,
+     *   'altitude':0,
+     *   'longitude':-73.987226800000002,
+     *   'time_sample':1467211033628,
+     *   'time_polled':1467211037064,
+     *   'latitude':40.691905499999997,
+     *   'speed':0,
+     *   'accuracy':699.9990234375
+     * },
+     * 'network':{
+     *   'bearing':0,
+     *   'altitude':0,
+     *   'extras':{
+     *     'travelState':'stationary',
+     *     'nlpVersion':2021,
+     *     'networkLocationType':'cell'
+     *   },
+     *   'longitude':-73.987226800000002,
+     *   'time_sample':1467211033628,
+     *   'time_polled':1467211037030,
+     *   'latitude':40.691905499999997,
+     *   'speed':0,
+     *   'accuracy':699.9990234375
+     * },
+     * 'gps':{
+     *   'bearing':0,
+     *   'altitude':129,
+     *   'extras':{
+     *     'satellites':8
+     *   },
+     *   'longitude':-73.985975449999998,
+     *   'time_sample':1466541236000,
+     *   'time_polled':1467211037029,
+     *   'latitude':40.692894889999998,
+     *   'speed':0,
+     *   'accuracy':44
+     * }
+     *
+     */
     public String getLocation() throws JSONException {
         JSONObject locations_json = new JSONObject();
         if (location_gps_json != null) {
@@ -189,6 +290,14 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
         return null;
     }
 
+
+   /*
+     * Returns last location update received by the device (e.g. by another app) for
+     * each available provider: fused, network and gps
+    *
+    * @return  String serialized JSON Object or null
+    * e.g.: same as getLocation
+    */
     public String getLastKnownLocation() throws JSONException {
 
         JSONObject locations_json = new JSONObject();
@@ -220,14 +329,48 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
     }
 
     /*
-
-     * Todo:
-     *   Better failure handling
+     * Returns at max a specified amount of address information for a given Latitude and Longitude
+     * This process is called reverse geo coding and requires an internet connection and
+     * a connection to Google Play Service API
+     *
+     * @param   Latitude (double)
+     * @param   Longitude (double)
+     * @param   Max results (int)
+     * @return  String serialized JSON Object or null
+     * e.g.:
+     * [
+     *   {
+     *     'thoroughfare':'Jay St',
+     *     'lines':[
+     *       '375 Jay St',
+     *       'Brooklyn, NY 11201'
+     *     ],
+     *     'admin_area':'New York',
+     *     'feature_name':'375',
+     *     'country_code':'US',
+     *     'country_name':'United States',
+     *     'postal_code':'11201',
+     *     'sub_locality':'Brooklyn',
+     *     'sub_thoroughfare':'375'
+     *   },
+     *   {
+     *     'locality':'Brooklyn',
+     *     'lines':[
+     *       'Downtown Brooklyn',
+     *       'Brooklyn, NY'
+     *     ],
+     *     'sub_admin_area':'Kings County',
+     *     'admin_area':'New York',
+     *     'feature_name':'Downtown Brooklyn',
+     *     'country_code':'US',
+     *     'country_name':'United States',
+     *     'sub_locality':'Downtown Brooklyn'
+     *   }
+     * ]
+     *
      */
     public String getGeoLocation(double latitude, double longitude, int max_results) throws
-            IOException, IllegalArgumentException, JSONException {
-//        Log.i(TAG, String.format("Get address(es) for location -- lat: %f, lon: %f, max: %d",
-//                latitude, longitude, max_results));
+        IOException, IllegalArgumentException, JSONException, GooglePlayServicesNotAvailableException {
 
         List<Address> addresses = null;
         if (google_api_client.isConnected() &&
@@ -236,10 +379,9 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
                     latitude,
                     longitude,
                     max_results);
+        } else {
+            throw new GooglePlayServicesNotAvailableException(1);
         }
-//        else {
-//            Log.i(TAG, "Did not perform reverse geocoding");
-//        }
 
         if (addresses != null) {
             JSONArray addresses_json = new JSONArray();
@@ -270,11 +412,21 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
             }
             return addresses_json.toString();
         }
-
-//        Log.i(TAG, "Did not get any addresses");
-        return null;
+       return null;
     }
 
+
+    /*
+     * Internal helper function that takes a location object of any provider, extracts
+     * its attributes and creates a JSONObject.
+     * Also adds the current time in milliseconds as "time_polled" attribute, i.e. the
+     * time when the user called getLocation or getLastKnownLocation. Whereas
+     * "time_sample" is the time when LocationService received the location update
+     *
+     * @return  String serialized JSON Object or null
+     * e.g.: see getLocation or getLastKnownLocation
+     *
+     */
     private JSONObject jsonify_location(Location location) throws JSONException {
         JSONObject location_json = new JSONObject();
 
@@ -288,7 +440,7 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
         location_json.put("speed", location.getSpeed());
         Bundle extras = location.getExtras();
 
-        // Provider specific extra information
+        // Provider specific extra information, e.g. satellites (gps), travelState (network)
         if (extras != null) {
             JSONObject extras_json = new JSONObject();
             for (String key : extras.keySet()) {
@@ -310,32 +462,30 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
      */
 
     /*
-     * Callback: Receives gps, network and fused locations
+     * Callback that receives gps, network and fused locations
+     * Stores location object the according provider's class members
      *
-     * Stores location object and location double values to the according
-     * class members
-     *
-     * CAUTION !!!!!!!!!
+     * CAUTION:
      * This method implements `onLocationChanged` of two different
      * interfaces:
      *     - android.location.LocationListener
      *     - com.google.android.gms.location.LocationListener
-     * Both callbacks receive an Android Location Object but
+     * Both callbacks receive an Android Location object but
      * from different Location Providers
      *
      * Android's Interface expects Locations of provider type:
      *      - LocationManager.GPS_PROVIDER
      *      - LocationManager.NETWORK_PROVIDER
      * Google Play Services's Interface expects Locations of provider type:
-     *      "fused"
-     *
-     * XXX
-     * It is not safe to expect that the string "fused" won't change
+     *      "fused" (XXX: this is a hardcoded string, prone to change)
      *
      */
     @Override
     public void onLocationChanged(Location location) {
         JSONObject location_json = null;
+
+        // We catch the exception here because the callback is asynchronous
+        // so we can't pass the exception on to the user
         try {
             location_json = jsonify_location(location);
         } catch (JSONException e) {
@@ -343,22 +493,22 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
         }
 
         if (location.getProvider().equals(LocationManager.GPS_PROVIDER)) {
-//            Log.i(TAG, "Received location GPS");
             location_gps_json = location_json;
         } else if (location.getProvider().equals(LocationManager.NETWORK_PROVIDER)) {
-//            Log.i(TAG, "Received location Network");
             location_network_json = location_json;
         } else if (location.getProvider().equals("fused")) {
-//            Log.i(TAG, "Received location Fused");
             location_fused_json = location_json;
         } else {
-            Log.i(TAG, String.format("Received location from unknown Provider: %s", location.getProvider()));
+            // WHAT THE terrible failure?!!
+            Log.wtf(TAG, String.format("Received location from unknown Provider: %s",
+                    location.getProvider()));
         }
     }
 
     /*
      * ###################################################
-     * Required LocationListener implementations (android)
+     * Required  android.location.LocationListener implementations
+     * but we don't really need them
      * ###################################################
      */
     @Override
@@ -369,32 +519,5 @@ public class LocationService implements ConnectionCallbacks, OnConnectionFailedL
     }
     @Override
     public void onProviderDisabled(String provider) {
-    }
-
-    /*
-     * ###################################################
-     * Required ConnectionCallback implementations (Google Play Services)
-     * ###################################################
-     */
-    @Override
-    public void onConnected(Bundle connectionHint) {
-//        Log.i(TAG, "Connected to google");
-        LocationServices.FusedLocationApi
-                .requestLocationUpdates(google_api_client, google_location_request, this, Looper.getMainLooper());
-    }
-    @Override
-    public void onConnectionSuspended(int cause) {
-    }
-
-    /*
-     * ###################################################
-     * Required OnConnectionFailedListener implementation (Google Play Services)
-     * ###################################################
-     */
-    @Override
-    public void onConnectionFailed(ConnectionResult result) {
-            Log.i(TAG, String.format("Connection failed with code: %d. " +
-              "Check com.google.android.gms.common.ConnectionResult Constants for details",
-              result.getErrorCode()));
     }
 }
