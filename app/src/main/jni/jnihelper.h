@@ -26,7 +26,7 @@ PyObject* jh_callIntMethod(JNIEnv* jni_env, jobject object, jmethodID method, va
 PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args);
 PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object, jmethodID method, va_list args);
 PyObject* jh_call(jclass class, jmethodID get_instance,
-                  PyObject* (*jh_call)(JNIEnv*, jobject, jmethodID, va_list),
+                  PyObject* (*_jh_call)(JNIEnv*, jobject, jmethodID, va_list),
                   jmethodID cached_method, ...);
 
 PyObject* jh_callStaticVoid(jclass class, jmethodID cached_method, ...);
