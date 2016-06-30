@@ -5,17 +5,16 @@ import android.content.Context;
 import android.util.Log;
 
 /**
- * Created by lukas on 4/21/16.
+ * Created by lukas.puehringer@nyu.edu
+ * on 4/21/16.
  *
- * Application subclass is used to maintain global
- * application state.
- *
- * Can also be used to provide a static reference
+ * Application subclass used to provide a static reference
  * to the application context. [1]
- * Although the preferred way to access context in static functions or
- * singletons is to pass the context to the function. [2]
+ * Can also be used to provide application state
  *
- * XXX:
+ * Note:
+ * The preferred way to access context in static functions or
+ * singletons is to pass the context to the function. [2]
  * Nevertheless we need the context in a sensor (pseudo) service class, called by C code via JNI
  * and I did not find any other way to access the context from there
  *
