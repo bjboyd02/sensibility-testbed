@@ -220,7 +220,7 @@ static PyMethodDef AndroidSensorMethods[] = {
 //PyMODINIT_FUNC initsensor(void) {
 void initsensor() {
     Py_InitModule("sensor", AndroidSensorMethods);
-    jclass class = jh_getClass( "com/snakei/SensorService");
+    jclass class = jh_getClass("com/snakei/SensorService");
 
     m_cached = (struct sensor_cache){
             .class = class,
