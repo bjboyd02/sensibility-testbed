@@ -26,7 +26,7 @@ import static android.os.Process.myUid;
  * a Python interpreter in a separate thread
  *
  * Performs the following tasks:
- *  - Declares a native Java method, whose C equivalent is called from
+ *  - Declares a native Java method that is implemented in C and called from
  *    the JVM using JNI
  *  - sets environment variables and passes them to native Python interpreter,
  *    e.g. the directory we want Python to write files to
@@ -42,24 +42,14 @@ import static android.os.Process.myUid;
  *
  */
 public class PythonInterpreterService extends Service {
-    private native void startNativePythonInterpreter(String path, String home,
-                            String script, String files, String args);
+    private native void startNativePythonInterpreter(String python_files);
 
     private class PythonInterpreterThread extends Thread {
-        private String python_path;
-        private String python_home;
-        private String python_script;
-        private String python_arguments;
-
         private String python_files;
 
 
-        private PythonInterpreterThread(String python_path, String python_home,
-                String python_script, String python_arguments) {
-            this.python_path = python_path;
-            this.python_home = python_home;
-            this.python_script = python_script;
-            this.python_arguments = python_arguments;
+        private PythonInterpreterThread() {
+
 
 //            this.python_files = getExternalFilesDir(null).getPath();
             this.python_files = getFilesDir().getPath();
@@ -99,8 +89,7 @@ public class PythonInterpreterService extends Service {
             System.loadLibrary("python2.7");
             System.loadLibrary("snakei");
             Log.i(this.getName(), "Before start native");
-            startNativePythonInterpreter(this.python_path, this.python_home,
-                    this.python_script, this.python_files, this.python_arguments);
+            startNativePythonInterpreter(this.python_files);
             Log.i(this.getName(), "After start native");
         }
     };
@@ -115,22 +104,27 @@ public class PythonInterpreterService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(this.getPackageName(), "**** UID is " + Integer.toString(myUid()));
 
-        Log.i(this.getPackageName(), "Getting intent and stuff");
-        String path = intent.getStringExtra("com.snakei.PythonInterpreterService.python_path");
-        String home = intent.getStringExtra("com.snakei.PythonInterpreterService.python_home");
-        String script = intent.getStringExtra("com.snakei.PythonInterpreterService.python_script");
-        String args = intent.getStringExtra("com.snakei.PythonInterpreterService.python_arguments");
+//        Log.i(this.getPackageName(), "Getting intent and stuff");
+//        String path = intent.getStringExtra(
+//                "com.snakei.PythonInterpreterService.python_path");
+//        String home = intent.getStringExtra(
+//                "com.snakei.PythonInterpreterService.python_home");
+//        String script = intent.getStringExtra(
+//                "com.snakei.PythonInterpreterService.python_script");
+//        String args = intent.getStringExtra(
+//                "com.snakei.PythonInterpreterService.python_arguments");
         Log.i(this.getPackageName(), "`new` thread");
-        PythonInterpreterThread pythonInterpreterThread = new PythonInterpreterThread(path,
-                home, script, args);
+        PythonInterpreterThread pythonInterpreterThread =
+                new PythonInterpreterThread();
         Log.i(this.getPackageName(), "Starting thread");
         pythonInterpreterThread.start();
         Log.i(this.getPackageName(), "Started");
-        /* TODO: For a plain Python interpreter that needs arguments,
-         * starting STICKY makes no sense as Android's restart attempt
-         * only sends a `null` Intent.
-         * (For an encapsulated nodemanager/softwareupdater, it would make sense OTOH).
-         */
+        // TODO: For a plain Python interpreter that needs arguments,
+        // starting STICKY makes no sense as Android's restart attempt
+        // only sends a `null` Intent
+        // For an encapsulated nodemanager/softwareupdater,
+        // it would make sense OTOH
+
         return START_NOT_STICKY;
     }
 
