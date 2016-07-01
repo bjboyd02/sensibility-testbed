@@ -1,11 +1,8 @@
 package com.snakei;
 // TODO Should we make this a proper Library Module? https://developer.android.com/tools/projects/index.html#LibraryModules
 
-import android.app.Service;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Handler;
-import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -13,16 +10,22 @@ import com.sensibility_testbed.SensibilityApplication;
 
 
 /**
- * Output service for Snakei
- * XXX Why should this be a service?
- *      It is never started as a service in the app
- *      Python interpreter is a service started by the app
- *      which executes this via python->c->jni
+ * Created by
+ * albert.rafetseder@univie.ac.at
+ * lukas.puehringer@nyu.edu
+ * on 5/4/16.
  *
- * This class hosts methods that let a Sensibility experiment
- * output information to the device owner.
+ * A pseudo Service class that provides a static method to write a String
+ * to the Android log and also as a Toast to the device's UI
+ *
+ * Note:
+ * This and all but one of the other snakei.*Service.java classes are not real
+ * Android Services:
+ * They are never started as a Servicec in the app
+ * But, PythonInterpreterService is a real Android Service started by the app
+ * which executes this via python->c->jni
+ *
  */
-//public class OutputService extends Service {
 public class OutputService {
     static final String TAG = "OutputService";
     public static Toast toast;
