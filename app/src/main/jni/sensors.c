@@ -1,36 +1,59 @@
 #include "sensors.h"
 /*
- * Python Extension(s) to get actual sensor values
- *  e.g. Accelerometer
+ * Created by
+ * albert.rafetseder@univie.ac.at
+ * lukas.puehringer@nyu.edu
+ * on 5/29/16
  *
- * This is harder and/as there are multiple approaches,
- * - Do we want one function for all sensors, like in current Repy Sensor API? [1]
- * - Do we want to poll a sensor? (let's start with this)
- *  e.g.:
- *      start_sensing(TYPE_ACCELEROMETER)
- *      get_current_value()
- *      stop_sensing()
- * - Do we want to use callback functions? (cool but hard)
- *  e.g.:
- *       start_sensing(TYPE_ACCELEROMETER, fn_called_with_sensor_values)
- *       stop_sensing()
- * - Should we go OO, like Yocto Python API? [2] (not really pythonic, is it?)
- *  e.g.:
- *       sensor = find_sensor(TYPE_ACCELEROMETER)
- *       sensor.start()
- *       sensor.getValue()
- *       sensor.stop()
+ * C Python Extensions that call Java Methods to return sensor values
+ * using jnihelper.c (custom JNI glue)
  *
- * In any case we need to think of,
- *  - properly creating, starting, stopping, destroying sensors and sensor listener.
- *  - multiple sensors for one type.
- *  - multiple vessels concurrently accessing a sensor.
+ * Usage:
+ * Module initialization - call initsensor() from C
+ *  - Initializes a Python module (sensor) with Python methods to retrieve sensor values
+ *  - Caches a native reference to the according Java Singleton Class SensorService.java
+ *  - Caches a native reference to the Singleton getter and all Java Methods to
+ *
+ * Sensor initialization - call sensor_start_sensing from C (currently not in the Python module)
+ *  - Calls start_sensing Java Method for a specific Sensor to register Sensor update listener
+ *  - Cf. SensorService.java constants CUSTOM_TYPE_* for a list of all sensors
+ *
+ * Get Sensor values - call sensor.get_* from Python
+ *  - Calls the according get* Method in Java
+ *  - The return values for each available Sensor are documented in SensorService.java
+ *
+ * Sensor de-initialization - call sensor_stop_sensing from C (currently not in the Python module)
+ *  - Calls stop_sensing Java Method for specific Sensor to unregister Sensor update listener in
+ *  - order to free resources
+ *
+ * Note:
+ * We need to think of
+ *  - acquiring and releasing resources
+ *  - dealing with multiple sensors for one type
+ *  - dealing with multiple threads concurrently accessing a sensor
+ *
+ * Possible other approaches:
+ *  - One function for all sensors, like in current Repy Sensor API [1]
+ *  - Pass callback functions (cool but hard) that receive the sensor values from Java on update
+ *    e.g.:
+ *      start_sensing(TYPE_ACCELEROMETER, callback_fn_receives_sensor_values)
+ *      stop_sensing(TYPE_ACCELEROMETER)
+ *  - Go OO, like Yocto Python API[2] (not really pythonic, is it?)
+ *    e.g.:
+ *      sensor = find_sensor(TYPE_ACCELEROMETER)
+ *      sensor.start()
+ *      sensor.getValue()
+ *      sensor.stop()
  *
  * [1] https://sensibilitytestbed.com/projects/project/wiki/sensors#Sensors
  * [2] http://www.yoctopuce.com/EN/products/yocto-meteo/doc/METEOMK1.usermanual.html#CHAP14
  *
  */
 
+
+/*
+ * Caches native references of used Java Class and Java Methods
+ */
 static struct sensor_cache {
     jclass class;
     jmethodID get_instance;
@@ -57,165 +80,246 @@ static struct sensor_cache {
 } m_cached;
 
 /*
- * Start a sensor by registering a SensorEventHandler in Java
+ * Calls Java to register a SensorEventListener for a specific
+ * sensor to receive Sensor updates
+ * Cf. SensorService.java constants CUSTOM_TYPE_* for a list of all sensors
+ *
+ * Needs to be called from C
+ *
  */
 void sensor_start_sensing(int sensor_type) {
-//    LOGI("Let's fire the sensor up...");
     jh_call(m_cached.class, m_cached.get_instance, jh_callVoidMethod,
                    m_cached.start_sensing, (jint) sensor_type);
 }
 /*
- * Stop a sensor by un-registering a SensorEventHandler in Java
+ * Calls Java to unregister the SensorEventListener of a specific
+ * sensor to stop receiving Sensor updates
+ * Cf. SensorService.java constants CUSTOM_TYPE_* for a list of all sensors
+ *
+ * Needs to be called from C
  */
 void sensor_stop_sensing(int sensor_type) {
-//    LOGI("Let's shut down the sensor...");
     jh_call(m_cached.class, m_cached.get_instance, jh_callVoidMethod,
                    m_cached.stop_sensing, (jint) sensor_type);
 }
 
-/*
- *
- * Python extension to get a list of sensor info
- * for each available sensor.
- *
- * Returns
- *  [{"name" : <name>, "vendor":<vendor>, ...},..]
- *
- */
 
+/*
+ * Cf. getSensorList() in SensorService.java for details
+ */
 PyObject* sensor_get_sensor_list(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
             m_cached.get_sensor_list);
 }
 
+
+/*
+ * Cf. getAcceleration() in SensorService.java for details
+ */
 PyObject* sensor_get_acceleration(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_acceleration);
 }
 
+
+/*
+ * Cf. getAmbientTemperature() in SensorService.java for details
+ */
 PyObject* sensor_get_ambient_temperature(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_ambient_temperature);
 }
 
+
+/*
+ * Cf. getGameRotationVector() in SensorService.java for details
+ */
 PyObject* sensor_get_game_rotation_vector(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_game_rotation_vector);
 }
 
+
+/*
+ * Cf. getGeomagneticRotationVector() in SensorService.java for details
+ */
 PyObject* sensor_get_geomagnetic_rotation_vector(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_geomagnetic_rotation_vector);
 }
 
+
+/*
+ * Cf. getGravity() in SensorService.java for details
+ */
 PyObject* sensor_get_gravity(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_gravity);
 }
 
+
+/*
+ * Cf. getGyroscope() in SensorService.java for details
+ */
 PyObject* sensor_get_gyroscope(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_gyroscope);
 }
 
+
+/*
+ * Cf. getGyroscopeUncalibrated() in SensorService.java for details
+ */
 PyObject* sensor_get_gyroscope_uncalibrated(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_gyroscope_uncalibrated);
 }
 
+
+/*
+ * Cf. getHeartRate() in SensorService.java for details
+ */
 PyObject* sensor_get_heart_rate(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_heart_rate);
 }
 
+
+/*
+ * Cf. getLight() in SensorService.java for details
+ */
 PyObject* sensor_get_light(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_light);
 }
+
+
+/*
+ * Cf. getLinearAcceleration() in SensorService.java for details
+ */
 PyObject* sensor_get_linear_acceleration(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_linear_acceleration);
 }
 
+
+/*
+ * Cf. getMagneticField() in SensorService.java for details
+ */
 PyObject* sensor_get_magnetic_field(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_magnetic_field);
 }
 
+
+/*
+ * Cf. getMagneticFieldUncalibrated() in SensorService.java for details
+ */
 PyObject* sensor_get_magnetic_field_uncalibrated(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_magnetic_field_uncalibrated);
 }
 
+
+/*
+ * Cf. getPressure() in SensorService.java for details
+ */
 PyObject* sensor_get_pressure(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_pressure);
 }
 
+
+/*
+ * Cf. getProximity() in SensorService.java for details
+ */
 PyObject* sensor_get_proximity(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_proximity);
 }
 
+
+/*
+ * Cf. getRelativeHumidity() in SensorService.java for details
+ */
 PyObject* sensor_get_relative_humidity(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_relative_humidity);
 }
 
+
+/*
+ * Cf. getRotationVector() in SensorService.java for details
+ */
 PyObject* sensor_get_rotation_vector(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_rotation_vector);
 }
 
+
+/*
+ * Cf. getStepCounter() in SensorService.java for details
+ */
 PyObject* sensor_get_step_counter(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance, jh_callJsonStringMethod,
                    m_cached.get_step_counter);
 }
 
 
-// Only functions taking two PyObject* arguments are PyCFunction
-// where this is not the case we need to cast
-// Todo: write descriptions
+/*
+ * Maps C functions to Python module methods
+ */
 static PyMethodDef AndroidSensorMethods[] = {
         {"get_sensor_list", (PyCFunction) sensor_get_sensor_list, METH_NOARGS,
-         "Get a list of sensor info dictionaries."},
+         "Returns list of sensor info dictionaries"},
         {"get_acceleration", (PyCFunction) sensor_get_acceleration, METH_NOARGS,
-         "Get list of accelerator values. [sample ts, poll ts, x, y, z]"},
+         "Returns list of acceleration values"},
         {"get_ambient_temperature", (PyCFunction) sensor_get_ambient_temperature, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Returns list of ambient temperature values"},
         {"get_game_rotation_vector", (PyCFunction) sensor_get_game_rotation_vector, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Returns list of rotation values"},
         {"get_geomagnetic_rotation_vector", (PyCFunction) sensor_get_geomagnetic_rotation_vector, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Returns list of geomagnetic rotation vector values"},
         {"get_gravity", (PyCFunction) sensor_get_gravity, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Returns list of gravity values"},
         {"get_gyroscope", (PyCFunction) sensor_get_gyroscope, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Return list of gyroscope values"},
         {"get_gyroscope_uncalibrated", (PyCFunction) sensor_get_gyroscope_uncalibrated, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Return list of uncalibrated gyroscope values"},
         {"get_heart_rate", (PyCFunction) sensor_get_heart_rate, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Return list of heart rate values"},
         {"get_light", (PyCFunction) sensor_get_light, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Return list of light values"},
         {"get_linear_acceleration", (PyCFunction) sensor_get_linear_acceleration, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Return list of linear acceleration values"},
         {"get_magnetic_field", (PyCFunction) sensor_get_magnetic_field, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Return list of magnetic field values"},
         {"get_magnetic_field_uncalibrated", (PyCFunction) sensor_get_magnetic_field_uncalibrated, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Return list of uncalibrated magnetic field values"},
         {"get_pressure", (PyCFunction) sensor_get_pressure, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Return list of pressure values"},
         {"get_proximity", (PyCFunction) sensor_get_proximity, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Return list of proximity values"},
         {"get_relative_humidity", (PyCFunction) sensor_get_relative_humidity, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Return list of relative humidity values"},
         {"get_rotation_vector", (PyCFunction) sensor_get_rotation_vector, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Return list of rotation vector values"},
         {"get_step_counter", (PyCFunction) sensor_get_step_counter, METH_NOARGS,
-         "XXXXXXXXXXXXXXXXXXXXXx"},
+         "Return list of step counter values"},
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
+
+/*
+ * Initializes Python module (sensor), looks up Java class and Java Methods
+ * used to poll sensor values and stores them to a cache
+ *
+ * Note:
+ * If we wanted to build the module as .so or .dll we could
+ * would have to change the signature to
+ * PyMODINIT_FUNC initsensor(void)
+ *
+ */
 
 //PyMODINIT_FUNC initsensor(void) {
 void initsensor() {
