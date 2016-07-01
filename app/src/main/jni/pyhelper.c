@@ -1,14 +1,28 @@
-//
-// Created by lukas on 5/4/16.
-//
-// Helps to debug python code run by c code
-// XXX Rather not use in production
+/*
+ * Created by lukas.puehringer@nyu.edu
+ * on 5/4/16.
+ *
+ * Provides wrappers for C-Python run methods
+ * that write Exception messages to the Android Log
+ * instead of the stderr
+ *
+ * Note:
+ * This is helpful in development but not necessarily necessary
+ * in production
+ *
+ */
 
 #include "pyhelper.h"
 
-/* Verbosely execute Python code.
+/*
+ * Verbosely execute Python code.
  * Exceptions are print to Android log using LOGI macro.
- * Returns 0 on success or -1 if an exception was raised.
+ *
+ * Arguments
+ *   code - Python code (const char*)
+ *
+ * Returns
+ *   0 on success or -1 if an exception was raised
  */
 int Verbose_PyRun_SimpleString(const char *code) {
     // Used for globals and locals
@@ -44,14 +58,20 @@ int Verbose_PyRun_SimpleString(const char *code) {
 /*
  * Verbosely open a python file and run it
  * Exceptions are print to Android log using LOGI macro.
- * Returns 0 on success or -1 if an exception was raised.
  *
+ * Arguments
+ *   filename - full path and file name to Python script (const char*)
+ *
+ * Returns
+ *   0 on success or -1 if an exception was raised.
+ *
+ * Note:
  * This is basically a copy of PyRun_SimpleFileExFlags with
  * the following changes
- *      * only needs the filename (fopen is done here)
- *      * expects the file to be python source code
- *      (does not handle *.pyc, or *.pyo)
- *      * replaces PyErr_Print() part with custom LOGI calls
+ *  - only needs the filename (fopen is done here)
+ *  - expects the file to be python source code
+ *    (does not handle *.pyc, or *.pyo)
+ *  - replaces PyErr_Print() part with custom LOGI calls
  */
 
 int Verbose_PyRun_SimpleFile(const char *filename) {
