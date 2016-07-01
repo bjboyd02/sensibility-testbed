@@ -17,10 +17,33 @@ import java.io.OutputStream;
 import static android.os.Process.myUid;
 
 /**
- * Implement a sensor-enabled Python interpreter.
+ *Created by
+ * albert.rafetseder@univie.ac.at
+ * lukas.puehringer@nyu.edu
+ * on 3/28/16.
+ *
+ * Implements an Android Service that runs in the background and starts
+ * a Python interpreter in a separate thread
+ *
+ * Performs the following tasks:
+ *  - Declares a native Java method, whose C equivalent is called from
+ *    the JVM using JNI
+ *  - sets environment variables and passes them to native Python interpreter,
+ *    e.g. the directory we want Python to write files to
+ *  - Loads shared libraries python2.7 and snakei (sensor extensions)
+ *  - Copies files from the assets folder to a place where Python can
+ *    access them
+ *
+ * Note:
+ * We have to decide where Python should be allowed to write files to
+ * and also keep in mind that external storage can become unavailable
+ * during runtime
+ *
+ *
  */
 public class PythonInterpreterService extends Service {
-    private native void startNativePythonInterpreter(String path, String home, String script, String files, String args);
+    private native void startNativePythonInterpreter(String path, String home,
+                            String script, String files, String args);
 
     private class PythonInterpreterThread extends Thread {
         private String python_path;
@@ -45,10 +68,12 @@ public class PythonInterpreterService extends Service {
         @Override
         public void run() {
 
-            // Copy python files we want to execute in our Interpreter
-            // from the asset directory somewhere were the interpreter can fopen them
+            // Copy python files we want to execute in our interpreter
+            // from the asset directory somewhere where the interpreter
+            // can fopen them
             // XXX: This is just to test the python extensions
-            // Copying all the seattle files should probably happen somewhere else, later
+            // Copying all the seattle files should probably
+            // happen somewhere else, later
             try {
                 AssetManager asset_manager = getAssets();
                 String[] files;
