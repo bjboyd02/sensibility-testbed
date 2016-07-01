@@ -13,7 +13,7 @@
  *
  * Location initialization - call location_start_location from C
  *  - Calls start_location Java Method to register location update listener 
- *      on ocation provider
+ *      on location provider
  *
  * Get location values - call location.get_* from Python
  *  - Calls the according get* Method in Java

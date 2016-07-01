@@ -49,7 +49,7 @@ import java.util.List;
  * Created by lukas.puehringer@nyu.edu
  * on  6/3/16.
  *
- * A pseudo Service that facades misc Android Info calls
+ * A pseudo Service that facades miscellaneous Android Info calls
  *
  * Provides info methods for
  *   - WiFi
@@ -157,16 +157,19 @@ public class MiscInfoService {
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
                 if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                    // Bluetooth discovery has received info from a paged remote device
+                    // Bluetooth discovery has received info
+                    // from a paged remote device
                     BluetoothDevice remote_device = intent.getParcelableExtra(
                             BluetoothDevice.EXTRA_DEVICE);
                     scanned_bluetooth_devices.add(remote_device);
-                } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-                    // Bluetooth discovery has finished, there won't be any more page requests
-                    // Unregister receiver and
-                    // notify scan info function to stop waiting and return values
+                } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(
+                        action)) {
+                    // Bluetooth discovery has finished, there won't be any
+                    // more page requests, unregister receiver and notify
+                    // scan info function to stop waiting and return values
                     synchronized (bluetooth_sync){
-                        app_context.unregisterReceiver(bluetooth_broadcast_receiver);
+                        app_context.unregisterReceiver(
+                                bluetooth_broadcast_receiver);
                         bluetooth_sync.notify();
                     }
                 }
@@ -206,21 +209,29 @@ public class MiscInfoService {
             JSONArray network_info_json_array = new JSONArray();
             for (Network network : networks) {
                 JSONObject network_info_json = new JSONObject();
-                NetworkInfo network_info = connectivity_manager.getNetworkInfo(network);
+                NetworkInfo network_info = connectivity_manager
+                        .getNetworkInfo(network);
                 network_info_json.put("detailed_state",
-                        network_info.getDetailedState().name()); // Enum
-                network_info_json.put("extra_info", network_info.getExtraInfo());
-                network_info_json.put("reason", network_info.getReason());
-                network_info_json.put("state", network_info.getState().name()); //Enum
+                        network_info.getDetailedState().name());
+                network_info_json.put("extra_info",
+                        network_info.getExtraInfo());
+                network_info_json.put("reason",
+                        network_info.getReason());
+                network_info_json.put("state",
+                        network_info.getState().name());
                 network_info_json.put("subtype", network_info.getSubtype());
-                network_info_json.put("subtype_name", network_info.getSubtypeName());
+                network_info_json.put("subtype_name",
+                        network_info.getSubtypeName());
                 network_info_json.put("type", network_info.getType());
                 network_info_json.put("type_name", network_info.getTypeName());
-                network_info_json.put("is_connected", network_info.isConnected());
-                network_info_json.put("is_available", network_info.isAvailable());
+                network_info_json.put("is_connected",
+                        network_info.isConnected());
+                network_info_json.put("is_available",
+                        network_info.isAvailable());
                 network_info_json.put("is_connected_or_connecting",
                         network_info.isConnectedOrConnecting());
-                network_info_json.put("is_failover", network_info.isFailover());
+                network_info_json.put("is_failover",
+                        network_info.isFailover());
                 network_info_json.put("is_roaming", network_info.isRoaming());
 
                 network_info_json_array.put(network_info_json);
@@ -243,16 +254,18 @@ public class MiscInfoService {
     public String getCellularProviderInfo() throws JSONException {
         JSONObject provider_info_json = new JSONObject();
 
-        provider_info_json.put("network_operator", telephony_manager.getNetworkOperator());
-        provider_info_json.put("network_operator_name",telephony_manager.getNetworkOperatorName());
+        provider_info_json.put("network_operator",
+                telephony_manager.getNetworkOperator());
+        provider_info_json.put("network_operator_name",
+                telephony_manager.getNetworkOperatorName());
 
         return provider_info_json.toString();
     }
 
 
     /*
-     * Returns all observed cell information from all radios on the device including the
-     * primary and neighboring cells.
+     * Returns all observed cell information from all radios on
+     * the device including the primary and neighboring cells.
      *
      * Attributes differ from network to network (CDMA, LTE, GSM, WCDMA)
      *
@@ -284,38 +297,56 @@ public class MiscInfoService {
                 if (cell_info instanceof CellInfoCdma) {
 
                     // CDMA Signal Strength
-                    CellSignalStrengthCdma signal_strength = ((CellInfoCdma) cell_info)
-                            .getCellSignalStrength();
-                    cell_info_json.put("asu_level", signal_strength.getAsuLevel());
-                    cell_info_json.put("cdma_dbm", signal_strength.getCdmaDbm());
-                    cell_info_json.put("cdma_level", signal_strength.getCdmaLevel());
+                    CellSignalStrengthCdma signal_strength = ((CellInfoCdma)
+                            cell_info).getCellSignalStrength();
+                    cell_info_json.put("asu_level",
+                            signal_strength.getAsuLevel());
+                    cell_info_json.put("cdma_dbm",
+                            signal_strength.getCdmaDbm());
+                    cell_info_json.put("cdma_level",
+                            signal_strength.getCdmaLevel());
                     cell_info_json.put("dbm", signal_strength.getDbm());
-                    cell_info_json.put("evdo_dbm", signal_strength.getEvdoDbm());
-                    cell_info_json.put("evdo_ecio", signal_strength.getEvdoEcio());
-                    cell_info_json.put("evdo_level", signal_strength.getEvdoLevel());
-                    cell_info_json.put("evdo_snr", signal_strength.getEvdoSnr());
+                    cell_info_json.put("evdo_dbm",
+                            signal_strength.getEvdoDbm());
+                    cell_info_json.put("evdo_ecio",
+                            signal_strength.getEvdoEcio());
+                    cell_info_json.put("evdo_level",
+                            signal_strength.getEvdoLevel());
+                    cell_info_json.put("evdo_snr",
+                            signal_strength.getEvdoSnr());
                     cell_info_json.put("level", signal_strength.getLevel());
 
                     //CDMA Cell Identity
-                    CellIdentityCdma cell_id = ((CellInfoCdma) cell_info).getCellIdentity();
+                    CellIdentityCdma cell_id = ((CellInfoCdma)
+                            cell_info).getCellIdentity();
 
-                    cell_info_json.put("base_station_id", cell_id.getBasestationId());
-                    cell_info_json.put("base_station_latitude", cell_id.getLatitude());
-                    cell_info_json.put("base_station_longitude", cell_id.getLongitude());
-                    cell_info_json.put("network_id", cell_id.getNetworkId());
-                    cell_info_json.put("system_id", cell_id.getSystemId());
+                    cell_info_json.put("base_station_id",
+                            cell_id.getBasestationId());
+                    cell_info_json.put("base_station_latitude",
+                            cell_id.getLatitude());
+                    cell_info_json.put("base_station_longitude",
+                            cell_id.getLongitude());
+                    cell_info_json.put("network_id",
+                            cell_id.getNetworkId());
+                    cell_info_json.put("system_id",
+                            cell_id.getSystemId());
 
                 } else if (cell_info instanceof CellInfoLte) {
                     // LTE Signal Strength
-                    CellSignalStrengthLte signal_strength = ((CellInfoLte) cell_info)
-                            .getCellSignalStrength();
-                    cell_info_json.put("dbm", signal_strength.getDbm());
-                    cell_info_json.put("asu_level", signal_strength.getAsuLevel());
-                    cell_info_json.put("level", signal_strength.getLevel());
-                    cell_info_json.put("timing_advance", signal_strength.getTimingAdvance());
+                    CellSignalStrengthLte signal_strength = ((CellInfoLte)
+                            cell_info).getCellSignalStrength();
+                    cell_info_json.put("dbm",
+                            signal_strength.getDbm());
+                    cell_info_json.put("asu_level",
+                            signal_strength.getAsuLevel());
+                    cell_info_json.put("level",
+                            signal_strength.getLevel());
+                    cell_info_json.put("timing_advance",
+                            signal_strength.getTimingAdvance());
 
                     //LTE Cell Identity
-                    CellIdentityLte cell_id = ((CellInfoLte) cell_info).getCellIdentity();
+                    CellIdentityLte cell_id = ((CellInfoLte)
+                            cell_info).getCellIdentity();
                     cell_info_json.put("ci", cell_id.getCi());
                     cell_info_json.put("mcc", cell_id.getMcc());
                     cell_info_json.put("mnc", cell_id.getMnc());
@@ -324,14 +355,16 @@ public class MiscInfoService {
 
                 } else if (cell_info instanceof CellInfoGsm) {
                     // GSM Signal Strength
-                    CellSignalStrengthGsm signal_strength = ((CellInfoGsm) cell_info)
-                            .getCellSignalStrength();
-                    cell_info_json.put("asu_level", signal_strength.getAsuLevel());
+                    CellSignalStrengthGsm signal_strength = ((CellInfoGsm
+                            ) cell_info).getCellSignalStrength();
+                    cell_info_json.put("asu_level",
+                            signal_strength.getAsuLevel());
                     cell_info_json.put("dbm", signal_strength.getDbm());
                     cell_info_json.put("level", signal_strength.getLevel());
 
                     //GSM Cell Identity
-                    CellIdentityGsm cell_id = ((CellInfoGsm) cell_info).getCellIdentity();
+                    CellIdentityGsm cell_id = ((CellInfoGsm)
+                            cell_info).getCellIdentity();
                     cell_info_json.put("mnc", cell_id.getMnc());
                     cell_info_json.put("mcc", cell_id.getMcc());
                     cell_info_json.put("cid", cell_id.getCid());
@@ -339,14 +372,15 @@ public class MiscInfoService {
 
                 } else if (cell_info instanceof CellInfoWcdma) {
                     // WCDMA Signal Strength
-                    CellSignalStrengthWcdma signal_strength = ((CellInfoWcdma) cell_info)
-                            .getCellSignalStrength();
+                    CellSignalStrengthWcdma signal_strength = ((CellInfoWcdma
+                            ) cell_info).getCellSignalStrength();
                     cell_info_json.put("asu_level", signal_strength.getAsuLevel());
                     cell_info_json.put("dbm", signal_strength.getDbm());
                     cell_info_json.put("level", signal_strength.getLevel());
 
                     //WCDMA Cell Identity
-                    CellIdentityWcdma cell_id = ((CellInfoWcdma) cell_info).getCellIdentity();
+                    CellIdentityWcdma cell_id = ((CellInfoWcdma)
+                            cell_info).getCellIdentity();
                     cell_info_json.put("psc", cell_id.getPsc());
                     cell_info_json.put("cid", cell_id.getCid());
                     cell_info_json.put("lac", cell_id.getLac());
@@ -385,9 +419,12 @@ public class MiscInfoService {
         JSONObject sim_info_json = new JSONObject();
         sim_info_json.put("SIM_operator", telephony_manager.getSimOperator());
         sim_info_json.put("SIM_state", telephony_manager.getSimState());
-        sim_info_json.put("SIM_country_code", telephony_manager.getSimCountryIso());
-        sim_info_json.put("SIM_operator_name", telephony_manager.getSimOperatorName());
-        sim_info_json.put("SIM_serial_number", telephony_manager.getSimSerialNumber());
+        sim_info_json.put("SIM_country_code",
+                telephony_manager.getSimCountryIso());
+        sim_info_json.put("SIM_operator_name",
+                telephony_manager.getSimOperatorName());
+        sim_info_json.put("SIM_serial_number",
+                telephony_manager.getSimSerialNumber());
 
         return sim_info_json.toString();
     }
@@ -413,9 +450,12 @@ public class MiscInfoService {
     public String getPhoneInfo() throws JSONException {
         JSONObject phone_info_json = new JSONObject();
 
-        phone_info_json.put("subscriber_id", telephony_manager.getSubscriberId());
-        phone_info_json.put("call_state", telephony_manager.getCallState());
-        phone_info_json.put("data_activity", telephony_manager.getDataActivity());
+        phone_info_json.put("subscriber_id",
+                telephony_manager.getSubscriberId());
+        phone_info_json.put("call_state",
+                telephony_manager.getCallState());
+        phone_info_json.put("data_activity",
+                telephony_manager.getDataActivity());
         phone_info_json.put("data_state", telephony_manager.getDataState());
         phone_info_json.put("device_id", telephony_manager.getDeviceId());
         phone_info_json.put("device_software_version",
@@ -475,7 +515,8 @@ public class MiscInfoService {
         wifi_info_json.put("hidden_ssid", wifi_info.getHiddenSSID());
         wifi_info_json.put("bssid", wifi_info.getBSSID());
         wifi_info_json.put("rssi", wifi_info.getRssi());
-        wifi_info_json.put("supplicant_state", wifi_info.getSupplicantState().name());
+        wifi_info_json.put("supplicant_state",
+                wifi_info.getSupplicantState().name());
         wifi_info_json.put("link_speed", wifi_info.getLinkSpeed());
         wifi_info_json.put("mac_address", wifi_info.getMacAddress());
         wifi_info_json.put("ip_address", wifi_info.getIpAddress());
@@ -556,7 +597,8 @@ public class MiscInfoService {
         bluetooth_info_json.put("state", bluetooth_adapter.getState());
         bluetooth_info_json.put("scan_mode", bluetooth_adapter.getScanMode());
         bluetooth_info_json.put("local_name", bluetooth_adapter.getName());
-        bluetooth_info_json.put("local_address", bluetooth_adapter.getAddress());
+        bluetooth_info_json.put("local_address",
+                bluetooth_adapter.getAddress());
 
         bluetooth_adapter.getClass();
 
@@ -565,23 +607,25 @@ public class MiscInfoService {
 
 
     /*
-     * Starts bluetooth discovery, wait gets notified that discovery has finished and returns info
-     * about all remote bluetooth devices
+     * Starts bluetooth discovery, wait gets notified that discovery
+     * has finished and returns info about all remote bluetooth devices
      *
-     * Discovery usually involves an inquiry scan of about 12 seconds, followed by a page scan
-     * for each found device.
+     * Discovery usually involves an inquiry scan of about 12 seconds,
+     * followed by a page scan for each found device.
      *
      * @return  String serialized JSON Array
      * e.g.:
      * [{'bond_state': 10,
-     * # DEVICE_TYPE_CLASSIC=1 | DEVICE_TYPE_LE=2 | DEVICE_TYPE_DUAL=3 | DEVICE_TYPE_UNKNOWN=0
+     * # DEVICE_TYPE_CLASSIC=1 | DEVICE_TYPE_LE=2 |
+     * #   DEVICE_TYPE_DUAL=3 | DEVICE_TYPE_UNKNOWN=0
      * 'type': 2,
      * 'name': 'UP2',
      * 'address': 'FB:A0:85:FF:AE:1E'
      * }, ...]
      *
      */
-    public String getBluetoothScanInfo() throws JSONException, InterruptedException {
+    public String getBluetoothScanInfo()
+            throws JSONException, InterruptedException {
 
         // Register receiver for page scan result
         // and discovery finished
@@ -602,11 +646,14 @@ public class MiscInfoService {
                 // transform infos to JSON and return as String
                 if (scanned_bluetooth_devices.size() > 0) {
                     JSONArray bluetooth_json_array = new JSONArray();
-                    for (BluetoothDevice remote_device : scanned_bluetooth_devices) {
+                    for (BluetoothDevice remote_device :
+                            scanned_bluetooth_devices) {
                         JSONObject bluetooth_json = new JSONObject();
-                        bluetooth_json.put("address", remote_device.getAddress());
+                        bluetooth_json.put("address",
+                                remote_device.getAddress());
                         bluetooth_json.put("name", remote_device.getName());
-                        bluetooth_json.put("bond_state", remote_device.getBondState());
+                        bluetooth_json.put("bond_state",
+                                remote_device.getBondState());
                         bluetooth_json.put("type", remote_device.getType());
 
                         bluetooth_json_array.put(bluetooth_json);
@@ -649,14 +696,21 @@ public class MiscInfoService {
         Intent battery_info = app_context.registerReceiver(null, ifilter);
 
         // Retrieve values
-        int status = battery_info.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
-        int temperature = battery_info.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1);
+        int status = battery_info.getIntExtra(
+                BatteryManager.EXTRA_STATUS, -1);
+        int temperature = battery_info.getIntExtra(
+                BatteryManager.EXTRA_TEMPERATURE, -1);
         int level = battery_info.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-        boolean present = battery_info.getExtras().getBoolean(BatteryManager.EXTRA_PRESENT, false);
-        int plugged = battery_info.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
-        int health = battery_info.getIntExtra(BatteryManager.EXTRA_HEALTH, -1);
-        int voltage = battery_info.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1);
-        String technology = battery_info.getExtras().getString(BatteryManager.EXTRA_TECHNOLOGY, "N/A");
+        boolean present = battery_info.getExtras().getBoolean(
+                BatteryManager.EXTRA_PRESENT, false);
+        int plugged = battery_info.getIntExtra(
+                BatteryManager.EXTRA_PLUGGED, -1);
+        int health = battery_info.getIntExtra(
+                BatteryManager.EXTRA_HEALTH, -1);
+        int voltage = battery_info.getIntExtra(
+                BatteryManager.EXTRA_VOLTAGE, -1);
+        String technology = battery_info.getExtras().getString(
+                BatteryManager.EXTRA_TECHNOLOGY, "N/A");
 
         // Add values to JSON dict
         battery_info_json.put("status",status);
@@ -682,10 +736,13 @@ public class MiscInfoService {
      *
      *
      */
-    public String getModeSettings() throws Settings.SettingNotFoundException, JSONException {
+    public String getModeSettings()
+            throws Settings.SettingNotFoundException, JSONException {
         JSONObject mode_settings_json = new JSONObject();
-        boolean airplane_mode = android.provider.Settings.System.getString(content_resolver,
-                Settings.Global.AIRPLANE_MODE_ON)  == Settings.Global.AIRPLANE_MODE_ON;
+        boolean airplane_mode = (android.provider.Settings.System
+                .getString(content_resolver,
+                        Settings.Global.AIRPLANE_MODE_ON)  ==
+                Settings.Global.AIRPLANE_MODE_ON);
         int ringer_mode = audio_manager.getRingerMode();
 
         mode_settings_json.put("airplane_mode", airplane_mode);
@@ -722,12 +779,12 @@ public class MiscInfoService {
         int rotation = display.getRotation();
         display.getSize(size);
 
-        String brightness = android.provider.Settings.System.getString(content_resolver,
-                Settings.System.SCREEN_BRIGHTNESS);
-        String brightness_mode = android.provider.Settings.System.getString(content_resolver,
-                Settings.System.SCREEN_BRIGHTNESS_MODE);
-        String timeout = android.provider.Settings.System.getString(content_resolver,
-                Settings.System.SCREEN_OFF_TIMEOUT);
+        String brightness = android.provider.Settings.System.getString(
+                content_resolver,Settings.System.SCREEN_BRIGHTNESS);
+        String brightness_mode = android.provider.Settings.System.getString(
+                content_resolver, Settings.System.SCREEN_BRIGHTNESS_MODE);
+        String timeout = android.provider.Settings.System.getString(
+                content_resolver, Settings.System.SCREEN_OFF_TIMEOUT);
 
         screen_settings_json.put("name", name);
         screen_settings_json.put("state", state);
@@ -748,7 +805,12 @@ public class MiscInfoService {
      *
      * @return  String serialized JSON Object
      * e.g.:
-     * {'max_media_volume': 15, 'media_volume': 0, 'max_ringer_volume': 15, 'ringer_volume': 0}
+     * {
+     * 'max_media_volume': 15,
+     * 'media_volume': 0,
+     * 'max_ringer_volume': 15,
+     * 'ringer_volume': 0
+     * }
      */
     public String getVolumeInfo() throws JSONException {
         JSONObject volume_json = new JSONObject();

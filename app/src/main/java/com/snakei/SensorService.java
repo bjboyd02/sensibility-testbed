@@ -776,7 +776,8 @@ public class SensorService implements SensorEventListener  {
             linear_acceleration_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD){
             magnetic_field_json = result;
-        } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED){
+        } else if (event.sensor.getType() ==
+                Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED){
             magnetic_field_uncalibrated_json = result;
         } else if (event.sensor.getType() == Sensor.TYPE_PRESSURE){
             pressure_json = result;

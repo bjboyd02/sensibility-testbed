@@ -33,13 +33,14 @@ import java.util.UUID;
  * (cf. SensorService.java for more info )
  *
  * Todo:
- *   - Currently we use default settings for text to speech and  audio recording
- *     Should we allow the user to change these settings?
+ *   - Currently we use default settings for text to speech and  audio
+ *     recording Should we allow the user to change these settings?
  *
- *   - Same story as in other Sensibility Services, how do we handle initialization
- *    and release of resources?
+ *   - Same story as in other Sensibility Services, how do we handle
+ *     initialization and release of resources?
  *
- *   - Doesn't implement get_media_play_info() from old API anymore, could be added
+ *   - Doesn't implement get_media_play_info() from old API anymore,
+ *     could be added
  */
 public class MediaService  {
     static final String TAG = "MediaService";
@@ -70,7 +71,8 @@ public class MediaService  {
 
     public MediaService() {
         app_context = SensibilityApplication.getAppContext();
-        audio_manager = (AudioManager)app_context.getSystemService(Context.AUDIO_SERVICE);
+        audio_manager = (AudioManager)app_context.getSystemService(
+                Context.AUDIO_SERVICE);
         tts_sync = new Object();
     }
 
@@ -133,7 +135,7 @@ public class MediaService  {
      * difficult.
      *
      * Possible non-blocking approach
-     *      For a non blocking approach we could use a recording session duration:
+     *      For a non blocking approach we could use recording session duration:
      *      recorder.setMaxDuration(int max_duration_ms) or a custom timer
      *      together with info or error listener:
      *          recorder.setOnInfoListener(OnInfoListener) or
@@ -142,7 +144,8 @@ public class MediaService  {
      * There are a lot of things that can be parametrized
      *     e.g. Format, Encoder, ...
      */
-    public void microphoneRecord(String file_name, int duration) throws InterruptedException, IOException {
+    public void microphoneRecord(String file_name, int duration)
+            throws InterruptedException, IOException {
         // Create new media recorder and start with default settings
         MediaRecorder recorder = new MediaRecorder();
         recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -205,8 +208,9 @@ public class MediaService  {
      * time (~8 seconds on developer device) for subsequent calls to ttsSpeak
      *
      * Caveats:
-     * Have to call start_media before using ttsSpeak and stop_media to release resources
-     * Concurrent calls to ttsSpeak will cancel each other
+     *  - Have to call start_media before using ttsSpeak and stop_media to
+     *    release resources
+     *  - Concurrent calls to ttsSpeak will cancel each other
      *
      * Further possible parameters
      *  - QUEUE_ADD - add to tts queue and synthesizes when ready

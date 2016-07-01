@@ -14,6 +14,8 @@
 #include "pyhelper.h"
 #include "miscinfo.h"
 
-void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(JNIEnv* env, jobject instance, jstring python_home, jstring python_path, jstring python_script, jstring python_files, jstring python_arguments);
+void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
+        JNIEnv* env, jobject instance, jstring python_home, jstring python_path,
+        jstring python_script, jstring python_files, jstring python_arguments);
 #endif /* defined _SNAKEI_INTERPRETER_H_ */
 

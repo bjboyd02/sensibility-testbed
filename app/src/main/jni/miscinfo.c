@@ -115,7 +115,8 @@ PyObject* miscinfo_get_network_info(PyObject *self) {
  */
 PyObject* miscinfo_get_cellular_provider_info(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod, m_cached.get_cellular_provider_info);
+                   jh_callJsonStringMethod,
+                   m_cached.get_cellular_provider_info);
 }
 
 
@@ -186,7 +187,8 @@ PyObject* miscinfo_get_battery_info(PyObject *self) {
  * Maps C functions to Python module methods
  */
 static PyMethodDef AndroidMiscinfoMethods[] = {
-        {"is_wifi_enabled", (PyCFunction) miscinfo_is_wifi_enabled, METH_NOARGS,
+        {"is_wifi_enabled",
+         (PyCFunction) miscinfo_is_wifi_enabled, METH_NOARGS,
          "True if WiFi is enabled, False otherwise"},
         {"get_wifi_state", (PyCFunction) miscinfo_get_wifi_state, METH_NOARGS,
          "Returns state of WiFi"},
@@ -196,7 +198,8 @@ static PyMethodDef AndroidMiscinfoMethods[] = {
         {"get_wifi_scan_info",
          (PyCFunction) miscinfo_get_wifi_scan_info, METH_NOARGS,
          "Performs WiFi scan and returns info about scanned WiFis"},
-        {"get_bluetooth_info", (PyCFunction) miscinfo_get_bluetooth_info, METH_NOARGS,
+        {"get_bluetooth_info",
+         (PyCFunction) miscinfo_get_bluetooth_info, METH_NOARGS,
          "Returns info about bluetooth interface on the device"},
         {"get_bluetooth_scan_info",
          (PyCFunction) miscinfo_get_bluetooth_scan_info, METH_NOARGS,

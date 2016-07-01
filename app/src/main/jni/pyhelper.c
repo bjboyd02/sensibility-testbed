@@ -49,7 +49,8 @@ int Verbose_PyRun_SimpleString(const char *code) {
  * This is basically a copy of PyRun_SimpleFileExFlags with
  * the following changes
  *      * only needs the filename (fopen is done here)
- *      * expects the file to be python source code (does not handle *.pyc, or *.pyo)
+ *      * expects the file to be python source code
+ *      (does not handle *.pyc, or *.pyo)
  *      * replaces PyErr_Print() part with custom LOGI calls
  */
 
@@ -60,7 +61,8 @@ int Verbose_PyRun_SimpleFile(const char *filename) {
 
     fp = fopen(filename, "r");
     if (fp == NULL) {
-        LOGI("NULL file pointer for '%s' because errno %i '%s'", filename, errno, strerror(errno));
+        LOGI("NULL file pointer for '%s' because errno %i '%s'",
+             filename, errno, strerror(errno));
         return -1;
     }
 

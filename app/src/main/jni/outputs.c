@@ -20,7 +20,8 @@ PyObject* androidlog_log(PyObject *self, PyObject *python_message) {
   // Convert C string to Java string
   java_message = jh_getJavaString(c_message);
 
-  PyObject* result = jh_callStaticVoid(m_cached.class, m_cached.log_message, java_message);
+  PyObject* result = jh_callStaticVoid(m_cached.class, m_cached.log_message,
+                                       java_message);
 
   jh_deleteReference((jobject) java_message);
 
@@ -43,5 +44,6 @@ void initandroidlog() {
   jclass class = jh_getClass("com/snakei/OutputService");
   m_cached = (struct output_cache){
           .class = class,
-          .log_message = jh_getStaticMethod(class, "logMessage", "(Ljava/lang/String;)V")};
+          .log_message = jh_getStaticMethod(class, "logMessage",
+                                            "(Ljava/lang/String;)V")};
 }

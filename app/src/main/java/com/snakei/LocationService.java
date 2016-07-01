@@ -53,8 +53,8 @@ import com.sensibility_testbed.SensibilityApplication;
  * Todo:
  *   Maybe we can generalize some common aspects of all the facades
  *     (Real sensors, location, media, miscinfo,...)
- *   Decide how to handle resource allocation and release in multi-threading environments
- *     Keep battery drain in mind
+ *   Decide how to handle resource allocation and release in multi-threading
+ *   environments, keep battery drain in mind
  *
  */
 
@@ -69,15 +69,17 @@ public class LocationService implements android.location.LocationListener,
 
     // Used to connect to Google Play Service
     private GoogleApiClient google_api_client;
-    // Used to define accuracy and frequency of Google Play Services location updates
+    // Used to define accuracy and frequency of Google Play Services
+    // location updates
     private LocationRequest google_location_request;
 
-    // We need to make those class members to be able to unregister them in their own
-    // callback functions
+    // We need to make those class members to be able to
+    // unregister them in their own callback functions
     private ConnectionCallbacks google_api_connection_callbacks;
     private OnConnectionFailedListener google_api_connection_failed_callbacks;
 
-    // Used to transform lat/long to addresses or vice-versa (requires Google Play Service)
+    // Used to transform lat/long to addresses or vice-versa
+    // Requires Google Play Service
     private Geocoder geocoder;
 
     // Location JSON object for each provider
@@ -107,11 +109,13 @@ public class LocationService implements android.location.LocationListener,
      */
     private LocationService() {
         Context app_context = SensibilityApplication.getAppContext();
-        location_manager = (LocationManager)app_context.getSystemService(app_context.LOCATION_SERVICE);
+        location_manager = (LocationManager)app_context.getSystemService(
+                app_context.LOCATION_SERVICE);
 
         // Set Google Play Service QoS parameters to "real-time"
         google_location_request = new LocationRequest();
-        google_location_request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        google_location_request.setPriority(
+                LocationRequest.PRIORITY_HIGH_ACCURACY);
         google_location_request.setInterval(5);
 
         geocoder = new Geocoder(app_context, Locale.getDefault());
@@ -119,23 +123,23 @@ public class LocationService implements android.location.LocationListener,
 
 
     /*
-     * Registers location update listeners for GPS and network provider and connects to
-     * Google API client
-     *
-     * The connection callback function is implemented
-     * by the LocationService class (see below). Upon connection it will also register a location
-     * update listener.
+     * Registers location update listeners for GPS and network provider and 
+     * connects to Google API client, upon connection it will also register
+     * a location update listener
      *
      */
     public void start_location() {
-        // There is no use in listening for PASSIVE_PROVIDER if one of the other two is registered
-        // It only retrieves values if any other app is listening to a gps or network provider
-        // If they can we can too, furthermore we need the same permissions for passive as for gps
-        // and network.
+        // There is no use in listening for PASSIVE_PROVIDER if one of the
+        // other two is registered
+        // It only retrieves values if any other app is listening to a gps or
+        // network provider
+        // If they can we can too, furthermore we need the same permissions
+        // for passive as for gps and network.
         // Current Sensibility API returns values from all three providers
-        location_manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0,
-                this, Looper.getMainLooper());
-        location_manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0,
+        location_manager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                0, 0, this, Looper.getMainLooper());
+        location_manager.requestLocationUpdates(
+                LocationManager.NETWORK_PROVIDER, 0, 0,
                 this, Looper.getMainLooper());
 
         // Store a copy of this to use in
@@ -148,15 +152,17 @@ public class LocationService implements android.location.LocationListener,
             public void onConnected(@Nullable Bundle bundle) {
                 LocationServices.FusedLocationApi
                         .requestLocationUpdates(_this.google_api_client,
-                        _this.google_location_request, _this, Looper.getMainLooper());
+                        _this.google_location_request, _this,
+                                Looper.getMainLooper());
 
-                // Once connected we can unregister the connection listener and connection
-                // failed listener
+                // Once connected we can unregister the connection listener
+                // and connection failed listener
                 _this.google_api_client.unregisterConnectionCallbacks(this);
 
-                // Only gets here after call to google_api_client.connect() which happens
-                // after google_api_connection_failed_callbacks is initialized
-                // but the compiler doesn't know this and wants us to check
+                // Only gets here after call to google_api_client.connect()
+                // which happens after google_api_connection_failed_callbacks
+                // is initialized but the compiler doesn't know this and
+                // wants us to check
                 if (_this.google_api_connection_failed_callbacks != null) {
                     _this.google_api_client.unregisterConnectionFailedListener(
                             google_api_connection_failed_callbacks);
@@ -170,16 +176,19 @@ public class LocationService implements android.location.LocationListener,
         // Initialize here and pass to google_api_client builder later
         google_api_connection_failed_callbacks = new OnConnectionFailedListener() {
             @Override
-            public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+            public void onConnectionFailed(@NonNull
+                                           ConnectionResult connectionResult) {
 
-                // XXX: This happens asynchronously, so we won't be able to tell the user
-                // but s/he will figure out sooner or later when s/he wants to use the Google API
+                // XXX: This happens asynchronously, so we won't be able
+                // to tell the user but s/he will figure out sooner or later
+                // when s/he wants to use the Google API
                 Log.wtf(TAG, String.format("Connection failed with code: %d. " +
-                        "Check com.google.android.gms.common.ConnectionResult constants",
+                        "Check com.google.android.gms.common.ConnectionResult" +
+                        " constants",
                         connectionResult.getErrorCode()));
 
-                // Once failed we can unregister the connection listener and connection
-                // failed listener
+                // Once failed we can unregister the connection listener
+                // and connection failed listener
                 _this.google_api_client.unregisterConnectionCallbacks(
                         google_api_connection_callbacks);
                 _this.google_api_client.unregisterConnectionFailedListener(this);
@@ -189,7 +198,8 @@ public class LocationService implements android.location.LocationListener,
 
         // Create Google Play Service API client using its builder and pass
         // it the above created connection/failure listener ...
-        google_api_client = new GoogleApiClient.Builder(SensibilityApplication.getAppContext())
+        google_api_client = new GoogleApiClient.Builder(
+                SensibilityApplication.getAppContext())
                 .addConnectionCallbacks(google_api_connection_callbacks)
                 .addOnConnectionFailedListener(google_api_connection_failed_callbacks)
                 .addApi(LocationServices.API)
@@ -210,7 +220,8 @@ public class LocationService implements android.location.LocationListener,
 
         location_manager.removeUpdates(this);
 
-        // If in the process of connecting wait with disconnect until being connected
+        // If in the process of connecting wait with disconnect until
+        // being connected
         if (google_api_client.isConnecting()) {
             google_api_client.blockingConnect();
             google_api_client.disconnect();
@@ -219,7 +230,8 @@ public class LocationService implements android.location.LocationListener,
         // Disconnect from Google Api Only if we are connected
         if(google_api_client.isConnected()) {
             // If listener is not registered this has no effects
-            LocationServices.FusedLocationApi.removeLocationUpdates(google_api_client, this);
+            LocationServices.FusedLocationApi.removeLocationUpdates(
+                    google_api_client, this);
             google_api_client.disconnect();
         }
     }
@@ -292,8 +304,8 @@ public class LocationService implements android.location.LocationListener,
 
 
    /*
-     * Returns last location update received by the device (e.g. by another app) for
-     * each available provider: fused, network and gps
+    * Returns last location update received by the device (e.g. by another app)
+    * foreach available provider: fused, network and gps
     *
     * @return  String serialized JSON Object or null
     * e.g.: same as getLocation
@@ -316,7 +328,8 @@ public class LocationService implements android.location.LocationListener,
         }
 
         if (google_api_client.isConnected()) {
-            location_fused = LocationServices.FusedLocationApi.getLastLocation(google_api_client);
+            location_fused = LocationServices.FusedLocationApi.getLastLocation(
+                    google_api_client);
             if (location_fused != null) {
                 locations_json.put("fused", jsonify_location(location_fused));
             }
@@ -329,9 +342,10 @@ public class LocationService implements android.location.LocationListener,
     }
 
     /*
-     * Returns at max a specified amount of address information for a given Latitude and Longitude
-     * This process is called reverse geo coding and requires an internet connection and
-     * a connection to Google Play Service API
+     * Returns at max a specified amount of address information for a given
+     * Latitude and Longitude. This process is called reverse geo coding and
+     * requires an internet connection and a connection to Google
+     * Play Service API
      *
      * @param   Latitude (double)
      * @param   Longitude (double)
@@ -369,8 +383,10 @@ public class LocationService implements android.location.LocationListener,
      * ]
      *
      */
-    public String getGeoLocation(double latitude, double longitude, int max_results) throws
-        IOException, IllegalArgumentException, JSONException, GooglePlayServicesNotAvailableException {
+    public String getGeoLocation(double latitude, double longitude,
+                                 int max_results) throws
+        IOException, IllegalArgumentException, JSONException,
+            GooglePlayServicesNotAvailableException {
 
         List<Address> addresses = null;
         if (google_api_client.isConnected() &&
@@ -397,7 +413,8 @@ public class LocationService implements android.location.LocationListener,
                 address_json.put("premises", address.getPremises());
                 address_json.put("sub_admin_area", address.getSubAdminArea());
                 address_json.put("sub_locality", address.getSubLocality());
-                address_json.put("sub_thoroughfare", address.getSubThoroughfare());
+                address_json.put("sub_thoroughfare",
+                        address.getSubThoroughfare());
                 address_json.put("thoroughfare", address.getThoroughfare());
                 address_json.put("url", address.getUrl());
                 int address_line_cnt = address.getMaxAddressLineIndex();
@@ -417,17 +434,19 @@ public class LocationService implements android.location.LocationListener,
 
 
     /*
-     * Internal helper function that takes a location object of any provider, extracts
-     * its attributes and creates a JSONObject.
-     * Also adds the current time in milliseconds as "time_polled" attribute, i.e. the
-     * time when the user called getLocation or getLastKnownLocation. Whereas
-     * "time_sample" is the time when LocationService received the location update
+     * Internal helper function that takes a location object of any provider,
+     * extracts its attributes and creates a JSONObject.
+     * Also adds the current time in milliseconds as "time_polled" attribute,
+     * i.e. the time when the user called getLocation or getLastKnownLocation.
+      * Whereas "time_sample" is the time when LocationService received
+      * the location update
      *
      * @return  String serialized JSON Object or null
      * e.g.: see getLocation or getLastKnownLocation
      *
      */
-    private JSONObject jsonify_location(Location location) throws JSONException {
+    private JSONObject jsonify_location(Location location)
+            throws JSONException {
         JSONObject location_json = new JSONObject();
 
         location_json.put("time_polled", System.currentTimeMillis());
@@ -440,11 +459,13 @@ public class LocationService implements android.location.LocationListener,
         location_json.put("speed", location.getSpeed());
         Bundle extras = location.getExtras();
 
-        // Provider specific extra information, e.g. satellites (gps), travelState (network)
+        // Provider specific extra information,
+        // e.g. satellites (gps), travelState (network)
         if (extras != null) {
             JSONObject extras_json = new JSONObject();
             for (String key : extras.keySet()) {
-                // Use wrap to also stringify in case the value is an unexpected Object
+                // Use wrap to also stringify in case the value
+                // is an unexpected Object
                 extras_json.put(key, JSONObject.wrap(extras.get(key)));
             }
             if (extras_json.length() > 0) {
@@ -494,13 +515,15 @@ public class LocationService implements android.location.LocationListener,
 
         if (location.getProvider().equals(LocationManager.GPS_PROVIDER)) {
             location_gps_json = location_json;
-        } else if (location.getProvider().equals(LocationManager.NETWORK_PROVIDER)) {
+        } else if (location.getProvider().equals(
+                LocationManager.NETWORK_PROVIDER)) {
             location_network_json = location_json;
         } else if (location.getProvider().equals("fused")) {
             location_fused_json = location_json;
         } else {
             // WHAT THE terrible failure?!!
-            Log.wtf(TAG, String.format("Received location from unknown Provider: %s",
+            Log.wtf(TAG, String.format(
+                    "Received location from unknown Provider: %s",
                     location.getProvider()));
         }
     }

@@ -144,9 +144,9 @@ static PyMethodDef AndroidMediaMethods[] = {
           (PyCFunction) media_microphone_record, METH_VARARGS,
          "Record audio to specified file for specified seconds "},
         {"is_tts_speaking", (PyCFunction) media_is_tts_speaking, METH_NOARGS,
-         "True if TTS is speaking or about to speak, false otherwise"},
+         "True if TTS is speaking or about to speak, False otherwise"},
         {"is_media_playing", (PyCFunction) media_is_media_playing, METH_NOARGS,
-         "True if media is playing, false otherwise"},
+         "True if media is playing, False otherwise"},
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
