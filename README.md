@@ -18,7 +18,7 @@ How this works approximately:
  * the proper Python bindings to make these JNI calls available 
   to Python code.
 
-Scroll down for a [detailed System Overview](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/README.md#detailed-system-overview)
+Read the **docstrings** and **comments** for detailed information about the different components!
 
 ## Installation and Usage
 
@@ -46,12 +46,12 @@ Scroll down for a [detailed System Overview](https://github.com/aaaaalbert/sensi
    - `onCreate` is the entry point to the app
    - sets up UI and handles user interaction 
    - starts `PythonInterpreterService`
-   - *parts to install Seattle are currently commented out*
+   - *Seattle installation is currently commented out*
  - **Python Interpreter Service** - `com.snakei.PythonInterpreterService` 
    - runs in background
    - loads native libraries (Python) and native modules (Snakei)
    - starts new thread (Android `Service`s don't run in their own thread a priori)
-   - calls its native method defined in `interpreter.c` 
+   - calls its native method which is defined in `interpreter.c` 
  - **Application** - `com.sensibility_testbed.SensibilityApplication`
    - Workaround to provide a static reference of the application context to Sensor Service Facades
  - **Android Manifest** - `AndroidManifest.xml` 
@@ -61,23 +61,23 @@ Scroll down for a [detailed System Overview](https://github.com/aaaaalbert/sensi
    - Facades for Android resource access, i.e. sensors, location providers, media components and miscellaneous device information
    - made available to native code via JNI calls to functions that return either simple data types or String serialized JSON Objects
    - *currently access the application context using a static call to `SensibilityApplication`*
-   - *These are not Android Services, they do not implement `android.app.Service`
+   - *these aren't Android Services, asthey do not implement `android.app.Service`, but we call them Service because they run in the background*
 
 
 ### Native Code
  - **Snakei** - `snakei.c`
    - receives and caches a reference to JVM when loaded via `System.loadLibrary()`
-   - included by all extensions to access the JVM pointer
+   - the cached reference is used by all native extension modules
  - **Python Interpreter** - `interpreter.c`
    - defines native function, declared in `PythonInterpreterService.java`, from where it gets called
-   - currently used to initialize Python modules - `init*()`, acquire resources in Java - `*_start_*()`, run Python tests scripts that use the new modules, and eventually release the resources - *_stop_*()
+   - currently used to initialize Python modules - `init*()`, acquire resources in Java - `*_start_*()`, run some Python scripts that use the new modules, and eventually release the resources - `*_stop_*()`
  - **Sensor Init/Deint Function /  Python Extensions** - `sensors.c`, `location.c`, `media.c`, `miscinfo.c`, `outputs.c`
    - initialize Python module
    - acquire Android resources
-   - Python extensions to access Android resources
+   - provide Python extensions to access Android resources
    - release Android resources
  - **JNI glue** - `jnihelper.c`
-   - Helper functions that can be used by C-Python extension to call into the Android Java Virtual Machine (JVM) using the Java Native Interface (JNI)
+   - Helper functions that can be used by extension to call into the Android Java Virtual Machine (JVM) using the Java Native Interface (JNI)
    - Some of the functions convert Java's return values to Python objects
  - **CJSON** - `cjson.c`
    - We use [Python CJSON](https://pypi.python.org/pypi/python-cjson) to decode String serialized JSON objects received from Java and convert them directly to Python objects
@@ -88,20 +88,40 @@ Scroll down for a [detailed System Overview](https://github.com/aaaaalbert/sensi
 ![Sensibility Sequence Diagram for Acceleration Extension](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/docs/sensibility_sequence.png "Sequence Diagram for Acceleration Extension")
 
 1. The native method `Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter()` is declared in [PythonInterpreterService.java](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/java/com/snakei/PythonInterpreterService.java) and defined in [interpreter.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/interpreter.c) and gets called from the JVM
-1. This method calls [sensor.c's](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/sensors.c#L340)`initsensor()` which
- - initializes the sensor extensions in a Python module (not shown)
- - and uses the custom JNI glue - [jnihelper.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/jnihelper.c) - to lookup the required Java class and methods defined in [SensorService.java](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/java/com/snakei/SensorService.java) and caches them for later use.
-1. The interpreter then calls sensor.c's `sensor_start_sensing()`, which passes the previously cached Java class and methods to the the JNI glue, in order to
- - retrieve a Singleton instance of `SensorService` and
- - call `start_sensing()` on the instance which registers a listener on the main thread (not the thread the method was called from). The listener receives regular updates from the device's Accelerometer
+1. This method calls [sensor.c's](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/sensors.c#L340)`initsensor()` which initializes the sensor extensions in a Python module (not shown in sequence diagram)
+1. and uses the custom JNI glue - [jnihelper.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/jnihelper.c) - to lookup the required Java class and methods defined in [SensorService.java](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/java/com/snakei/SensorService.java) and caches them for later use.
+
+1. The interpreter then calls sensor.c's `sensor_start_sensing()`, 
+1. which passes the previously cached Java class and methods to the the JNI glue, in order to
+1. retrieve a Singleton instance of `SensorService` and
+1.  call `start_sensing()` on the instance which registers a listener on the main thread (not the thread the method was called from). The listener receives regular updates from the device's Accelerometer
+
 1. The interpreter then runs a Python script which simply imports the previously initialized Python module `sensor` and calls its `get_acceleration()` function. The script is executed using a custom C wrapper defined in [pyhelper.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/pyhelper.c)
- - the Python function `get_acceleration()` is defined as C Extension in `sensors.c` where it again uses `jnihelper.c` to get a Singleton instance of `SensorService.java` and call `getAcceleartion()` on that instance, which
-    - returns the last Sensor update, received in the previously registered Listener, as String serialized JSON Object
-    - `jnihelper.c` uses [cjson.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/cjson.c) to decode the returned String as Python Object which gets returned to the calling Python script
+1. the Python function `get_acceleration()` is defined as C-Python extension in `sensors.c`, where it again 
+1. uses `jnihelper.c` to get a Singleton instance of `SensorService.java` and call `getAcceleration()` on that instance, which 
+1. returns the last Sensor update, received in the previously registered Listener, as String serialized JSON Object
+1. `jnihelper.c` then uses [cjson.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/cjson.c) to decode the returned String as Python Object which gets returned to the calling Python script
 1. Eventually, the interpreter calls `sensor_stop_sensing()` to unregister the listener in Java
 
+## Notes on Java Native Interface (JNI)
+In general the JNI can be used to call native methods from Java and vice versa. This application uses the JNI in both ways. It starts a Python interpreter - a native method that runs Python scripts - from Java and it calls into the JVM from native code, to access Android resources and make them available to Python via C-Python extensions. Most of the JNI specific calls are hidden from the extensions by `jnihelper.c`.
 
-## Extension Modules
+### Passing data from Java to native Code
+Given a list of Java objects, where each object has getters that return different primitive data types, the native code would have to iterate the list
+and call back into the JVM to first find each object's class and all the getters and finally call each getter. Also, Java would probably have to give back a Java List object with the capability of containing objects of different types to the native code, which can't be simply iterated but would require the native code to find the class and methods of the List's iterator using JNI and then iterate through the List also using the JNI.
+
+To avoid this, all Java functions that are called from native code either directly return primitive data types that don't require reaching back into the JVM or convert the returned data to JSON and give back a serialized String that gets decoded in native code.
+
+### Caching
+To avoid redundant calls into the JVM, classes and methods that get repeatedly called are cached in the init function of the Python extension modules
+
+### Helpful resources
+ - [Android JNI Tips](https://developer.android.com/training/articles/perf-jni.html)
+ - [JNI Specification](http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/jniTOC.html)
+ - [JNI best practices](http://www.ibm.com/developerworks/java/library/j-jni/index.html)
+
+
+## API modules
 The following modules are available in Python. Detailed information about each method can be found in the source code comments. 
 
 ### sensor
@@ -125,12 +145,14 @@ The following modules are available in Python. Detailed information about each m
  - get_relative_humidity()
  - get_rotation_vector()
  - get_step_counter()
+
 ### location
 `location.c`
 
  - get_location()
  - get_lastknown_location()
  - get_geolocation(latitude, longitude, max_results)
+
 ### media
 `media.c`
 
@@ -138,6 +160,7 @@ The following modules are available in Python. Detailed information about each m
  - microphone_record(file_name, duration)
  - is_media_playing()
  - is_tts_speaking()
+
 ### miscinfo
 `miscinfo.c`
 
@@ -156,21 +179,19 @@ The following modules are available in Python. Detailed information about each m
  - get_display_info()
  - get_volume_info()
  - get_battery_info()
+
 ### androidlog
 `outputs.c`
 
  - log(message)
 
-** Notes on Java Native Interface
-In general the JNI can be used to call native methods from Java and vice versa. This application uses the JNI in both ways. It starts a Python interpreter - a native method that runs Python scripts - from Java and it calls into the JVM from native code, to access Android resources and make them available to Python as C-Python extensions. Most of the JNI specific calls are hidden by `jnihelper.c`. Furthermore, complex data, e.g. nested lists or maps containing values of different data types are returned from Java to the native code as String serialized JSON Objects and subsequently converted to Python Objects. This avoids reaching back into the JVM repeatedly. E.g. given an array of 
-
-*Helpful resources*
- - [Android JNI Tips](https://developer.android.com/training/articles/perf-jni.html)
- - [JNI Specification](http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/jniTOC.html)
- - [JNI best practices](http://www.ibm.com/developerworks/java/library/j-jni/index.html)
-
+ ## Caveats, pitfalls and notes
+ *Most of them are already mentioned in the source code comments but they should also be mentioned here.*
 
 
 -----
 ## Todo
- - Write Todo
+ - Clean up build and config scripts (I think there are redundancies in gradle, AndroidManifest and Android.mk)
+ - Take care of `thread-from-JVM` removal
+ - Take care of save file system access
+ - Install and start Seattle using JNI (don't forget about vessel management)
