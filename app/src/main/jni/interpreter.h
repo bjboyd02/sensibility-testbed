@@ -15,6 +15,6 @@
 #include "miscinfo.h"
 
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
-        JNIEnv* env, jobject instance, jstring python_files);
+        JNIEnv* env, jobject instance, jstring python_scripts);
 #endif /* defined _SNAKEI_INTERPRETER_H_ */
 

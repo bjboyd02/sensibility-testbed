@@ -26,16 +26,16 @@
 #include "interpreter.h"
 
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
-        JNIEnv* env, jobject instance, jstring python_files) {
+        JNIEnv* env, jobject instance, jstring python_scripts) {
 
-  char* files = (char*) (*env)->GetStringUTFChars(env, python_files, NULL);
+  char* files = (char*) (*env)->GetStringUTFChars(env, python_scripts, NULL);
 
   LOGI("Before Py_Initialize...");
-  Py_Initialize();
+    Py_SetPythonHome("/data/data/com.sensibility_testbed/files/python");
+
+    Py_Initialize();
 
 //    PySys_SetPath(path);
-//    Py_SetPythonHome(home);
-//    Py_SetProgramName("/sdcard/mypython/python");
 
 
     // Print stats about the environment
@@ -52,61 +52,68 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
   char *filename;
   char *full_filename;
 
-  LOGI("Start Sensing IN C!!!!");
-  initsensor();
-  int i;
-  for (i = 1;  i <= 17; i++) {
-     sensor_start_sensing(i);
-  }
 
-  // Och, memory...
-  filename = "test_sensors.py";
-  full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-  strcpy(full_filename, files);
-  strcat(full_filename, filename);
+    filename = "test_python.py";
+    full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+    strcpy(full_filename, files);
+    strcat(full_filename, filename);
+    LOGI("PyRun returns %i", Verbose_PyRun_SimpleFile(full_filename));
 
-  LOGI("PyRun returns %i", Verbose_PyRun_SimpleFile(full_filename));
-  LOGI("Stop Sensing IN C!!!!");
-  int j;
-  for (j = 1;  j <= 17; j++) {
-    sensor_stop_sensing(j);
-   }
-
-  LOGI("Start Locating IN C!!!!");
-  initlocation();
-  location_start_location();
-  filename = "test_location.py";
-  full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-  strcpy(full_filename, files);
-  strcat(full_filename, filename);
-  LOGI("PyRun File: %s", full_filename);
-  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename),
-       filename);
-  LOGI("Stop Locating IN C!!!!");
-  location_stop_location();
-
-  LOGI("Start Media-ing IN C!!!!");
-  initmedia();
-  media_start_media();
-  filename = "test_tts.py";
-  full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-  strcpy(full_filename, files);
-  strcat(full_filename, filename);
-  LOGI("PyRun File: %s", full_filename);
-  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename),
-       filename);
-  LOGI("Stop Media-ing IN C!!!!");
-  media_stop_media();
-
-  LOGI("Init and start MiscInfo-ing IN C!!!!");
-  initmiscinfo();
-  filename = "test_miscinfo.py";
-  full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-  strcpy(full_filename, files);
-  strcat(full_filename, filename);
-  LOGI("PyRun File: %s", full_filename);
-  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename),
-       filename);
+//  LOGI("Start Sensing IN C!!!!");
+//  initsensor();
+//  int i;
+//  for (i = 1;  i <= 17; i++) {
+//     sensor_start_sensing(i);
+//  }
+//
+//  // Och, memory...
+//  filename = "test_sensors.py";
+//  full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+//  strcpy(full_filename, files);
+//  strcat(full_filename, filename);
+//
+//  LOGI("PyRun returns %i", Verbose_PyRun_SimpleFile(full_filename));
+//  LOGI("Stop Sensing IN C!!!!");
+//  int j;
+//  for (j = 1;  j <= 17; j++) {
+//    sensor_stop_sensing(j);
+//   }
+//
+//  LOGI("Start Locating IN C!!!!");
+//  initlocation();
+//  location_start_location();
+//  filename = "test_location.py";
+//  full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+//  strcpy(full_filename, files);
+//  strcat(full_filename, filename);
+//  LOGI("PyRun File: %s", full_filename);
+//  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename),
+//       filename);
+//  LOGI("Stop Locating IN C!!!!");
+//  location_stop_location();
+//
+//  LOGI("Start Media-ing IN C!!!!");
+//  initmedia();
+//  media_start_media();
+//  filename = "test_tts.py";
+//  full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+//  strcpy(full_filename, files);
+//  strcat(full_filename, filename);
+//  LOGI("PyRun File: %s", full_filename);
+//  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename),
+//       filename);
+//  LOGI("Stop Media-ing IN C!!!!");
+//  media_stop_media();
+//
+//  LOGI("Init and start MiscInfo-ing IN C!!!!");
+//  initmiscinfo();
+//  filename = "test_miscinfo.py";
+//  full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+//  strcpy(full_filename, files);
+//  strcat(full_filename, filename);
+//  LOGI("PyRun File: %s", full_filename);
+//  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename),
+//       filename);
 
   LOGI("Before Py_Finalize...");
   Py_Finalize();
