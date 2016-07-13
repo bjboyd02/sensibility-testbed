@@ -13,7 +13,6 @@
         android:icon="@drawable/ic_launcher"
         android:name="com.sensibility_testbed.SensibilityApplication"
         android:label="@string/app_name" >
-        <!--android:name="com.sensibility_testbed.ScriptApplication"-->
         <activity
             android:name="com.sensibility_testbed.ScriptActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
