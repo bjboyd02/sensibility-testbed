@@ -16,11 +16,15 @@
 
 package com.sensibility_testbed;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.NetworkInterface;
@@ -28,6 +32,8 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -41,6 +47,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Environment;
@@ -69,6 +76,8 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+
+import com.googlecode.android_scripting.FileUtils;
 import com.sensibility_testbed.SensibilityApplication;
 
 import com.snakei.OutputService;
@@ -80,6 +89,9 @@ import com.googlecode.android_scripting.Constants;
 import com.googlecode.android_scripting.FileUtils;
 */
 
+
+
+
 /**
  *
  * Loosely based on the ScriptActivity found in the ScriptForAndroidTemplate
@@ -89,15 +101,23 @@ import com.googlecode.android_scripting.FileUtils;
  *
  */
 public class ScriptActivity extends Activity {
-  public native void startEmbeddedPython();
+//  public native void startEmbeddedPython();
 
+    static final String TAG = "ScriptActivity";
     private static boolean pythonRuns = false;
 
   // Use int values instead of enums for easier message handling
   public final static int SEATTLE_INSTALLED = 14;
   public final static int INSTALL_FAILED = 15;
 
-  // Names of the keys to use
+    public final String FILES_ROOT = SensibilityApplication.getAppContext().getFilesDir().getPath() + "/";
+    public final String SEATTLE_FILES = FILES_ROOT + "seattle/";
+    public final String PYTHON = FILES_ROOT + "python/";
+    public final String PYTHON_LIB = FILES_ROOT + "python/lib/python2.7/";
+    public final String PYTHON_SCRIPTS = FILES_ROOT + "scripts/";
+
+
+    // Names of the keys to use
   public final static String AUTOSTART_ON_BOOT = "autostart_on_boot";
   public final static String AUTOSTART_DELAY = "autostart_delay";
   public final static String SEATTLE_PREFERENCES = "seattlepreferences";
@@ -699,52 +719,32 @@ public class ScriptActivity extends Activity {
     }
     currentContentView = R.layout.about;
   }
-
-  // Unpack and set file permission for python files located in res/raw based
-  // off of Anthony Prieur & Daniel Oppenheim work
-  // https://code.google.com/p/android-python27/
-  private void copyPythonToLocal() {
-    String zipPath, zipName;
-    InputStream content;
-    /*R.raw a = new R.raw();
-    java.lang.reflect.Field[] t = R.raw.class.getFields();
-    Resources resources = getResources();
-    Log.i(Common.LOG_TAG, Common.LOG_INFO_PYTHON_UNZIP_STARTED);
-    for (int i = 0; i < t.length; i++) {
-      try {
-        // Get path of zip to unpack
-        zipPath = resources.getText(t[i].getInt(a)).toString();
-        // Extract the zipName from zipPath
-        zipName = zipPath.substring(zipPath.lastIndexOf('/') + 1,
-            zipPath.length());
-        content = getResources().openRawResource(t[i].getInt(a));
-        content.reset();
-
-        // Python_27 we unpack to ->
-        // /data/data/com.sensibility_testbed/files/python
-        if (zipName.endsWith(Common.PYTHON_ZIP_NAME)) {
-          // This is the Python binary. It needs to live in /data/data/....,
-          // as it can't be made executable on the SDcard due to VFAT.
-          // Thus, we must not use seattleInstallDirectory for this.
-          Utils
-          .unzip(content, this.getFilesDir().getAbsolutePath() + "/", true);
-          // set file permissions
-          //FileUtils.chmod(new File(this.getFilesDir().getAbsolutePath()
-          //    + "/python/bin/python"), 0755);
-        }
-        // Python_extras_27 we unpack to ->
-        // /sdcard/com.sensibility_testbed/extras/python
-        else if (zipName.endsWith(Common.PYTHON_EXTRAS_ZIP_NAME)) {
-          Utils.unzip(content, seattleInstallDirectory.getAbsolutePath()
-              + "/extras/", true);
-        }
-      } catch (Exception e) {
-        Log.e(Common.LOG_TAG, Common.LOG_EXCEPTION_PYTHON_UNZIPPING, e);
-      }
+    /*
+     * Unpack archive from res/raw to a suitable directory in
+     * the Android file system and set file permissions
+     *
+     * Expects raw.zip in res/raw
+     *
+     * Requirements for a suitable directory are:
+     *  - The native Python interpreter can find and read from the directory
+     *  - It is available independently of the device and whether
+     *    it has an sdcard or not
+     *  - The app can write files to it (needs some space and the according
+     *    permissions)
+     *
+     * The archive contains:
+     *  - python/lib/python2.7/ - Python modules (e.g. os.py, ...)
+     *  - seattle/ - Seattle installation
+     *  - scripts/ - Misc python scripts
+     *
+     * XXX Note on SD cards
+     * Apparently external storage only is emulated if the device does not have
+     * a sdcard slot. If it has one but there is no sdcard, writing to external
+     * storage throws an exception (needs to be verified and handled)
+     */
+    private void copyPythonToLocal(String destination) throws Exception {
+        Utils.unzip(getResources().openRawResource(R.raw.raw), destination, true);
     }
-    Log.i(Common.LOG_TAG, Common.LOG_INFO_PYTHON_UNZIP_COMPLETED);
-    */
-  }
 
   // Executed whenever a boolean shared preference is saved
   private void saveSharedBooleanPreference(String preference, boolean bool) {
@@ -907,7 +907,7 @@ public class ScriptActivity extends Activity {
         @Override
         public void run() {
           // Python binary was not found -> install python
-          copyPythonToLocal();
+//          copyPythonToLocal();
           runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -946,77 +946,59 @@ public class ScriptActivity extends Activity {
             + seattleInstallDirectory.getAbsolutePath());
   }
 
-  // Executed after the activity is started / resumed
-  @Override
-  protected void onStart() {
-    super.onStart();
 
-      if (!pythonRuns) {
-          pythonRuns = true;
-          Log.i(Common.LOG_TAG, "UID is " + Integer.toString(myUid()));
+    // Executed after the activity is started / resumed
+    @Override
+    protected void onStart() {
+        super.onStart();
 
+        if (!pythonRuns) {
+
+            pythonRuns = true;
+            Log.i(Common.LOG_TAG, "UID is " + Integer.toString(myUid()));
+
+            Intent intent = new Intent(getBaseContext(), com.snakei.PythonInterpreterService.class);
+//            intent.putExtra("com.snakei.PythonInterpreterService.python_path", "/sdcard/mypython/");
+//            intent.putExtra("com.snakei.PythonInterpreterService.python_home", "/sdcard/mypython/");
+            intent.putExtra("com.snakei.PythonInterpreterService.python_scripts", PYTHON_SCRIPTS);
+//            intent.putExtra("com.snakei.PythonInterpreterService.python_arguments",
+//            Environment.getExternalStorageDirectory().toString());
+
+            startService(intent);
+            Log.i(Common.LOG_TAG, "Done with first Python.");
+        }
+
+        // If the consent form was not finished to completion, show it
         /*
-         * Apparently external storage only is emulated if the device does not have
-         * a sdcard slot. If it has one but there is no sdcard, writing to external
-         * storage throws an exception
-         * XXX: Comment for now and verify later how to handle files We don't need this for now.
-         */
-//          Log.i(Common.LOG_TAG, Environment.getExternalStoragePublicDirectory("").toString());
-//
-//          for (File dir: getBaseContext().getExternalFilesDirs("")) {
-//              Log.i(Common.LOG_TAG, dir.toString());
-//          }
-//
-//          File f = new File(getExternalFilesDir(null), "test2.py");
-//          try {
-//              Log.i(Common.LOG_TAG, "File is " + f.getCanonicalPath());
-//              File f2 = f.getCanonicalFile();
-//              Log.i(Common.LOG_TAG, "AbsoluteFile is " + f2.getAbsolutePath());
-//
-//              OutputStream os = new FileOutputStream(f);
-//
-//
-//              os.write("import androidlog\nl = androidlog.log\nl('k')\nimport os\nl('still k')\nl(os.getlogin())\n".getBytes());
-//              os.flush();
-//              os.close();
-//          } catch (Exception e){
-//              Log.i(Common.LOG_TAG, "Error in file/stream magic");
-//              e.printStackTrace();
-//          }
+           if (!settings.getBoolean(CONSENT_COMPLETED, true)) {
+           showConsentForm();
+           } */
 
-
-          //Log.i(Common.LOG_TAG, );
-          //Log.i(Common.LOG_TAG, );
-          Intent intent = new Intent(getBaseContext(), com.snakei.PythonInterpreterService.class);
-          intent.putExtra("com.snakei.PythonInterpreterService.python_path", "/sdcard/mypython/");
-          intent.putExtra("com.snakei.PythonInterpreterService.python_home", "/sdcard/mypython/");
-          intent.putExtra("com.snakei.PythonInterpreterService.python_script",
-                  //Environment.getExternalStorageDirectory().toString() +
-                  "/sdcard/test2.py");
-          intent.putExtra("com.snakei.PythonInterpreterService.python_arguments",
-                  Environment.getExternalStorageDirectory().toString());
-
-          startService(intent);
-          Log.i(Common.LOG_TAG, "Done with first Python.");
-      }
-
-    // If the consent form was not finished to completion, show it
-    /*
-    if (!settings.getBoolean(CONSENT_COMPLETED, true)) {
-      showConsentForm();
-    } */
-
-    // Verify installation for Seattle
-    //checkSeattleInstall();
-    showFrontendLayout();
-  }
+        // Verify installation for Seattle
+        //checkSeattleInstall();
+        showFrontendLayout();
+    }
 
   // Executed after the activity is created, calls onStart()
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+
     Log.i(Common.LOG_TAG, "Into onCreate");
 
-   // get and save the shared preferences
+      // TODO: Check and copy only if files are not yet
+      // Move to Background service, e.g. InstallerService
+      Log.i(TAG, String.format("Unpacking python archive to %s", FILES_ROOT));
+
+      try {
+          copyPythonToLocal(FILES_ROOT);
+      } catch (IOException e) {
+          Log.i(TAG, "Couldn't unpack python archive");
+          e.printStackTrace();
+      } catch (Exception e) {
+          e.printStackTrace();
+      }
+
+      // get and save the shared preferences
     settings = getSharedPreferences(SEATTLE_PREFERENCES, MODE_WORLD_WRITEABLE);
 
     // If CONSENT_COMPLETED key does not exist, create it

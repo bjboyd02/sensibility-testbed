@@ -42,54 +42,23 @@ import static android.os.Process.myUid;
  *
  */
 public class PythonInterpreterService extends Service {
-    private native void startNativePythonInterpreter(String python_files);
+    private native void startNativePythonInterpreter(String python_scripts);
 
     private class PythonInterpreterThread extends Thread {
-        private String python_files;
+        private String python_scripts;
 
 
-        private PythonInterpreterThread() {
-
-
-//            this.python_files = getExternalFilesDir(null).getPath();
-            this.python_files = getFilesDir().getPath();
+        public PythonInterpreterThread(String python_scripts) {
+            this.python_scripts = python_scripts;
         }
 
         @Override
         public void run() {
 
-            // Copy python files we want to execute in our interpreter
-            // from the asset directory somewhere where the interpreter
-            // can fopen them
-            // XXX: This is just to test the python extensions
-            // Copying all the seattle files should probably
-            // happen somewhere else, later
-            try {
-                AssetManager asset_manager = getAssets();
-                String[] files;
-                files = asset_manager.list("");
-                if (files != null) for (String filename : files) {
-                    if (filename.endsWith(".py")) {
-                            InputStream in;
-                            OutputStream out;
-                            in = asset_manager.open(filename);
-                            File out_file = new File(this.python_files + filename);
-                            out = new FileOutputStream(out_file);
-                            byte[] buffer = new byte[1024];
-                            int read;
-                            while ((read = in.read(buffer)) != -1) {
-                                out.write(buffer, 0, read);
-                            }
-                    }
-                }
-            } catch (Exception e) {
-                Log.i("PythonInterpreterThread", e.getMessage());
-            }
-
             System.loadLibrary("python2.7");
             System.loadLibrary("snakei");
             Log.i(this.getName(), "Before start native");
-            startNativePythonInterpreter(this.python_files);
+            startNativePythonInterpreter(this.python_scripts);
             Log.i(this.getName(), "After start native");
         }
     };
@@ -109,16 +78,17 @@ public class PythonInterpreterService extends Service {
 //                "com.snakei.PythonInterpreterService.python_path");
 //        String home = intent.getStringExtra(
 //                "com.snakei.PythonInterpreterService.python_home");
-//        String script = intent.getStringExtra(
-//                "com.snakei.PythonInterpreterService.python_script");
+        String python_scripts = intent.getStringExtra(
+                "com.snakei.PythonInterpreterService.python_scripts");
 //        String args = intent.getStringExtra(
 //                "com.snakei.PythonInterpreterService.python_arguments");
         Log.i(this.getPackageName(), "`new` thread");
         PythonInterpreterThread pythonInterpreterThread =
-                new PythonInterpreterThread();
+                new PythonInterpreterThread(python_scripts);
         Log.i(this.getPackageName(), "Starting thread");
         pythonInterpreterThread.start();
         Log.i(this.getPackageName(), "Started");
+
         // TODO: For a plain Python interpreter that needs arguments,
         // starting STICKY makes no sense as Android's restart attempt
         // only sends a `null` Intent
