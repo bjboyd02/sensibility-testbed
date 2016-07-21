@@ -1,8 +1,5 @@
-import time
-#import androidlog, os, time
-#l = androidlog.log
-
-
-for x in range(10):
-    #l("PID: " + str(os.getpid()) + " PPID: " + str(os.getppid()) + " UID: " + str(os.getuid()))
-    time.sleep(2)
+import os
+f = open("/sdcard/python.log", "w+")
+f.write("I am a python\n")
+f.write("And I even know my pid " + str(os.getpid()) + "\n")
+f.close()

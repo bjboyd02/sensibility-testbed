@@ -43,50 +43,33 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
         JNIEnv* env, jobject instance, jstring python_scripts) {
 
   pid_t pid;
-
   pid = fork();
+  if (pid == 0) {
+    char *files = (char *) (*env)->GetStringUTFChars(env, python_scripts, NULL);
+    logf2("Before Py_Initialize...");
+    Py_SetPythonHome("/data/data/com.sensibility_testbed/files/python");
+    Py_Initialize();
+    logf2("After Py_Initialize...");
 
-  char* who;
+    char *filename;
+    char *full_filename;
 
-  if (pid == 0)
-    who = "child";
-  else
-    who = "parent";
+    filename = "test_process.py";
+    full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+    strcpy(full_filename, files);
+    strcat(full_filename, filename);
 
-  logf2("%s: with PID: %d \n",who,  getpid());
-  JNIEnv *jni_env;
-  jclass class;
-  jmethodID method;
+    logf2("Before PyRUN...\n");
+    logf2("PyRun returns %i\n", Verbose_PyRun_SimpleFile(full_filename));
+    logf2("After PyRUN\n");
 
-  logf2("%s wants to attach to current thread: \n", who);
-  (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
-  logf2("%s JNIenv pointer:  %d and pointer address: %d\n", who, jni_env, &jni_env);
-
-  logf2("%s wants log class\n", who);
-  class = (*jni_env)->FindClass(jni_env, "com/snakei/OutputService");
-  if (class == NULL)
-    logf2("%s class is null\n", who);
-
-  logf2("%s wants log method\n", who);
-  method = (*jni_env)->GetStaticMethodID(jni_env, class, "giveMeSomething",
-                                         "(I)I");
-  if (method == NULL)
-    logf2("%s method is null\n", who);
-
-
-  if (pid == 0){
-    logf2("CHIIIILD  gets something: %d \n", (*jni_env)->CallStaticIntMethod(jni_env, class, method, 0));
-    ;
-
-  } else {
-    logf2("PAAAARENT gets something: %d \n", (*jni_env)->CallStaticIntMethod(jni_env, class, method, 1));
+    Py_Finalize();
   }
 
 
 
 
 
-  //    char *files = (char *) (*env)->GetStringUTFChars(env, python_scripts, NULL);
 
 
   // https://github.com/kuri65536/sl4a/blob/master/android/ScriptingLayerForAndroid/jni/com_googlecode_android_scripting_Exec.cpp
@@ -165,11 +148,6 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
 //
 //
 //
-//    LOGI("Before Py_Initialize...");
-//    Py_SetPythonHome("/data/data/com.sensibility_testbed/files/python");
-//
-//    Py_Initialize();
-//    LOGI("After Py_Initialize...");
 ////
 //////    PySys_SetPath(path);
 ////
