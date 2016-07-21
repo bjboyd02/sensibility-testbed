@@ -8,7 +8,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.googlecode.android_scripting.FileUtils;
+
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -66,8 +69,7 @@ public class SensibilityActivity extends Activity {
     public final String TAG = "SensibilityActivity";
 
     public final String FILES_ROOT = SensibilityApplication.getAppContext().getFilesDir().getPath() + "/";
-    public final String SEATTLE_FILES = FILES_ROOT + "seattle/";
-    public final String SEATTLE_ZIP = SEATTLE_FILES + "seattle_android.zip";
+    public final String SEATTLE_ZIP = FILES_ROOT + "seattle_android.zip";
     //Todo: this is definitely not going to be defined here
     String DOWNLOAD_URL =
             "https://sensibilityclearinghouse.poly.edu/geni/download/altruistic/seattle_android.zip";
@@ -122,6 +124,7 @@ public class SensibilityActivity extends Activity {
                         output.write(data, 0, count);
                     }
 
+
                     if (input != null) {
                         input.close();
                     }
@@ -134,8 +137,10 @@ public class SensibilityActivity extends Activity {
                         connection.disconnect();
                     }
 
-                    Log.i(TAG, String.format("Unpacking seattle zip to %s", SEATTLE_FILES));
-                    Utils.unzip(new FileInputStream(SEATTLE_ZIP), SEATTLE_FILES, true);
+
+                    Log.i(TAG, String.format("Unpacking seattle zip to %s", FILES_ROOT));
+                    Utils.unzip(new FileInputStream(SEATTLE_ZIP), FILES_ROOT, true);
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -168,7 +173,19 @@ public class SensibilityActivity extends Activity {
                     e.printStackTrace();
                 }
 
-                installSeattle();
+                //installSeattle();
+            }
+        });
+
+
+        // Ha I say I am an advanced button, but I am a start process button
+        final Button buttonAdvanced = (Button) findViewById(R.id.showadvancedoptionsbutton);
+        buttonAdvanced.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getBaseContext(), com.snakei.PythonInterpreterService.class);
+                intent.putExtra("com.snakei.PythonInterpreterService.python_scripts", PYTHON_SCRIPTS);
+                startService(intent);
             }
         });
     }
