@@ -52,7 +52,8 @@ public class Utils {
         // Check if file exist, if it does then delete
         File file2 = new File(dest + zipEntryName);
 
-        if (file2.exists()) {
+          // XXX: This can delete a directory that is still being extracted
+        if (file2.isFile() && file2.exists()) {
           if (replaceIfExists) {
             try {
               boolean b = deleteDir(file2);
