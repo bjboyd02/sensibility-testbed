@@ -28,36 +28,128 @@
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
         JNIEnv* env, jobject instance, jstring python_scripts) {
 
-  char* files = (char*) (*env)->GetStringUTFChars(env, python_scripts, NULL);
-
-  LOGI("Before Py_Initialize...");
-    Py_SetPythonHome("/data/data/com.sensibility_testbed/files/python");
-
-    Py_Initialize();
-
-//    PySys_SetPath(path);
 
 
-    // Print stats about the environment
-  LOGI("ProgramName %s", (char*) Py_GetProgramName());
-  LOGI("Prefix %s", Py_GetPrefix());
-  LOGI("ExecPrefix %s", Py_GetExecPrefix());
-  LOGI("ProgramFullName %s", Py_GetProgramFullPath());
-  LOGI("Path %s", Py_GetPath());
-  LOGI("Platform %s", Py_GetPlatform());
-  LOGI("PythonHome %s", Py_GetPythonHome());
-
-  initandroidlog();
-
-  char *filename;
-  char *full_filename;
+  //    char *files = (char *) (*env)->GetStringUTFChars(env, python_scripts, NULL);
 
 
-    filename = "test_python.py";
-    full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-    strcpy(full_filename, files);
-    strcat(full_filename, filename);
-    LOGI("PyRun returns %i", Verbose_PyRun_SimpleFile(full_filename));
+  // https://github.com/kuri65536/sl4a/blob/master/android/ScriptingLayerForAndroid/jni/com_googlecode_android_scripting_Exec.cpp
+  pid_t pid;
+  char* cmd;
+  cmd = "/bin/pwd";
+  char *args[0];
+  char *envp[0];
+  // Open a master pseudo terminal with read/write permissions
+  // (creates pseudo terminal slave)
+  // Returns a file discriptor
+  // Abort if it does not work
+  int ptm = open("/dev/ptmx", O_RDWR);
+  if(ptm < 0){
+    LOGI("Cannot open /dev/ptmx: %s\n", strerror(errno));
+    return -1;
+  }
+
+  // Manipulate filedescriptor to enable the close-on-exec
+  fcntl(ptm, F_SETFD, FD_CLOEXEC);
+
+  // Sets mode and ownership of slave pseudo temrinal to UID of this process
+  // Unlocks slave pseudoterminal
+  // stores name of slave pseudoterminal
+  // needs to be done before using slave pseudo terminal
+  // Abort if none of this works
+  if (grantpt(ptm) || unlockpt(ptm) ||
+      ((devname = (char*) ptsname(ptm)) == 0)) {
+    LOGI("Trouble with /dev/ptmx: %s\n", strerror(errno));
+    return -1;
+  }
+
+  pid = fork();
+  // Parent and child processes start execution here
+  // Both have identical but separate adress spaces
+
+  if(pid < 0) {
+    LOGI("Fork failed: %s\n", strerror(errno));
+    return -1;
+  }
+  LOGI("pid %d\n", pid);
+  // This is the child process
+  if(pid == 0){
+
+    int pts;
+
+    // Creates new session (collection of process group)
+    setsid();
+
+    // Opens pseudo terminal slave
+    pts = open(devname, O_RDWR);
+    if(pts < 0) {
+      exit(-1);
+    }
+    // Duplicate slave to special unix filedescriptors
+    // Standard input
+     dup2(pts, 0);
+     // Standard output
+     dup2(pts, 1);
+     // Standard error
+     dup2(pts, 2);
+     // Close master, because we have above?
+    close(ptm);
+    LOGI("and do I get here?\n");
+    // run run run
+    LOGI("execv returned %d\n", execve(cmd, args, envp));
+    sleep(5);
+    LOGI("Child goes home\n");
+    return -1;
+  } else {
+    sleep(8);
+    LOGI("Parent goes home\n");
+    return -1;
+  }
+
+//
+//
+//
+//    LOGI("Before Py_Initialize...");
+//    Py_SetPythonHome("/data/data/com.sensibility_testbed/files/python");
+//
+//    Py_Initialize();
+//    LOGI("After Py_Initialize...");
+////
+//////    PySys_SetPath(path);
+////
+////
+////    // Print stats about the environment
+////  LOGI("ProgramName %s", (char*) Py_GetProgramName());
+////  LOGI("Prefix %s", Py_GetPrefix());
+////  LOGI("ExecPrefix %s", Py_GetExecPrefix());
+////  LOGI("ProgramFullName %s", Py_GetProgramFullPath());
+////  LOGI("Path %s", Py_GetPath());
+////  LOGI("Platform %s", Py_GetPlatform());
+////  LOGI("PythonHome %s", Py_GetPythonHome());
+//
+//    LOGI("Before init log...");
+//    initandroidlog();
+//    LOGI("After init log...");
+//
+//    char *filename;
+//    char *full_filename;
+//
+//    filename = "test_process.py";
+//    full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+//    strcpy(full_filename, files);
+//    strcat(full_filename, filename);
+//
+//    LOGI("Before PyRUN...");
+//    LOGI("PyRun returns %i", Verbose_PyRun_SimpleFile(full_filename));
+//    LOGI("After PyRUN");
+//
+
+
+//    filename = "test_python.py";
+//    full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
+//    strcpy(full_filename, files);
+//    strcat(full_filename, filename);
+//    LOGI("PyRun returns %i", Verbose_PyRun_SimpleFile(full_filename));
 
 //  LOGI("Start Sensing IN C!!!!");
 //  initsensor();
@@ -115,9 +207,9 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
 //  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename),
 //       filename);
 
-  LOGI("Before Py_Finalize...");
-  Py_Finalize();
-
-  LOGI("Done. Bye!");
+//  LOGI("Before Py_Finalize...");
+//  Py_Finalize();
+//
+//  LOGI("Done. Bye!");
 };
 
