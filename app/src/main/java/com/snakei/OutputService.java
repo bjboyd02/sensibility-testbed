@@ -49,4 +49,17 @@ public class OutputService {
             }
         });
     }
+
+    public static int giveMeSomething(int process) {
+        if (process == 0) {
+            Log.i(TAG, "Child in java");
+            return 11111;
+        }
+
+        else {
+            Log.i(TAG, "Parent in java");
+            return 22222;
+
+        }
+    }
 }

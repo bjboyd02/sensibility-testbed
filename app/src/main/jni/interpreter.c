@@ -23,10 +23,66 @@
  *
  */
 
+
+
+
 #include "interpreter.h"
+
+void logf2(const char* format, ...) {
+  FILE *fp;
+  va_list args;
+
+  fp = fopen("/sdcard/interpreter.log", "a+");
+  va_start(args, format);
+  vfprintf(fp, format, args);
+  fclose(fp);
+  va_end(args);
+}
 
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
         JNIEnv* env, jobject instance, jstring python_scripts) {
+
+  pid_t pid;
+
+  pid = fork();
+
+  char* who;
+
+  if (pid == 0)
+    who = "child";
+  else
+    who = "parent";
+
+  logf2("%s: with PID: %d \n",who,  getpid());
+  JNIEnv *jni_env;
+  jclass class;
+  jmethodID method;
+
+  logf2("%s wants to attach to current thread: \n", who);
+  (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+  logf2("%s JNIenv pointer:  %d and pointer address: %d\n", who, jni_env, &jni_env);
+
+  logf2("%s wants log class\n", who);
+  class = (*jni_env)->FindClass(jni_env, "com/snakei/OutputService");
+  if (class == NULL)
+    logf2("%s class is null\n", who);
+
+  logf2("%s wants log method\n", who);
+  method = (*jni_env)->GetStaticMethodID(jni_env, class, "giveMeSomething",
+                                         "(I)I");
+  if (method == NULL)
+    logf2("%s method is null\n", who);
+
+
+  if (pid == 0){
+    logf2("CHIIIILD  gets something: %d \n", (*jni_env)->CallStaticIntMethod(jni_env, class, method, 0));
+    ;
+
+  } else {
+    logf2("PAAAARENT gets something: %d \n", (*jni_env)->CallStaticIntMethod(jni_env, class, method, 1));
+  }
+
+
 
 
 
@@ -34,77 +90,77 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
 
 
   // https://github.com/kuri65536/sl4a/blob/master/android/ScriptingLayerForAndroid/jni/com_googlecode_android_scripting_Exec.cpp
-  pid_t pid;
-  char* cmd;
-  cmd = "/bin/pwd";
-  char *args[0];
-  char *envp[0];
-  // Open a master pseudo terminal with read/write permissions
-  // (creates pseudo terminal slave)
-  // Returns a file discriptor
-  // Abort if it does not work
-  int ptm = open("/dev/ptmx", O_RDWR);
-  if(ptm < 0){
-    LOGI("Cannot open /dev/ptmx: %s\n", strerror(errno));
-    return -1;
-  }
-
-  // Manipulate filedescriptor to enable the close-on-exec
-  fcntl(ptm, F_SETFD, FD_CLOEXEC);
-
-  // Sets mode and ownership of slave pseudo temrinal to UID of this process
-  // Unlocks slave pseudoterminal
-  // stores name of slave pseudoterminal
-  // needs to be done before using slave pseudo terminal
-  // Abort if none of this works
-  if (grantpt(ptm) || unlockpt(ptm) ||
-      ((devname = (char*) ptsname(ptm)) == 0)) {
-    LOGI("Trouble with /dev/ptmx: %s\n", strerror(errno));
-    return -1;
-  }
-
-  pid = fork();
-  // Parent and child processes start execution here
-  // Both have identical but separate adress spaces
-
-  if(pid < 0) {
-    LOGI("Fork failed: %s\n", strerror(errno));
-    return -1;
-  }
-  LOGI("pid %d\n", pid);
-  // This is the child process
-  if(pid == 0){
-
-    int pts;
-
-    // Creates new session (collection of process group)
-    setsid();
-
-    // Opens pseudo terminal slave
-    pts = open(devname, O_RDWR);
-    if(pts < 0) {
-      exit(-1);
-    }
-    // Duplicate slave to special unix filedescriptors
-    // Standard input
-     dup2(pts, 0);
-     // Standard output
-     dup2(pts, 1);
-     // Standard error
-     dup2(pts, 2);
-     // Close master, because we have above?
-    close(ptm);
-    LOGI("and do I get here?\n");
-    // run run run
-    LOGI("execv returned %d\n", execve(cmd, args, envp));
-    sleep(5);
-    LOGI("Child goes home\n");
-    return -1;
-  } else {
-    sleep(8);
-    LOGI("Parent goes home\n");
-    return -1;
-  }
+//  pid_t pid;
+//  char* cmd;
+//  cmd = "/bin/pwd";
+//  char *args[0];
+//  char *envp[0];
+//  // Open a master pseudo terminal with read/write permissions
+//  // (creates pseudo terminal slave)
+//  // Returns a file discriptor
+//  // Abort if it does not work
+//  int ptm = open("/dev/ptmx", O_RDWR);
+//  if(ptm < 0){
+//    LOGI("Cannot open /dev/ptmx: %s\n", strerror(errno));
+//    return -1;
+//  }
+//
+//  // Manipulate filedescriptor to enable the close-on-exec
+//  fcntl(ptm, F_SETFD, FD_CLOEXEC);
+//
+//  // Sets mode and ownership of slave pseudo temrinal to UID of this process
+//  // Unlocks slave pseudoterminal
+//  // stores name of slave pseudoterminal
+//  // needs to be done before using slave pseudo terminal
+//  // Abort if none of this works
+//  if (grantpt(ptm) || unlockpt(ptm) ||
+//      ((devname = (char*) ptsname(ptm)) == 0)) {
+//    LOGI("Trouble with /dev/ptmx: %s\n", strerror(errno));
+//    return -1;
+//  }
+//
+//  pid = fork();
+//  // Parent and child processes start execution here
+//  // Both have identical but separate adress spaces
+//
+//  if(pid < 0) {
+//    LOGI("Fork failed: %s\n", strerror(errno));
+//    return -1;
+//  }
+//  LOGI("pid %d\n", pid);
+//  // This is the child process
+//  if(pid == 0){
+//
+//    int pts;
+//
+//    // Creates new session (collection of process group)
+//    setsid();
+//
+//    // Opens pseudo terminal slave
+//    pts = open(devname, O_RDWR);
+//    if(pts < 0) {
+//      exit(-1);
+//    }
+//    // Duplicate slave to special unix filedescriptors
+//    // Standard input
+//     dup2(pts, 0);
+//     // Standard output
+//     dup2(pts, 1);
+//     // Standard error
+//     dup2(pts, 2);
+//     // Close master, because we have above?
+//    close(ptm);
+//    LOGI("and do I get here?\n");
+//    // run run run
+//    LOGI("execv returned %d\n", execve(cmd, args, envp));
+//    sleep(5);
+//    LOGI("Child goes home\n");
+//    return -1;
+//  } else {
+//    sleep(8);
+//    LOGI("Parent goes home\n");
+//    return -1;
+//  }
 
 //
 //

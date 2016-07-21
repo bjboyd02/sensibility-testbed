@@ -75,8 +75,11 @@ static PyMethodDef AndroidLogMethods[] = {
  *
  */
 void initandroidlog() {
+  LOGI("before init");
   Py_InitModule("androidlog", AndroidLogMethods);
+  LOGI("before looking for a class");
   jclass class = jh_getClass("com/snakei/OutputService");
+  LOGI("before caching a method");
   m_cached = (struct output_cache){
           .class = class,
           .log_message = jh_getStaticMethod(class, "logMessage",
