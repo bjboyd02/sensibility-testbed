@@ -1,5 +1,7 @@
-import os
-f = open("/sdcard/python.log", "w+")
-f.write("I am a python\n")
-f.write("And I even know my pid " + str(os.getpid()) + "\n")
-f.close()
+import androidlog, os, time
+l = androidlog.log
+
+
+while True:
+    l("PID: " + str(os.getpid()) + " PPID: " + str(os.getppid()) + " UID: " + str(os.getuid()))
+    time.sleep(1)

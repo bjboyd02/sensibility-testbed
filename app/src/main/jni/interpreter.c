@@ -28,17 +28,6 @@
 
 #include "interpreter.h"
 
-void logf2(const char* format, ...) {
-  FILE *fp;
-  va_list args;
-
-  fp = fopen("/sdcard/interpreter.log", "a+");
-  va_start(args, format);
-  vfprintf(fp, format, args);
-  fclose(fp);
-  va_end(args);
-}
-
 void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
         JNIEnv* env, jobject instance, jstring python_scripts) {
 
@@ -46,10 +35,10 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
   pid = fork();
   if (pid == 0) {
     char *files = (char *) (*env)->GetStringUTFChars(env, python_scripts, NULL);
-    logf2("Before Py_Initialize...");
+    LOGI("Before Py_Initialize...");
     Py_SetPythonHome("/data/data/com.sensibility_testbed/files/python");
     Py_Initialize();
-    logf2("After Py_Initialize...");
+    LOGI("After Py_Initialize...");
 
     char *filename;
     char *full_filename;
@@ -59,17 +48,12 @@ void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
     strcpy(full_filename, files);
     strcat(full_filename, filename);
 
-    logf2("Before PyRUN...\n");
-    logf2("PyRun returns %i\n", Verbose_PyRun_SimpleFile(full_filename));
-    logf2("After PyRUN\n");
+    LOGI("Before PyRUN...\n");
+    LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleFile(full_filename));
+    LOGI("After PyRUN\n");
 
     Py_Finalize();
   }
-
-
-
-
-
 
 
   // https://github.com/kuri65536/sl4a/blob/master/android/ScriptingLayerForAndroid/jni/com_googlecode_android_scripting_Exec.cpp
