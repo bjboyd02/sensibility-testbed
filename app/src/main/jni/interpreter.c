@@ -23,36 +23,46 @@
  *
  */
 
-
-
-
 #include "interpreter.h"
 
-void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
-        JNIEnv* env, jobject instance, jstring python_scripts) {
+void Java_com_snakei_PythonInterpreter_runScript(
+        JNIEnv* env, jobject instance, jstring python_script, jstring python_args,
+        jstring python_home, jstring python_path) {
 
   pid_t pid;
   pid = fork();
   if (pid == 0) {
-    char *files = (char *) (*env)->GetStringUTFChars(env, python_scripts, NULL);
-    LOGI("Before Py_Initialize...");
-    Py_SetPythonHome("/data/data/com.sensibility_testbed/files/python");
+
+    char *script = (char *) (*env)->GetStringUTFChars(env, python_script, NULL);
+    char *args = (char *) (*env)->GetStringUTFChars(env, python_args, NULL);
+    char *home = (char *) (*env)->GetStringUTFChars(env, python_home, NULL);
+    char *path = (char *) (*env)->GetStringUTFChars(env, python_path, NULL);
+
+    Py_SetPythonHome(home);
+    Py_SetProgramName(script);
+    // Apperently we can call Py_Initialize several times without problems
     Py_Initialize();
-    LOGI("After Py_Initialize...");
+    //Todo:
+    //    PySys_SetArgv()
 
-    char *filename;
-    char *full_filename;
+    PyObject *sys_module = PyImport_ImportModule("sys");
+    PyObject *sys_attr_path = PyObject_GetAttrString(sys_module, "path");
+    PyList_Append(sys_attr_path, PyString_FromString(path));
 
-    filename = "test_process.py";
-    full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-    strcpy(full_filename, files);
-    strcat(full_filename, filename);
+    // Initialize C-Python Extensions
+    initandroid();
+    initandroidlog();
 
-    LOGI("Before PyRUN...\n");
-    LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleFile(full_filename));
-    LOGI("After PyRUN\n");
+    // C doesn't look for the file on the python search path anyway
+    // We could iterate through all python paths and try to find the file
+    // or we just cd into passed path and execute passed script
+    // CAUTION!! in this case path must be a single path (no : delimiter)
+    chdir(path);
+    LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleFile(script));
 
-    Py_Finalize();
+    // We can't call Py_Finalize because a child might still be using Python
+    // Todo: What should we do about this?
+//    Py_Finalize();
   }
 
 

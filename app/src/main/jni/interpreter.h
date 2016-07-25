@@ -13,8 +13,12 @@
 #include "media.h"
 #include "pyhelper.h"
 #include "miscinfo.h"
+#include "pythonrun.h"
 
-void Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter(
-        JNIEnv* env, jobject instance, jstring python_scripts);
+
+void Java_com_snakei_PythonInterpreterService_runScript(JNIEnv* env,
+        jobject instance, jstring python_script, jstring python_args,
+        jstring python_home, jstring python_path);
+
 #endif /* defined _SNAKEI_INTERPRETER_H_ */
 
