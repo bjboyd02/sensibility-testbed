@@ -1,7 +1,6 @@
-import androidlog, os, time
+import android, androidlog, os, time
 l = androidlog.log
 
+l("Forkbomb, naah not reallyy")
+android.run("test_python.py")
 
-while True:
-    l("PID: " + str(os.getpid()) + " PPID: " + str(os.getppid()) + " UID: " + str(os.getuid()))
-    time.sleep(1)
