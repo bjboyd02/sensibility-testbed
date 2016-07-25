@@ -42,26 +42,6 @@ import static android.os.Process.myUid;
  *
  */
 public class PythonInterpreterService extends Service {
-    private native void startNativePythonInterpreter(String python_scripts);
-
-    private class PythonInterpreterThread extends Thread {
-        private String python_scripts;
-
-
-        public PythonInterpreterThread(String python_scripts) {
-            this.python_scripts = python_scripts;
-        }
-
-        @Override
-        public void run() {
-
-            System.loadLibrary("python2.7");
-            System.loadLibrary("snakei");
-            Log.i(this.getName(), "Before start native");
-            startNativePythonInterpreter(this.python_scripts);
-            Log.i(this.getName(), "After start native");
-        }
-    };
 
     /**
      * For every call to start this service,
@@ -73,21 +53,27 @@ public class PythonInterpreterService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(this.getPackageName(), "**** UID is " + Integer.toString(myUid()));
 
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                System.loadLibrary("python2.7");
+                System.loadLibrary("snakei");
+                // Todo: don't hardcode here
+                PythonInterpreter.runScript("nmmain.py", "");
+            }
+        }).start();
+
 //        Log.i(this.getPackageName(), "Getting intent and stuff");
 //        String path = intent.getStringExtra(
 //                "com.snakei.PythonInterpreterService.python_path");
 //        String home = intent.getStringExtra(
 //                "com.snakei.PythonInterpreterService.python_home");
-        String python_scripts = intent.getStringExtra(
-                "com.snakei.PythonInterpreterService.python_scripts");
+//        String python_scripts = intent.getStringExtra(
+//                "com.snakei.PythonInterpreterService.python_scripts");
 //        String args = intent.getStringExtra(
 //                "com.snakei.PythonInterpreterService.python_arguments");
-        Log.i(this.getPackageName(), "`new` thread");
-        PythonInterpreterThread pythonInterpreterThread =
-                new PythonInterpreterThread(python_scripts);
-        Log.i(this.getPackageName(), "Starting thread");
-        pythonInterpreterThread.start();
-        Log.i(this.getPackageName(), "Started");
+//        Log.i(this.getPackageName(), "`new` thread");
+
 
         // TODO: For a plain Python interpreter that needs arguments,
         // starting STICKY makes no sense as Android's restart attempt
