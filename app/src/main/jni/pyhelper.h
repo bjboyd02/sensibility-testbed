@@ -6,6 +6,7 @@
 #define _SNAKEI_PYHELPER_H_
 
 #include <Python.h>
+#include <frameobject.h>
 
 #include <jni.h>
 #include <errno.h>
