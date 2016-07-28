@@ -32,7 +32,12 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/python2.7/
 # XXX SHouldn't these automatically set up through LOCAL_EXPORT_C_INCLUDES 
 # above, and our `#include`ing Python.h.
 LOCAL_SHARED_LIBRARIES := python2.7 unistd
-LOCAL_LDLIBS    := -llog
+
+# I think we should use ld, cause this just gave me two priorly unknown log statements, that seem promising
+# 07-26 15:43:18.028 10658-11113/com.sensibility_testbed W/linker: /data/app/com.sensibility_testbed-1/lib/arm/libpython2.7.so: is missing DT_SONAME will use basename as a replacement: "libpython2.7.so"
+# 07-26 15:43:18.052 10658-11113/com.sensibility_testbed W/linker: '/data/app/com.sensibility_testbed-1/lib/arm/libsnakei.so' library has invalid DT_NEEDED entry '/home/lukas/sensibility-testbed/app/src/main/obj/local/armeabi/libpython2.7.so'
+
+LOCAL_LDLIBS    := -llog # ld
 LOCAL_MODULE    := snakei
 LOCAL_SRC_FILES := pythonrun.c outputs.c sensors.c location.c media.c miscinfo.c interpreter.c snakei.c pyhelper.c jnihelper.c cjson.c
 
