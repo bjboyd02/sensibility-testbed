@@ -173,7 +173,7 @@ public class SensibilityActivity extends Activity {
                     e.printStackTrace();
                 }
 
-                //installSeattle();
+                installSeattle();
             }
         });
 

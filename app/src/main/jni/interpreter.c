@@ -42,8 +42,11 @@ void Java_com_snakei_PythonInterpreter_runScript(
     Py_SetProgramName(script);
     // Apperently we can call Py_Initialize several times without problems
     Py_Initialize();
+
+    char **argv;
+    argv = &script;
     //Todo:
-    //    PySys_SetArgv()
+    PySys_SetArgv(1, argv);
 
     PyObject *sys_module = PyImport_ImportModule("sys");
     PyObject *sys_attr_path = PyObject_GetAttrString(sys_module, "path");
