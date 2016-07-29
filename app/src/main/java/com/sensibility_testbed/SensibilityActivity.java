@@ -72,7 +72,8 @@ public class SensibilityActivity extends Activity {
     public final String SEATTLE_ZIP = FILES_ROOT + "seattle_android.zip";
     //Todo: this is definitely not going to be defined here
     String DOWNLOAD_URL =
-            "https://sensibilityclearinghouse.poly.edu/geni/download/altruistic/seattle_android.zip";
+//            "https://sensibilityclearinghouse.poly.edu/geni/download/altruistic/seattle_android.zip";
+            "https://sensibilityclearinghouse.poly.edu/custominstallerbuilder/e3978fcf1a421d92d4d8b34313c829c52ed81da4/installers/android/";
     public final String PYTHON = FILES_ROOT + "python/";
     public final String PYTHON_LIB = FILES_ROOT + "python/lib/python2.7/";
     public final String PYTHON_SCRIPTS = FILES_ROOT + "scripts/";
