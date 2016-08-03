@@ -58,8 +58,9 @@ public class PythonInterpreterService extends Service {
             public void run() {
                 System.loadLibrary("python2.7");
                 System.loadLibrary("snakei");
+                String[] python_args = {"nmmain.py", "--foreground"};
                 // Todo: don't hardcode here
-                PythonInterpreter.runScript("nmmain.py", "");
+                PythonInterpreter.runScript(python_args);
             }
         }).start();
 

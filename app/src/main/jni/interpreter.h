@@ -5,7 +5,8 @@
 #include <jni.h>
 #include <errno.h>
 #include <string.h>
-#include <unistd.h>
+#include <sys/prctl.h>
+
 #include "snakei.h"
 #include "outputs.h"
 #include "sensors.h"
@@ -16,9 +17,12 @@
 #include "pythonrun.h"
 
 
-void Java_com_snakei_PythonInterpreterService_runScript(JNIEnv* env,
-        jobject instance, jstring python_script, jstring python_args,
-        jstring python_home, jstring python_path);
+void Java_com_snakei_PythonInterpreter_runScript(
+    JNIEnv* env, jobject instance, jobjectArray j_args,
+    jstring j_home, jstring j_path);
+
+void interpreter_init(char* home, char* path);
+void interpreter_run(int argc, char **argv);
 
 #endif /* defined _SNAKEI_INTERPRETER_H_ */
 

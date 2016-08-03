@@ -9,8 +9,6 @@ package com.snakei;
  * a native method which sets Python environment variables and executes
  * the passed Python script.
  *
- * A Singleton is chosen over a static method to store
- *
  *
  *
  */
@@ -22,17 +20,13 @@ public class PythonInterpreter {
     private static String python_path =
             "/data/data/com.sensibility_testbed/files/seattle/seattle_repy";
 
-    public static void runScript(String python_script) {
-        PythonInterpreter.runScript(python_script,
-                "", python_home, python_path);
-    }
 
-    public static void runScript(String python_script, String python_args) {
-        PythonInterpreter.runScript(python_script,
+    public static void runScript(String[] python_args) {
+        PythonInterpreter.runScript(
                 python_args, python_home, python_path);
     }
 
-    private static native void runScript(String python_script,
-            String python_args, String python_home, String python_path);
+    private static native void runScript(String[] python_args,
+                                         String python_home, String python_path);
 
 }

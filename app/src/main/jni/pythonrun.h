@@ -10,6 +10,6 @@
 #include "snakei.h"
 #include "jnihelper.h"
 
-PyObject* android_run(PyObject *self, PyObject *python_script);
+PyObject* android_run(PyObject *self, PyObject *args);
 
 #endif //SENSIBILITY_TESTBED_PYTHONRUN_H

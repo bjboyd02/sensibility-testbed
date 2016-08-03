@@ -26,137 +26,86 @@
 #include "interpreter.h"
 
 void Java_com_snakei_PythonInterpreter_runScript(
-        JNIEnv* env, jobject instance, jstring python_script, jstring python_args,
-        jstring python_home, jstring python_path) {
+    JNIEnv* env, jobject instance, jobjectArray j_args,
+    jstring j_home, jstring j_path) {
 
+  int argc;
+  argc = (*env)->GetArrayLength(env, j_args);
+
+  char *argv[argc];
+  char *home;
+  char *path;
+
+  home = (char*) (*env)->GetStringUTFChars(env, j_home, NULL);
+  path = (char*) (*env)->GetStringUTFChars(env, j_path, NULL);
+
+  int i;
+  for (i = 0; i < argc; i++) {
+    jstring j_arg = (jstring) (*env)->GetObjectArrayElement(env, j_args, i);
+    const char* arg_tmp = (*env)->GetStringUTFChars(env, j_arg, NULL);
+    argv[i] = malloc(strlen(arg_tmp) + 1);
+    strcpy(argv[i], arg_tmp);
+
+    // We can release right away because we made a copy
+    (*env)->ReleaseStringUTFChars(env, j_arg, arg_tmp);
+  }
+
+  interpreter_init(home, path);
+  interpreter_run(argc, argv);
+
+  // We can't call Py_Finalize because a child might still be using Python
+  // Todo: What should we do about this? Maybe wait?
+  // Py_Finalize();
+
+  // XXX: This might lead to problems if a child process is still using
+  // those char pointers
+  (*env)->ReleaseStringUTFChars(env, j_home, home);
+  (*env)->ReleaseStringUTFChars(env, j_path, path);
+
+  for(i = 0; i < argc; i++) {
+    free(argv[i]);
+  }
+}
+
+void interpreter_init(char* home, char* path) {
+
+  // C doesn't look for the file on the python search path anyway
+  // We could iterate through all python paths and try to find the file
+  // or we just cd into passed path and execute passed script
+  // CAUTION!! in this case path must be a single path (no : delimiter)
+  chdir(path);
+
+  Py_SetPythonHome(home);
+  // Apparently we can call Py_Initialize several times without problems
+  Py_Initialize();
+
+  // Initialize C-Python Extensions
+  initandroid();
+  initandroidlog();
+
+  PyObject *sys_module = PyImport_ImportModule("sys");
+  PyObject *sys_attr_path = PyObject_GetAttrString(sys_module, "path");
+  PyList_Append(sys_attr_path, PyString_FromString(path));
+}
+
+void interpreter_run(int argc, char **argv) {
+  LOGI("RUNNING %s", argv[0]);
   pid_t pid;
   pid = fork();
   if (pid == 0) {
+    // Set process name
+    prctl(PR_SET_NAME, argv[0]);
 
-    char *script = (char *) (*env)->GetStringUTFChars(env, python_script, NULL);
-    char *args = (char *) (*env)->GetStringUTFChars(env, python_args, NULL);
-    char *home = (char *) (*env)->GetStringUTFChars(env, python_home, NULL);
-    char *path = (char *) (*env)->GetStringUTFChars(env, python_path, NULL);
-
-    Py_SetPythonHome(home);
-    Py_SetProgramName(script);
-    // Apperently we can call Py_Initialize several times without problems
-    Py_Initialize();
-
-    char **argv;
-    argv = &script;
     //Todo:
-    PySys_SetArgv(1, argv);
+    PySys_SetArgv(argc, argv);
+    Py_SetProgramName(argv[0]);
 
-    PyObject *sys_module = PyImport_ImportModule("sys");
-    PyObject *sys_attr_path = PyObject_GetAttrString(sys_module, "path");
-    PyList_Append(sys_attr_path, PyString_FromString(path));
+    LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleFile(argv[0]));
 
-    // Initialize C-Python Extensions
-    initandroid();
-    initandroidlog();
-
-    // C doesn't look for the file on the python search path anyway
-    // We could iterate through all python paths and try to find the file
-    // or we just cd into passed path and execute passed script
-    // CAUTION!! in this case path must be a single path (no : delimiter)
-    chdir(path);
-    LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleFile(script));
-
-    // We can't call Py_Finalize because a child might still be using Python
-    // Todo: What should we do about this?
-//    Py_Finalize();
   }
 
 
-  // https://github.com/kuri65536/sl4a/blob/master/android/ScriptingLayerForAndroid/jni/com_googlecode_android_scripting_Exec.cpp
-//  pid_t pid;
-//  char* cmd;
-//  cmd = "/bin/pwd";
-//  char *args[0];
-//  char *envp[0];
-//  // Open a master pseudo terminal with read/write permissions
-//  // (creates pseudo terminal slave)
-//  // Returns a file discriptor
-//  // Abort if it does not work
-//  int ptm = open("/dev/ptmx", O_RDWR);
-//  if(ptm < 0){
-//    LOGI("Cannot open /dev/ptmx: %s\n", strerror(errno));
-//    return -1;
-//  }
-//
-//  // Manipulate filedescriptor to enable the close-on-exec
-//  fcntl(ptm, F_SETFD, FD_CLOEXEC);
-//
-//  // Sets mode and ownership of slave pseudo temrinal to UID of this process
-//  // Unlocks slave pseudoterminal
-//  // stores name of slave pseudoterminal
-//  // needs to be done before using slave pseudo terminal
-//  // Abort if none of this works
-//  if (grantpt(ptm) || unlockpt(ptm) ||
-//      ((devname = (char*) ptsname(ptm)) == 0)) {
-//    LOGI("Trouble with /dev/ptmx: %s\n", strerror(errno));
-//    return -1;
-//  }
-//
-//  pid = fork();
-//  // Parent and child processes start execution here
-//  // Both have identical but separate adress spaces
-//
-//  if(pid < 0) {
-//    LOGI("Fork failed: %s\n", strerror(errno));
-//    return -1;
-//  }
-//  LOGI("pid %d\n", pid);
-//  // This is the child process
-//  if(pid == 0){
-//
-//    int pts;
-//
-//    // Creates new session (collection of process group)
-//    setsid();
-//
-//    // Opens pseudo terminal slave
-//    pts = open(devname, O_RDWR);
-//    if(pts < 0) {
-//      exit(-1);
-//    }
-//    // Duplicate slave to special unix filedescriptors
-//    // Standard input
-//     dup2(pts, 0);
-//     // Standard output
-//     dup2(pts, 1);
-//     // Standard error
-//     dup2(pts, 2);
-//     // Close master, because we have above?
-//    close(ptm);
-//    LOGI("and do I get here?\n");
-//    // run run run
-//    LOGI("execv returned %d\n", execve(cmd, args, envp));
-//    sleep(5);
-//    LOGI("Child goes home\n");
-//    return -1;
-//  } else {
-//    sleep(8);
-//    LOGI("Parent goes home\n");
-//    return -1;
-//  }
 
-//
-//
-//
-////
-//////    PySys_SetPath(path);
-////
-////
-////    // Print stats about the environment
-////  LOGI("ProgramName %s", (char*) Py_GetProgramName());
-////  LOGI("Prefix %s", Py_GetPrefix());
-////  LOGI("ExecPrefix %s", Py_GetExecPrefix());
-////  LOGI("ProgramFullName %s", Py_GetProgramFullPath());
-////  LOGI("Path %s", Py_GetPath());
-////  LOGI("Platform %s", Py_GetPlatform());
-////  LOGI("PythonHome %s", Py_GetPythonHome());
 //
 //    LOGI("Before init log...");
 //    initandroidlog();
