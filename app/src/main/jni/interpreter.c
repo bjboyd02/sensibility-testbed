@@ -25,6 +25,7 @@
 
 #include "interpreter.h"
 
+
 void Java_com_snakei_PythonInterpreter_runScript(
     JNIEnv* env, jobject instance, jobjectArray j_args,
     jstring j_home, jstring j_path) {
@@ -78,6 +79,7 @@ void interpreter_init(char* home, char* path) {
   Py_SetPythonHome(home);
   // Apparently we can call Py_Initialize several times without problems
   Py_Initialize();
+  PyEval_InitThreads();
 
   // Initialize C-Python Extensions
   initandroid();
@@ -86,6 +88,25 @@ void interpreter_init(char* home, char* path) {
   PyObject *sys_module = PyImport_ImportModule("sys");
   PyObject *sys_attr_path = PyObject_GetAttrString(sys_module, "path");
   PyList_Append(sys_attr_path, PyString_FromString(path));
+
+  // Injecting Python print wrapper
+  // cf.  https://github.com/kivy/python-for-android/blob/master/pythonforandroid/bootstraps/webview/build/jni/src/start.c#L181-L197
+  LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleString(
+        "import sys\n" \
+        "import androidlog\n" \
+        "class LogFile(object):\n" \
+        "    def __init__(self):\n" \
+        "        self.buffer = ''\n" \
+        "    def write(self, s):\n" \
+        "        s = self.buffer + s\n" \
+        "        lines = s.split(\"\\n\")\n" \
+        "        for l in lines[:-1]:\n" \
+        "            androidlog.log(l)\n" \
+        "        self.buffer = lines[-1]\n" \
+        "    def flush(self):\n" \
+        "        return\n" \
+        "sys.stdout = sys.stderr = LogFile()"));
+
 }
 
 void interpreter_run(int argc, char **argv) {
@@ -93,10 +114,10 @@ void interpreter_run(int argc, char **argv) {
   pid_t pid;
   pid = fork();
   if (pid == 0) {
-    // Set process name
-    prctl(PR_SET_NAME, argv[0]);
 
-    //Todo:
+    // Set process name
+    LOGI("Setting proc name '%s' returns %i\n", argv[0], prctl(PR_SET_NAME, argv[0]));
+
     PySys_SetArgv(argc, argv);
     Py_SetProgramName(argv[0]);
 
