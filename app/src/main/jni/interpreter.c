@@ -123,7 +123,32 @@ void interpreter_run(int argc, char **argv) {
 
     LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleFile(argv[0]));
 
+  } else {
+//    (*jni_env)->CallStaticIntMethod(jni_env, class, method, 1);
+    int ppid = getpid();
+    int status;
+    LOGI("Parent %i starts waiting for %i", ppid, pid);
+    waitpid(pid, &status, 0);
+
+    int macroret;
+    if (macroret = WIFEXITED(status))
+      LOGI("WIFEXITED %i", macroret);
+    if (macroret = WEXITSTATUS(status))
+      LOGI("WEXITSTATUS %i", macroret);
+    if (macroret = WIFSIGNALED(status))
+      LOGI("WIFSIGNALED %i", macroret);
+    if (macroret = WTERMSIG(status))
+      LOGI("WTERMSIG %i", macroret);
+    if (macroret = WCOREDUMP(status))
+      LOGI("WCOREDUMP %i", macroret);
+    if (macroret = WIFSTOPPED(status))
+      LOGI("WIFSTOPPED %i", macroret);
+    if (macroret = WSTOPSIG(status))
+      LOGI("WSTOPSIG %i", macroret);
+
+    LOGI("Parent %i stops waiting for child %i, exit status was: %i", ppid, pid, status);
   }
+
 
 
 

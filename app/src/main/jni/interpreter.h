@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/prctl.h>
+#include <sys/wait.h>
 
 #include "snakei.h"
 #include "outputs.h"

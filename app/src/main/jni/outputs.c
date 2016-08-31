@@ -36,22 +36,25 @@ static struct output_cache {
  */
 PyObject* androidlog_log(PyObject *self, PyObject *python_message) {
   char* c_message;
-  jstring java_message;
-
+//  jstring java_message;
+//
   // Convert Python string to C string
   c_message = PyString_AsString(python_message);
-  // Convert C string to Java string
-  java_message = jh_getJavaString(c_message);
 
-  PyObject* result = jh_callStaticVoid(m_cached.class, m_cached.log_message,
-                                       java_message);
+  LOGI("C says: %s", c_message);
 
-  jh_deleteReference((jobject) java_message);
-
-  // XXX: do we have to delete the string reference?
-  // We shouldn't have to, that's why it is called local, BUT
-
-  return result;  // I.e., `return Py_None;` with reference counting
+//  // Convert C string to Java string
+//  java_message = jh_getJavaString(c_message);
+//
+//  PyObject* result = jh_callStaticVoid(m_cached.class, m_cached.log_message,
+//                                       java_message);
+//
+//  jh_deleteReference((jobject) java_message);
+//
+//  // XXX: do we have to delete the string reference?
+//  // We shouldn't have to, that's why it is called local, BUT
+  Py_RETURN_NONE;
+//  return result;  // I.e., `return Py_None;` with reference counting
 }
 
 
