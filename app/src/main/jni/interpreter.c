@@ -107,6 +107,20 @@ void interpreter_init(char* home, char* path) {
         "        return\n" \
         "sys.stdout = sys.stderr = LogFile()"));
 
+
+  LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleString(
+        "import sys\n" \
+        "the_very_original_open = open\n" \
+        "def tracefunc(frame, event, arg, indent=[0]):\n"\
+        "  with the_very_original_open('/data/data/com.sensibility_testbed/files/trace.txt', 'a+') as trace_file:\n"\
+        "    if event == 'call':\n"\
+        "      indent[0] += 2\n"\
+        "      trace_file.writelines('-' * indent[0] + '> ' + str(frame.f_code.co_filename) + ' call function ' +  str(frame.f_code.co_name) + '\n')\n"\
+        "    elif event == 'return':\n"\
+        "      trace_file.writelines('<' + '-' * indent[0] + ' ' + str(frame.f_code.co_filename) + ' exit function ' + str(frame.f_code.co_name) + '\n')\n"\
+        "      indent[0] -= 2\n"\
+        "    return tracefunc"));
+
 }
 
 void interpreter_run(int argc, char **argv) {
@@ -114,7 +128,6 @@ void interpreter_run(int argc, char **argv) {
   pid_t pid;
   pid = fork();
   if (pid == 0) {
-
     // Set process name
     LOGI("Setting proc name '%s' returns %i\n", argv[0], prctl(PR_SET_NAME, argv[0]));
 

@@ -59,6 +59,7 @@ public class PythonInterpreterService extends Service {
                 System.loadLibrary("python2.7");
                 System.loadLibrary("snakei");
                 String[] python_args = {"nmmain.py", "--foreground"};
+//                String[] python_args = {"repyV2/repy.py", "restrictions.default", "test.r2py"};
                 // Todo: don't hardcode here
                 PythonInterpreter.runScript(python_args);
             }
