@@ -1,63 +1,69 @@
 apply plugin: 'com.android.model.application'
 
+def lib_distribution_root = '../distribution'
+
 model {
-    android {
-        compileSdkVersion = 22
-        buildToolsVersion = "23.0.1"
-
-        defaultConfig.with {
-            applicationId = "com.sensibility_testbed"
-            minSdkVersion.apiLevel = 21
-            targetSdkVersion.apiLevel = 22
-            versionCode = 1
-            versionName = "1.0"
-        }
-    }
-
-    android.buildTypes {
-        release {
-            minifyEnabled = false
-            // proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
-            // https://codelabs.developers.google.com/codelabs/android-studio-jni/index.html?index=..%2F..%2Findex#2
-            proguardFiles.add(file('proguard-android.txt'))
-        }
-    }
-    /*
-    android.ndk {
-        moduleName = "embedded_python_test"
-    }
-    */
     repositories {
         libs(PrebuiltLibraries) {
             python27 {
+                // Python header files
+                headers.srcDir "${lib_distribution_root}/python27/include"
+                // Python shared library -- each ABI should have a lib file
                 binaries.withType(SharedLibraryBinary) {
-                    sharedLibraryFile = file("jniLibs/libpython2.7.so")
-                }
-            }
-            snakei {
-                binaries.withType(SharedLibraryBinary) {
-                    sharedLibraryFile = file("jniLibs/libsnakei.so")
+                    sharedLibraryFile = file("${lib_distribution_root}/python27/lib/${targetPlatform.getName()}/libpython2.7.so")
                 }
             }
         }
     }
-    android.sources {
-        main {
-            jniLibs {
-                dependencies {
-                    library "python27"
-                    library "snakei"
+
+    android {
+        compileSdkVersion 24
+        buildToolsVersion "24.0.0"
+
+        defaultConfig {
+            applicationId = "com.sensibility_testbed"
+            minSdkVersion.apiLevel = 14
+            targetSdkVersion.apiLevel = 24
+            versionCode = 1
+            versionName = "1.0"
+        }
+        ndk {
+            platformVersion 21
+            moduleName "snakei"
+            toolchain = 'clang'
+            abiFilters.addAll(['armeabi-v7a'])
+            ldLibs.addAll(["android", "log"])
+        }
+        sources {
+            main {
+                jni {
+                    dependencies {
+                        library 'python27' linkage 'shared'
+                    }
+                }
+                jniLibs {
+                    source {
+                        srcDir "${lib_distribution_root}/python27/lib"
+                    }
                 }
             }
-
+        }
+        buildTypes {
+            release {
+                minifyEnabled false
+                proguardFiles.add(file('proguard-android.txt'))
+            }
+            // debug build type is implicit
         }
     }
 }
 dependencies {
-    compile 'com.android.support:support-v4:19.1.0'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    compile 'com.android.support:support-v4:24.0.0'
     compile 'com.google.android.gms:play-services-location:9.0.0'
-    compile 'com.google.guava:guava:18.0'
-    compile files('libs/libGoogleAnalytics.jar')
-    compile files('libs/locale_platform.jar')
-    compile files('libs/script.jar')
+    // compile 'com.google.guava:guava:18.0'
+    // compile files('libs/libGoogleAnalytics.jar')
+    // compile files('libs/locale_platform.jar')
+    // compile files('libs/script.jar')
 }

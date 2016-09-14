@@ -4,10 +4,6 @@
     android:versionCode="16"
     android:versionName="20160324-1404CET-Alpha" >
 
-    <uses-sdk
-        android:minSdkVersion="21"
-        android:targetSdkVersion="22" />
-
 
     <application
         android:icon="@drawable/ic_launcher"
@@ -76,6 +72,5 @@
     <!--Includes permissions for network and gps location provider-->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
 
 </manifest>
