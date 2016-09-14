@@ -13,7 +13,6 @@
  */
 
 #include "pyhelper.h"
-#include "python2.7/traceback.h"
 
 /*
  * Verbosely execute Python code.
@@ -127,12 +126,12 @@ int Verbose_PyRun_SimpleFile(const char *filename) {
             errstring = PyObject_Str(errvalue);
             LOGI("Errvalue: %s\n", PyString_AS_STRING(errstring));
         }
-      if(traceback != NULL) {
-        PyTracebackObject *traceback_obj = (PyTracebackObject*) traceback;
-        int err_lineno = traceback_obj->tb_lineno;
-        const char* err_filename = PyString_AsString(traceback_obj->tb_frame->f_code->co_filename);
-        LOGI("Short Traceback: Line %d in file %s", err_lineno, err_filename);
-      }
+//      if(traceback != NULL) {
+//        PyTracebackObject *traceback_obj = (PyTracebackObject*) traceback;
+//        int err_lineno = traceback_obj->tb_lineno;
+//        const char* err_filename = PyString_AsString(traceback_obj->tb_frame->f_code->co_filename);
+//        LOGI("Short Traceback: Line %d in file %s", err_lineno, err_filename);
+//      }
         Py_XDECREF(errvalue);
         Py_XDECREF(errtype);
         Py_XDECREF(traceback);
