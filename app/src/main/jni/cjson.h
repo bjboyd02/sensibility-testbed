@@ -4,8 +4,8 @@
 
 #ifndef SENSIBILITY_TESTBED_CJSON_H
 #define SENSIBILITY_TESTBED_CJSON_H
-#include "snakei.h"
 
+#include "snakei.h"
 
 PyObject* JSON_decode_c(char* json_string);
 

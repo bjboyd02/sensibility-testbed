@@ -1,13 +1,12 @@
 #ifndef _SNAKEI_INTERPRETER_H_
 #define _SNAKEI_INTERPRETER_H_
 
-#include <Python.h>
 #include <jni.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/prctl.h>
 #include <sys/wait.h>
-
+#include <Python.h>
 #include "snakei.h"
 #include "outputs.h"
 #include "sensors.h"

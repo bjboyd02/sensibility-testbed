@@ -4,12 +4,11 @@
 
 #ifndef SENSIBILITY_TESTBED_MISCINFO_H
 #define SENSIBILITY_TESTBED_MISCINFO_H
-#include <Python.h>
 #include <jni.h>
+#include <Python.h>
 #include "snakei.h"
 #include "cjson.h"
 #include "jnihelper.h"
-#include "python2.7/object.h"
 
 void initmiscinfo();
 

@@ -5,9 +5,9 @@
 #ifndef _SNAKEI_location_H_
 #define _SNAKEI_location_H_
 
-#include <Python.h>
 #include <jni.h>
 #include <assert.h>
+#include <Python.h>
 #include "snakei.h"
 #include "jnihelper.h"
 

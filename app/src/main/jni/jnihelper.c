@@ -57,8 +57,6 @@
  */
 
 #include "jnihelper.h"
-#include "python2.7/pyerrors.h"
-
 
 /*
  * Takes a Java Class name, searches for the Class in the JVM and returns

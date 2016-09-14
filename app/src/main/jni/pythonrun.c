@@ -7,7 +7,6 @@
  *
  */
 #include "pythonrun.h"
-#include "python2.7/object.h"
 
 /*
  * Caches native references of used Java Class and Java Methods

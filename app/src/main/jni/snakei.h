@@ -1,19 +1,16 @@
 #ifndef _SNAKEI_H_
 #define _SNAKEI_H_
 
-#include <Python.h>
 #include <jni.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <Python.h>
 #include <android/log.h>
-
 #include "interpreter.h"
 #include "outputs.h"
 #include "sensors.h"
 #include "pyhelper.h"
 #include "miscinfo.h"
-
-
 
 // Define a "convenience" macro for simple logging (see `adb logcat`)
 // (taken from the Android NDK samples)

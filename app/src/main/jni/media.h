@@ -4,8 +4,8 @@
 
 #ifndef SENSIBILITY_TESTBED_MEDIA_H
 #define SENSIBILITY_TESTBED_MEDIA_H
-#include <Python.h>
 #include <jni.h>
+#include <Python.h>
 #include "snakei.h"
 #include "jnihelper.h"
 

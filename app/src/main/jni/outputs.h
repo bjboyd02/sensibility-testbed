@@ -1,8 +1,8 @@
 #ifndef _SNAKEI_OUTPUTS_H_
 #define _SNAKEI_OUTPUTS_H_
 
-#include <Python.h>
 #include <jni.h>
+#include <Python.h>
 #include "snakei.h"
 #include "jnihelper.h"
 

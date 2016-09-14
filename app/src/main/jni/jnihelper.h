@@ -8,8 +8,10 @@
 #include <jni.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <Python.h>
 #include "snakei.h"
 #include "cjson.h"
+
 
 
 jclass jh_getClass(const char *class_name);
