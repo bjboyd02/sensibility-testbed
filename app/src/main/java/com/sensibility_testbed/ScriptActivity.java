@@ -743,7 +743,7 @@ public class ScriptActivity extends Activity {
      * storage throws an exception (needs to be verified and handled)
      */
     private void copyPythonToLocal(String destination) throws Exception {
-        Utils.unzip(getResources().openRawResource(R.raw.raw), destination, true);
+        Utils.unzip(getResources().openRawResource(R.raw.python_lib), destination, true);
     }
 
   // Executed whenever a boolean shared preference is saved

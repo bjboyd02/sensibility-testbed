@@ -166,7 +166,7 @@ public class SensibilityActivity extends Activity {
                 // Todo: Check and copy only if files are not yet
                 Log.i(TAG, String.format("Unpacking python archive to %s", FILES_ROOT));
                 try {
-                    Utils.unzip(getResources().openRawResource(R.raw.raw), FILES_ROOT, true);
+                    Utils.unzip(getResources().openRawResource(R.raw.python_lib), FILES_ROOT, true);
                 } catch (IOException e) {
                     Log.i(TAG, "Couldn't unpack python archive");
                     e.printStackTrace();
@@ -174,7 +174,7 @@ public class SensibilityActivity extends Activity {
                     e.printStackTrace();
                 }
 
-                installSeattle();
+//                installSeattle();
             }
         });
 
