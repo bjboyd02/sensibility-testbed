@@ -45,6 +45,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.nfc.Tag;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Environment;
@@ -179,9 +180,10 @@ public class InstallerService extends ForegroundService {
     final PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
         callIntent, 0);
 
-    notification.setLatestEventInfo(this,
-        this.getString(R.string.srvc_install_name),
-        this.getString(R.string.srvc_install_copy), contentIntent);
+    // XXX Deprecated
+//    notification.setLatestEventInfo(this,
+//        this.getString(R.string.srvc_install_name),
+//        this.getString(R.string.srvc_install_copy), contentIntent);
     notification.flags = Notification.FLAG_AUTO_CANCEL;
 
     mNotificationManager.notify(NOTIFICATION_ID, notification);
@@ -302,10 +304,12 @@ public class InstallerService extends ForegroundService {
         // Remove archive
         archive.delete();
 
+        // XXX Deprecated
+
         // Update notification
-        notification.setLatestEventInfo(s,
-            s.getString(R.string.srvc_install_name),
-            s.getString(R.string.srvc_install_config), contentIntent);
+//        notification.setLatestEventInfo(s,
+//            s.getString(R.string.srvc_install_name),
+//            s.getString(R.string.srvc_install_config), contentIntent);
         notification.flags = Notification.FLAG_AUTO_CANCEL;
         mNotificationManager.notify(NOTIFICATION_ID, notification);
 
@@ -431,6 +435,7 @@ public class InstallerService extends ForegroundService {
     }
   }
 
+
   // Create initial notification
   @Override
   protected Notification createNotification() {
@@ -441,9 +446,10 @@ public class InstallerService extends ForegroundService {
     Intent intent = new Intent(this, ScriptActivity.class);
     PendingIntent contentIntent = PendingIntent.getActivity(this, 0, intent, 0);
 
-    notification.setLatestEventInfo(this,
-        this.getString(R.string.srvc_install_name),
-        this.getString(R.string.srvc_install_start), contentIntent);
+    // XXX Deprecated
+//    notification.setLatestEventInfo(this,
+//        this.getString(R.string.srvc_install_name),
+//        this.getString(R.string.srvc_install_start), contentIntent);
 
     notification.flags = Notification.FLAG_AUTO_CANCEL;
     this.notification = notification;
