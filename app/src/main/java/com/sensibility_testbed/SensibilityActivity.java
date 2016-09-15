@@ -9,6 +9,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.googlecode.android_scripting.FileUtils;
+import com.snakei.PythonInterpreterService;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -153,17 +154,16 @@ public class SensibilityActivity extends Activity {
     // Show install layout
     private void showBasicInstallLayout() {
         setContentView(R.layout.basic_install);
+//
+        final Button installButton = (Button) findViewById(R.id.basicinstallbutton);
+        final Button startButton = (Button) findViewById(R.id.showadvancedoptionsbutton);
 
-        final Button buttonInstall = (Button) findViewById(
-                R.id.basicinstallbutton);
-
-        buttonInstall.setOnClickListener(new View.OnClickListener() {
+        // XXX Todo: Disable if already installed
+        installButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Todo: Move this out of Activity to InstallerService
 
-                // Copy Python modules from res/raw to internal storage
-                // Todo: Check and copy only if files are not yet
+                // Install python
                 Log.i(TAG, String.format("Unpacking python archive to %s", FILES_ROOT));
                 try {
                     Utils.unzip(getResources().openRawResource(R.raw.python_lib), FILES_ROOT, true);
@@ -173,20 +173,34 @@ public class SensibilityActivity extends Activity {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+//
+//                // Download Seattle
+//                // XXX for now we just copy over a zip with the WIP seattle files
+                Log.i(TAG, String.format("Unpacking python archive to %s", FILES_ROOT));
+                try {
+                    Utils.unzip(getResources().openRawResource(R.raw.seattle_android), FILES_ROOT, true);
+                } catch (IOException e) {
+                    Log.i(TAG, "Couldn't unpack python archive");
+                    e.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
-//                installSeattle();
+                // Install seattle
+                String[] python_args = {"seattleinstaller.py", "--percent", "50", "--disable-startup-script", "True"};
+                PythonInterpreterService.startService(python_args, getBaseContext());
             }
         });
 
-
-        // Ha I say I am an advanced button, but I am a start process button
-        final Button buttonAdvanced = (Button) findViewById(R.id.showadvancedoptionsbutton);
-        buttonAdvanced.setOnClickListener(new View.OnClickListener() {
+        // XXX Todo: Disable if already running
+        startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getBaseContext(), com.snakei.PythonInterpreterService.class);
-                intent.putExtra("com.snakei.PythonInterpreterService.python_scripts", PYTHON_SCRIPTS);
-                startService(intent);
+
+                // Start a new python interpreter service process that runs nmmain.py
+                // (foreground skips daemonizing)
+                String[] python_args = {"nmmain.py", "--foreground"};
+                PythonInterpreterService.startService(python_args, getBaseContext());
             }
         });
     }

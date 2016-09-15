@@ -16,7 +16,6 @@
             android:theme="@android:style/Theme.Black" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <!--
@@ -31,9 +30,59 @@
         <!-- <service android:name="com.sensibility_testbed.ScriptService" />
         <service android:name="com.sensibility_testbed.InstallerService" /> -->
         <service
-            android:name="com.snakei.PythonInterpreterService"
-            android:exported="false" /> <!--android:isolatedProcess="true" -->
+            android:name="com.snakei.PythonInterpreterService0"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":proc0"></service>
+        <service
+            android:name="com.snakei.PythonInterpreterService1"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":proc1"></service>
 
+        <service
+            android:name="com.snakei.PythonInterpreterService2"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":proc2"></service>
+        <service
+            android:name="com.snakei.PythonInterpreterService3"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":proc3"></service>
+
+        <service
+            android:name="com.snakei.PythonInterpreterService4"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":proc4"></service>
+        <service
+            android:name="com.snakei.PythonInterpreterService5"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":proc5"></service>
+
+        <service
+            android:name="com.snakei.PythonInterpreterService6"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":proc6"></service>
+        <service
+            android:name="com.snakei.PythonInterpreterService7"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":proc7"></service>
+
+        <service
+            android:name="com.snakei.PythonInterpreterService8"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":proc8"></service>
+        <service
+            android:name="com.snakei.PythonInterpreterService9"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":proc9"></service>
         <!--
         <activity
             android:name="com.googlecode.android_scripting.activity.FutureActivity"
