@@ -10,6 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <Python.h>
+#include <frameobject.h>
 #include "snakei.h"
 
 int Verbose_PyRun_SimpleString(const char *code);
