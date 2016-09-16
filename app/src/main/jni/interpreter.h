@@ -14,12 +14,7 @@
 #include "media.h"
 #include "pyhelper.h"
 #include "miscinfo.h"
-#include "pythonrun.h"
-
-
-void Java_com_snakei_PythonInterpreter_runScript(
-    JNIEnv* env, jobject instance, jobjectArray j_args,
-    jstring j_home, jstring j_path);
+#include "popen.h"
 
 void interpreter_init(char* home, char* path);
 void interpreter_run(int argc, char **argv);

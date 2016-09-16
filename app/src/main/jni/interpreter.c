@@ -26,9 +26,10 @@
 #include "interpreter.h"
 
 
-void Java_com_snakei_PythonInterpreter_runScript(
+JNIEXPORT void JNICALL
+Java_com_snakei_PythonInterpreterService_runScript(
     JNIEnv* env, jobject instance, jobjectArray j_args,
-    jstring j_home, jstring j_path) {
+    jstring j_home, jstring j_path, jobject context) {
 
   int argc;
   argc = (*env)->GetArrayLength(env, j_args);
@@ -51,12 +52,14 @@ void Java_com_snakei_PythonInterpreter_runScript(
     (*env)->ReleaseStringUTFChars(env, j_arg, arg_tmp);
   }
 
+  // Cache the application context to use it in the extensions
+  cached_context = context;
+
   interpreter_init(home, path);
   interpreter_run(argc, argv);
 
-  // We can't call Py_Finalize because a child might still be using Python
-  // Todo: What should we do about this? Maybe wait?
-  // Py_Finalize();
+  // Once interpreter_run returns we should be done with this process
+   Py_Finalize();
 
   // XXX: This might lead to problems if a child process is still using
   // those char pointers
@@ -84,10 +87,12 @@ void interpreter_init(char* home, char* path) {
   // Initialize C-Python Extensions
   initandroid();
   initandroidlog();
+  initmiscinfo();
 
   PyObject *sys_module = PyImport_ImportModule("sys");
   PyObject *sys_attr_path = PyObject_GetAttrString(sys_module, "path");
   PyList_Append(sys_attr_path, PyString_FromString(path));
+
 
   // Injecting Python print wrapper
   // cf.  https://github.com/kivy/python-for-android/blob/master/pythonforandroid/bootstraps/webview/build/jni/src/start.c#L181-L197
@@ -106,63 +111,15 @@ void interpreter_init(char* home, char* path) {
         "    def flush(self):\n" \
         "        return\n" \
         "sys.stdout = sys.stderr = LogFile()"));
-
-
-  LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleString(
-        "import sys\n" \
-        "the_very_original_open = open\n" \
-        "def tracefunc(frame, event, arg, indent=[0]):\n"\
-        "  with the_very_original_open('/data/data/com.sensibility_testbed/files/trace.txt', 'a+') as trace_file:\n"\
-        "    if event == 'call':\n"\
-        "      indent[0] += 2\n"\
-        "      trace_file.writelines('-' * indent[0] + '> ' + str(frame.f_code.co_filename) + ' call function ' +  str(frame.f_code.co_name) + '\n')\n"\
-        "    elif event == 'return':\n"\
-        "      trace_file.writelines('<' + '-' * indent[0] + ' ' + str(frame.f_code.co_filename) + ' exit function ' + str(frame.f_code.co_name) + '\n')\n"\
-        "      indent[0] -= 2\n"\
-        "    return tracefunc"));
-
-}
+  }
 
 void interpreter_run(int argc, char **argv) {
   LOGI("RUNNING %s", argv[0]);
-  pid_t pid;
-  pid = fork();
-  if (pid == 0) {
-    // Set process name
-    LOGI("Setting proc name '%s' returns %i\n", argv[0], prctl(PR_SET_NAME, argv[0]));
 
-    PySys_SetArgv(argc, argv);
-    Py_SetProgramName(argv[0]);
+  PySys_SetArgv(argc, argv);
+  Py_SetProgramName(argv[0]);
 
-    LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleFile(argv[0]));
-
-  } else {
-//    (*jni_env)->CallStaticIntMethod(jni_env, class, method, 1);
-    int ppid = getpid();
-    int status;
-    LOGI("Parent %i starts waiting for %i", ppid, pid);
-    waitpid(pid, &status, 0);
-
-    int macroret;
-    if (macroret = WIFEXITED(status))
-      LOGI("WIFEXITED %i", macroret);
-    if (macroret = WEXITSTATUS(status))
-      LOGI("WEXITSTATUS %i", macroret);
-    if (macroret = WIFSIGNALED(status))
-      LOGI("WIFSIGNALED %i", macroret);
-    if (macroret = WTERMSIG(status))
-      LOGI("WTERMSIG %i", macroret);
-    if (macroret = WCOREDUMP(status))
-      LOGI("WCOREDUMP %i", macroret);
-    if (macroret = WIFSTOPPED(status))
-      LOGI("WIFSTOPPED %i", macroret);
-    if (macroret = WSTOPSIG(status))
-      LOGI("WSTOPSIG %i", macroret);
-
-    LOGI("Parent %i stops waiting for child %i, exit status was: %i", ppid, pid, status);
-  }
-
-
+  LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleFile(argv[0]));
 
 
 //
@@ -250,5 +207,5 @@ void interpreter_run(int argc, char **argv) {
 //  Py_Finalize();
 //
 //  LOGI("Done. Bye!");
-};
+}
 

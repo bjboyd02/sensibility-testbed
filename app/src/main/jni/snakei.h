@@ -34,6 +34,7 @@
  *   maybe this can be done here
  */
 JavaVM* cached_vm;
+jobject cached_context;
 
 #endif /* defined _SNAKEI_H_ */
 

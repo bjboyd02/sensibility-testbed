@@ -127,12 +127,8 @@ public class PythonInterpreterService extends Service {
 
     }
 
-    public void runScript(String[] python_args) {
-        runScript(python_args, python_home, python_path);
-    }
-
     public native void runScript(String[] python_args,
-                                 String python_home, String python_path);
+                                 String python_home, String python_path, Context context);
 
     /**
      * For every call to start this service,
@@ -145,7 +141,7 @@ public class PythonInterpreterService extends Service {
         // Log.i(this.getPackageName(), "**** UID is " + Integer.toString(myUid()));
 
         String[] python_args = intent.getStringArrayExtra("python_args");
-        runScript(python_args);
+        runScript(python_args, python_home, python_path, getApplicationContext());
 
         /* Once the script has run the service should stop (go idle)
          * so that we can reuse it. */

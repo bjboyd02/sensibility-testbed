@@ -179,7 +179,7 @@ PyObject* miscinfo_get_volume_info(PyObject *self) {
  */
 PyObject* miscinfo_get_battery_info(PyObject *self) {
     return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod, m_cached.get_battery_info);
+                   jh_callJsonStringMethod, m_cached.get_battery_info, cached_context);
 }
 
 
@@ -270,7 +270,7 @@ void initmiscinfo() {
                                                "()Ljava/lang/String;"),
             .get_battery_info = jh_getMethod(class,
                                              "getBatteryInfo",
-                                             "()Ljava/lang/String;"),
+                                             "(Landroid/content/Context;)Ljava/lang/String;"),
             .get_network_info = jh_getMethod(class,
                                              "getNetworkInfo",
                                              "()Ljava/lang/String;"),
