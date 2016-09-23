@@ -74,10 +74,22 @@ public class PythonInterpreterService extends Service {
 
     // python_args = {"nmmain.py", "--foreground"};
     // python_args = {"repyV2/repy.py", "restrictions.default", "test.r2py"};
+
+
+    /*
+     * Androidesque fork of new Service process
+     * actually we adopt a child then spawn a new one
+     *
+     * Find an idle Service in the set of defined (Manifest) Service processes
+     * pack the Python args into an Intent and start theService.
+     *
+     */
     public static void startService(String[] python_args, Context context) {
+
+        // Find a Service we can use
         Class idle_service_class = getIdleServiceClass(context);
 
-        // XXX What should we do if there is no idle service around?
+        // XXX LP: What should we do if there is no idle service around?
         // Try until we find one?
         // Throw an exception?
         // Return not 0 ?
@@ -86,13 +98,13 @@ public class PythonInterpreterService extends Service {
             return;
         }
 
-        // Fork new process !!!!!!!!
+        //
         Intent intent = new Intent(context, idle_service_class);
         intent.putExtra("python_args", python_args);
         context.startService(intent);
     }
 
-    /* XXX Todo: this is a critical section, take care of it!! */
+    /* XXX LP: this is a critical section, take care of it!!! */
     public static Class getIdleServiceClass(Context context) {
 
         ActivityManager manager = (ActivityManager)context.getSystemService(ACTIVITY_SERVICE);
@@ -100,7 +112,7 @@ public class PythonInterpreterService extends Service {
         // Enabled but idle service
         Class idle_service = null;
 
-        // Currently running service per ActivityManager
+        // Currently running services reported by ActivityManager
         List<ActivityManager.RunningServiceInfo> running_services =
                 manager.getRunningServices(Integer.MAX_VALUE);
 
@@ -124,35 +136,50 @@ public class PythonInterpreterService extends Service {
         }
 
         return idle_service;
-
     }
 
     public native void runScript(String[] python_args,
                                  String python_home, String python_path, Context context);
 
     /**
-     * For every call to start this service,
-     * - extract the future  sys.path, PYTHONHOME, the script file name,
-     *   and the command-line arguments  from `intent`, and
-     * - create a new Python interpreter.
+     * Call into native Python Interpreter and run the Python script at the passed path
+     *
+     * Passes the Application Context to native method so that Python can call back into
+     * Java e.g. to start a new Service Process or use Sensors
      */
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
+    public int onStartCommand(final Intent intent, int flags, int startId) {
         // Log.i(this.getPackageName(), "**** UID is " + Integer.toString(myUid()));
 
-        String[] python_args = intent.getStringArrayExtra("python_args");
-        runScript(python_args, python_home, python_path, getApplicationContext());
+        // Worker thread for Python Interpreter Process to run Python code
+        new Thread(new Runnable() {
+            public void run() {
+                String[] python_args = intent.getStringArrayExtra("python_args");
+                runScript(python_args, python_home, python_path, getApplicationContext());
 
-        /* Once the script has run the service should stop (go idle)
-         * so that we can reuse it. */
-        stopSelf();
+                // Once the work is done, the service should stop itself (go idle)
+                // so that we can reuse it.
+                // If the Service process was killed by a natively forked process,
+                // it will never get back here, but there is no need to call stopSelf
+                // anyway.
+                stopSelf();
+            }
+        }).start();
 
-        // TODO: For a plain Python interpreter that needs arguments,
-        // starting STICKY makes no sense as Android's restart attempt
-        // only sends a `null` Intent
-        // For an encapsulated nodemanager/softwareupdater,
-        // it would make sense OTOH
+        /*
+           From the docs:
+           "if this service's process is killed while it is started
+           (after returning from onStartCommand(Intent, int, int)),
+           and there are no new start intents to deliver to it,
+           then take the service out of the started state
+           and don't recreate until a future explicit call"
 
+           XXX LP:
+           Although above seems to work, after I kill the process in native code the catlog says:
+           schedule to restart ...
+           If Android indeed tries to restart we maybe want to use flags or startId together with
+           some instance variables to make sure onStartCommand is only called by us.
+         */
         return START_NOT_STICKY;
     }
 
