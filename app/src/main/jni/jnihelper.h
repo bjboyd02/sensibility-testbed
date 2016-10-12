@@ -8,11 +8,21 @@
 #include <jni.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <pthread.h>
 #include <Python.h>
 #include "snakei.h"
 #include "cjson.h"
 
+JavaVM* cached_vm;
+jobject cached_context;
+pthread_key_t jni_thread_key;
 
+jclass popen_class;
+jmethodID popen_method;
+
+void jni_initialize(JavaVM *vm);
+JNIEnv *jni_get_env(void);
+void jni_detach_current_thread(void *env);
 
 jclass jh_getClass(const char *class_name);
 jmethodID jh_getGetter(jclass class, const char *type_signature);
@@ -39,4 +49,5 @@ PyObject* jh_call(jclass class, jmethodID get_instance,
                   jmethodID cached_method, ...);
 
 PyObject* jh_callStaticVoid(jclass class, jmethodID cached_method, ...);
+
 #endif //SENSIBILITY_TESTBED_JNIHELPER_H

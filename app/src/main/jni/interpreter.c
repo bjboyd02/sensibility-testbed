@@ -52,8 +52,9 @@ Java_com_snakei_PythonInterpreterService_runScript(
     (*env)->ReleaseStringUTFChars(env, j_arg, arg_tmp);
   }
 
+  JNIEnv *jni_env = jni_get_env();
   // Cache the application context to use it in the extensions
-  cached_context = context;
+  cached_context = (*jni_env)->NewGlobalRef(jni_env, context);
 
   interpreter_init(home, path);
   interpreter_run(argc, argv);
@@ -87,7 +88,6 @@ void interpreter_init(char* home, char* path) {
   // Initialize C-Python Extensions
   initandroid();
   initandroidlog();
-  initmiscinfo();
 
   PyObject *sys_module = PyImport_ImportModule("sys");
   PyObject *sys_attr_path = PyObject_GetAttrString(sys_module, "path");

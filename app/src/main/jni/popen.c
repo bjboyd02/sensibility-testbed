@@ -14,11 +14,6 @@
 /*
  * Caches native references of used Java Class and Java Methods
  */
-static struct output_cache {
-  jclass class;
-  jmethodID run_script;
-} m_cached;
-
 
 PyObject* android_popen_python(PyObject *self, PyObject *args) {
 
@@ -28,8 +23,6 @@ PyObject* android_popen_python(PyObject *self, PyObject *args) {
   PyObject* args_list;
   int argc;
   int i;
-
-
 
   if (!PyArg_ParseTuple(args, "O", &args_list)) {
     // Todo proper error raising, this must be a non empty array!!!!
@@ -45,7 +38,8 @@ PyObject* android_popen_python(PyObject *self, PyObject *args) {
   }
 
   // Todo: Add this to jnihelper
-  (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+  jni_env = jni_get_env();
+
   popen_args = (jobjectArray)(*jni_env)->NewObjectArray(jni_env, argc,
                                                         (*jni_env)->FindClass(jni_env, "java/lang/String"),
                                                         (*jni_env)->NewStringUTF(jni_env, ""));
@@ -54,13 +48,11 @@ PyObject* android_popen_python(PyObject *self, PyObject *args) {
                                       (*jni_env)->NewStringUTF(jni_env, argv[i]));
   }
 
-  jh_callStaticVoid(m_cached.class, m_cached.run_script, popen_args, cached_context);
-  jh_deleteReference((jobject) popen_args);
+  jh_callStaticVoid(popen_class, popen_method, popen_args, cached_context);
 
+  jh_deleteReference((jobject) popen_args);
   Py_RETURN_NONE;
 }
-
-
 
 /*
  * Maps C functions to Python module methods
@@ -83,9 +75,4 @@ static PyMethodDef AndroidPythonMethods[] = {
  */
 void initandroid() {
   Py_InitModule("android", AndroidPythonMethods);
-  jclass class = jh_getClass("com/snakei/PythonInterpreterService");
-  m_cached = (struct output_cache){
-      .class = class,
-      .run_script = jh_getStaticMethod(class, "startService",
-                                        "([Ljava/lang/String;Landroid/content/Context;)V")};
 }

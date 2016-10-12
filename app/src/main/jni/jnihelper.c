@@ -58,6 +58,51 @@
 
 #include "jnihelper.h"
 
+void jni_initialize(JavaVM *vm) {
+    JNIEnv *jni_env;
+
+    // Cache vm
+    cached_vm = vm;
+
+    // Define thread "destructor"
+    if (pthread_key_create(&jni_thread_key, jni_detach_current_thread) != 0) {
+        LOGI( "Error initializing pthread key");
+    }
+
+    jni_env = jni_get_env();
+
+    jclass the_class_local  = (*jni_env)->FindClass(jni_env, "com/snakei/PythonInterpreterService");
+    popen_class = (jclass)(*jni_env)->NewGlobalRef(jni_env, the_class_local);
+    popen_method = (*jni_env)->GetStaticMethodID(jni_env, popen_class, "startService", "([Ljava/lang/String;Landroid/content/Context;)V");
+}
+
+/*
+ * Attach current thread to Java VM and return a valid JNIEnv pointer
+ */
+JNIEnv *jni_get_env(void) {
+    JNIEnv *env;
+    int status = (*cached_vm)->AttachCurrentThread(cached_vm, &env, NULL);
+    if(status < 0) {
+        LOGI("jni_get_env: could not attach thread");
+        return 0;
+    }
+    pthread_setspecific(jni_thread_key, (void*) env);
+    return env;
+}
+
+/*
+ * Detach current thread, called automatically
+ */
+void jni_detach_current_thread(void *env) {
+    JNIEnv *jni_env = (JNIEnv*) env;
+    if (jni_env != NULL) {
+        (*cached_vm)->DetachCurrentThread(cached_vm);
+        pthread_setspecific(jni_thread_key, NULL);
+    }
+}
+
+
+
 /*
  * Takes a Java Class name, searches for the Class in the JVM and returns
  * a Java Class reference

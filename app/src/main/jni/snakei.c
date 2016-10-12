@@ -8,9 +8,9 @@
  * used by all snakei extensions
  */
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
-    cached_vm = vm;
+    LOGI("############################ ONLOAD IS CALLED");
+    jni_initialize(vm);
     return JNI_VERSION_1_6;
-
 }
 
 
