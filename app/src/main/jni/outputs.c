@@ -25,10 +25,10 @@
 /*
  * Caches native references of used Java Class and Java Methods
  */
-static struct output_cache {
-    jclass class;
-    jmethodID log_message;
-} m_cached;
+//static struct output_cache {
+//    jclass class;
+//    jmethodID log_message;
+//} m_cached;
 
 
 /*
@@ -41,7 +41,7 @@ PyObject* androidlog_log(PyObject *self, PyObject *python_message) {
   // Convert Python string to C string
   c_message = PyString_AsString(python_message);
 
-  LOGI("C says: %s", c_message);
+  LOGI("NATIVE LOG: %s", c_message);
 
 //  // Convert C string to Java string
 //  java_message = jh_getJavaString(c_message);
@@ -78,13 +78,10 @@ static PyMethodDef AndroidLogMethods[] = {
  *
  */
 void initandroidlog() {
-  LOGI("before init");
   Py_InitModule("androidlog", AndroidLogMethods);
-  LOGI("before looking for a class");
-  jclass class = jh_getClass("com/snakei/OutputService");
-  LOGI("before caching a method");
-  m_cached = (struct output_cache){
-          .class = class,
-          .log_message = jh_getStaticMethod(class, "logMessage",
-                                            "(Ljava/lang/String;)V")};
+//  jclass class = jh_getClass("com/snakei/OutputService");
+//  m_cached = (struct output_cache){
+//          .class = class,
+//          .log_message = jh_getStaticMethod(class, "logMessage",
+//                                            "(Ljava/lang/String;)V")};
 }
