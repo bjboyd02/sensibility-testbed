@@ -72,10 +72,6 @@ public class PythonInterpreterService extends Service {
         System.loadLibrary("snakei");
     }
 
-    // python_args = {"nmmain.py", "--foreground"};
-    // python_args = {"repyV2/repy.py", "restrictions.default", "test.r2py"};
-
-
     /*
      * Androidesque fork of new Service process
      * actually we adopt a child then spawn a new one
@@ -87,6 +83,7 @@ public class PythonInterpreterService extends Service {
     public static void startService(String[] python_args, Context context) {
 
         // Find a Service we can use
+        Log.i(TAG, "Searching for an idle service proc");
         Class idle_service_class = getIdleServiceClass(context);
 
         // XXX LP: What should we do if there is no idle service around?
@@ -97,8 +94,8 @@ public class PythonInterpreterService extends Service {
             Log.i(TAG, "No idle Service");
             return;
         }
+        Log.i(TAG, "Idle service proc found");
 
-        //
         Intent intent = new Intent(context, idle_service_class);
         intent.putExtra("python_args", python_args);
         context.startService(intent);
