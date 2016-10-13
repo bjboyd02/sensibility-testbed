@@ -88,11 +88,11 @@ void interpreter_init(char* home, char* path) {
   // Initialize C-Python Extensions
   initandroid();
   initandroidlog();
+  initmiscinfo();
 
   PyObject *sys_module = PyImport_ImportModule("sys");
   PyObject *sys_attr_path = PyObject_GetAttrString(sys_module, "path");
   PyList_Append(sys_attr_path, PyString_FromString(path));
-
 
   // Injecting Python print wrapper
   // cf.  https://github.com/kivy/python-for-android/blob/master/pythonforandroid/bootstraps/webview/build/jni/src/start.c#L181-L197
@@ -111,101 +111,11 @@ void interpreter_init(char* home, char* path) {
         "    def flush(self):\n" \
         "        return\n" \
         "sys.stdout = sys.stderr = LogFile()"));
-  }
+}
 
 void interpreter_run(int argc, char **argv) {
-  LOGI("RUNNING %s", argv[0]);
-
   PySys_SetArgv(argc, argv);
   Py_SetProgramName(argv[0]);
 
   LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleFile(argv[0]));
-
-
-//
-//    LOGI("Before init log...");
-//    initandroidlog();
-//    LOGI("After init log...");
-//
-//    char *filename;
-//    char *full_filename;
-//
-//    filename = "test_process.py";
-//    full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-//    strcpy(full_filename, files);
-//    strcat(full_filename, filename);
-//
-//    LOGI("Before PyRUN...");
-//    LOGI("PyRun returns %i", Verbose_PyRun_SimpleFile(full_filename));
-//    LOGI("After PyRUN");
-//
-
-
-//    filename = "test_python.py";
-//    full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-//    strcpy(full_filename, files);
-//    strcat(full_filename, filename);
-//    LOGI("PyRun returns %i", Verbose_PyRun_SimpleFile(full_filename));
-
-//  LOGI("Start Sensing IN C!!!!");
-//  initsensor();
-//  int i;
-//  for (i = 1;  i <= 17; i++) {
-//     sensor_start_sensing(i);
-//  }
-//
-//  // Och, memory...
-//  filename = "test_sensors.py";
-//  full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-//  strcpy(full_filename, files);
-//  strcat(full_filename, filename);
-//
-//  LOGI("PyRun returns %i", Verbose_PyRun_SimpleFile(full_filename));
-//  LOGI("Stop Sensing IN C!!!!");
-//  int j;
-//  for (j = 1;  j <= 17; j++) {
-//    sensor_stop_sensing(j);
-//   }
-//
-//  LOGI("Start Locating IN C!!!!");
-//  initlocation();
-//  location_start_location();
-//  filename = "test_location.py";
-//  full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-//  strcpy(full_filename, files);
-//  strcat(full_filename, filename);
-//  LOGI("PyRun File: %s", full_filename);
-//  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename),
-//       filename);
-//  LOGI("Stop Locating IN C!!!!");
-//  location_stop_location();
-//
-//  LOGI("Start Media-ing IN C!!!!");
-//  initmedia();
-//  media_start_media();
-//  filename = "test_tts.py";
-//  full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-//  strcpy(full_filename, files);
-//  strcat(full_filename, filename);
-//  LOGI("PyRun File: %s", full_filename);
-//  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename),
-//       filename);
-//  LOGI("Stop Media-ing IN C!!!!");
-//  media_stop_media();
-//
-//  LOGI("Init and start MiscInfo-ing IN C!!!!");
-//  initmiscinfo();
-//  filename = "test_miscinfo.py";
-//  full_filename = (char *) malloc(1 + strlen(files) + strlen(filename));
-//  strcpy(full_filename, files);
-//  strcat(full_filename, filename);
-//  LOGI("PyRun File: %s", full_filename);
-//  LOGI("PyRun returns %i for %s", Verbose_PyRun_SimpleFile(full_filename),
-//       filename);
-
-//  LOGI("Before Py_Finalize...");
-//  Py_Finalize();
-//
-//  LOGI("Done. Bye!");
 }
-
