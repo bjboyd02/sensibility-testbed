@@ -20,9 +20,17 @@ pthread_key_t jni_thread_key;
 jclass popen_class;
 jmethodID popen_method;
 
+jclass miscinfo_class;
+jmethodID miscinfo_getter;
+jmethodID miscinfo_method_battery_info;
+
+
 void jni_initialize(JavaVM *vm);
 JNIEnv *jni_get_env(void);
 void jni_detach_current_thread(void *env);
+
+jobject jni_createGlobalReference(jobject local_ref);
+jobject jni_createStringArray(int argc, char *argv[]);
 
 jclass jh_getClass(const char *class_name);
 jmethodID jh_getGetter(jclass class, const char *type_signature);

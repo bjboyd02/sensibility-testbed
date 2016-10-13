@@ -58,6 +58,12 @@
 
 #include "jnihelper.h"
 
+jclass _createGlobalClassRef(const char *class_name) {
+    jclass local_class;
+    local_class = jh_getClass(class_name);
+    return (jclass)jni_createGlobalReference((jobject) local_class);
+}
+
 void jni_initialize(JavaVM *vm) {
     JNIEnv *jni_env;
 
@@ -69,12 +75,17 @@ void jni_initialize(JavaVM *vm) {
         LOGI( "Error initializing pthread key");
     }
 
-    jni_env = jni_get_env();
+    popen_class = _createGlobalClassRef("com/snakei/PythonInterpreterService");
+    popen_method = jh_getStaticMethod(popen_class, "startService",
+            "([Ljava/lang/String;Landroid/content/Context;)V");
 
-    jclass the_class_local  = (*jni_env)->FindClass(jni_env, "com/snakei/PythonInterpreterService");
-    popen_class = (jclass)(*jni_env)->NewGlobalRef(jni_env, the_class_local);
-    popen_method = (*jni_env)->GetStaticMethodID(jni_env, popen_class, "startService", "([Ljava/lang/String;Landroid/content/Context;)V");
+    miscinfo_class = _createGlobalClassRef("com/snakei/MiscInfoService");
+    miscinfo_getter = jh_getGetter(miscinfo_class, "()Lcom/snakei/MiscInfoService;");
+    miscinfo_method_battery_info = jh_getMethod(miscinfo_class, "getBatteryInfo",
+            "(Landroid/content/Context;)Ljava/lang/String;");
+
 }
+
 
 /*
  * Attach current thread to Java VM and return a valid JNIEnv pointer
@@ -101,6 +112,33 @@ void jni_detach_current_thread(void *env) {
     }
 }
 
+jobject jni_createGlobalReference(jobject local_ref) {
+    JNIEnv *jni_env;
+    jni_env = jni_get_env();
+    return (*jni_env)->NewGlobalRef(jni_env, local_ref);
+}
+
+
+jobjectArray jni_createStringArray(int argc, char *argv[]) {
+    JNIEnv *jni_env;
+    jobjectArray string_array;
+    int i;
+
+    jni_env = jni_get_env();
+
+    string_array = (jobjectArray)(*jni_env)->NewObjectArray(jni_env, argc,
+                                             (*jni_env)->FindClass(jni_env, "java/lang/String"),
+                                             (*jni_env)->NewStringUTF(jni_env, ""));
+
+    for(i = 0; i < argc; i++) {
+        LOGI(argv[i]);
+        (*jni_env)->SetObjectArrayElement(jni_env, string_array, i,
+                                          (*jni_env)->NewStringUTF(jni_env, argv[i]));
+    }
+
+    return string_array;
+}
+
 
 
 /*
@@ -125,7 +163,7 @@ jclass jh_getClass(const char *class_name) {
     JNIEnv *jni_env;
     jclass class;
 
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    jni_env = jni_get_env();
     class = (*jni_env)->FindClass(jni_env, class_name);
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
@@ -162,7 +200,7 @@ jmethodID jh_getGetter(jclass class, const char *type_signature) {
     JNIEnv *jni_env;
     jmethodID getter;
 
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    jni_env = jni_get_env();
     getter = (*jni_env)->GetStaticMethodID(jni_env, class,
                                            "getInstance", type_signature);
     if ((*jni_env)->ExceptionOccurred(jni_env)){
@@ -201,7 +239,7 @@ jmethodID jh_getMethod(jclass class, const char *method_name,
     JNIEnv *jni_env;
     jmethodID method;
 
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    jni_env = jni_get_env();
     method = (*jni_env)->GetMethodID(jni_env, class,
                                      method_name, type_signature);
     if ((*jni_env)->ExceptionOccurred(jni_env)){
@@ -240,7 +278,7 @@ jmethodID jh_getStaticMethod(jclass class, const char *method_name,
     JNIEnv *jni_env;
     jmethodID method;
 
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    jni_env = jni_get_env();
     method = (*jni_env)->GetStaticMethodID(jni_env, class, method_name,
                                            type_signature);
     if ((*jni_env)->ExceptionOccurred(jni_env)){
@@ -275,7 +313,7 @@ jobject jh_getInstance(jclass class, jmethodID getter) {
     JNIEnv *jni_env;
     jobject object;
 
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    jni_env = jni_get_env();
     object = (*jni_env)->CallStaticObjectMethod(jni_env, class, getter);
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
@@ -310,10 +348,9 @@ jobject jh_getInstance(jclass class, jmethodID getter) {
  */
 jstring jh_getJavaString(char *string) {
     JNIEnv *jni_env;
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    jni_env = jni_get_env();
     return (*jni_env)->NewStringUTF(jni_env, string);
 }
-
 
 /*
  * Takes a native reference and deletes it from JNI local reference table
@@ -338,7 +375,7 @@ jstring jh_getJavaString(char *string) {
  */
 void jh_deleteReference(jobject obj) {
     JNIEnv *jni_env;
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    jni_env = jni_get_env();
     (*jni_env)->DeleteLocalRef(jni_env, obj);
 }
 
@@ -364,19 +401,23 @@ void jh_deleteReference(jobject obj) {
  *
  */
 int _handle_errors(JNIEnv* jni_env, const char *where) {
-    jthrowable error = (*jni_env)->ExceptionOccurred(jni_env);
+
+    jthrowable error;
+    const char *error_msg;
+    jclass class;
+    jmethodID method;
+    jstring error_msg_java;
+
+    error = (*jni_env)->ExceptionOccurred(jni_env);
     if (error) {
         LOGI("%s", where);
         (*jni_env)->ExceptionClear(jni_env);
 
         // Maybe cache java/lang/Object and toString
-        jclass class = (*jni_env)->FindClass(jni_env, "java/lang/Object");
-        jmethodID method = (*jni_env)->GetMethodID(jni_env, class,
-                                        "toString", "()Ljava/lang/String;");
-        jstring error_msg_java = (*jni_env)->CallObjectMethod(jni_env,
-                                    error, method);
-        const char *error_msg = (*jni_env)->GetStringUTFChars(jni_env,
-                                    error_msg_java, 0);
+        class = (*jni_env)->FindClass(jni_env, "java/lang/Object");
+        method = (*jni_env)->GetMethodID(jni_env, class, "toString", "()Ljava/lang/String;");
+        error_msg_java = (*jni_env)->CallObjectMethod(jni_env, error, method);
+        error_msg = (*jni_env)->GetStringUTFChars(jni_env, error_msg_java, 0);
         PyErr_SetString(PyExc_Exception, error_msg);
         (*jni_env)->ReleaseStringUTFChars(jni_env, error_msg_java, error_msg);
         (*jni_env)->DeleteLocalRef(jni_env, error_msg_java);
@@ -448,8 +489,9 @@ PyObject* jh_callBooleanMethod(JNIEnv* jni_env, jobject object,
                                jmethodID method, va_list args) {
 
     // V for va_list
-    jboolean success = (*jni_env)->CallBooleanMethodV(jni_env,
-                                                      object, method, args);
+    jboolean success;
+
+    success = (*jni_env)->CallBooleanMethodV(jni_env, object, method, args);
     if (_handle_errors(jni_env, "jh_callBooleanMethod: exception occurred")) {
         //If we want to re-raise the exception in Python we have to return NULL
         return NULL;
@@ -489,7 +531,9 @@ PyObject* jh_callIntMethod(JNIEnv* jni_env, jobject object,
                            jmethodID method, va_list args) {
 
     // V for va_list
-    int retval = (*jni_env)->CallIntMethodV(jni_env, object, method, args);
+    int retval;
+
+    retval = (*jni_env)->CallIntMethodV(jni_env, object, method, args);
     if (_handle_errors(jni_env, "jh_callIntMethod: exception occurred")) {
         // If we want to re-raise the exception in Python we have to return NULL
         return NULL;
@@ -526,6 +570,9 @@ PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object,
                               jmethodID method, va_list args) {
 
     jstring java_string;
+    const char *c_string;
+    PyObject *py_string = NULL;
+
     // V for va_list
     java_string = (*jni_env)->CallObjectMethodV(jni_env, object, method, args);
 
@@ -542,10 +589,8 @@ PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object,
         Py_RETURN_NONE;
     }
 
-    PyObject *py_string = NULL;
     // Convert Java string to C char*
-    const char *c_string = (*jni_env)->GetStringUTFChars(jni_env,
-                                                         java_string, 0);
+    c_string = (*jni_env)->GetStringUTFChars(jni_env, java_string, 0);
     // Convert C char* to Python string
     py_string = PyString_FromString(c_string);
     // Free memory and delete reference
@@ -586,6 +631,10 @@ PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object,
                                   jmethodID method, va_list args) {
 
     jstring java_string;
+    const char *c_string_const;
+    char *c_string;
+    PyObject *py_object = NULL;
+
     java_string = (*jni_env)->CallObjectMethodV(jni_env, object, method, args);
 
     // V for va_list
@@ -600,26 +649,24 @@ PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object,
         Py_RETURN_NONE;
     }
 
-    PyObject *obj = NULL;
     // Convert Java string to C const char*
     // JNI method will only give us a const char* although we want a char*
-    const char *c_string_const = (*jni_env)->GetStringUTFChars(jni_env,
-                                                               java_string, 0);
+    c_string_const = (*jni_env)->GetStringUTFChars(jni_env, java_string, 0);
 
     // Convert Java string to char*
     // cjson will only accept a char* although we have a const char*
-    char *c_string = malloc(strlen(c_string_const) + 1);
+    c_string = malloc(strlen(c_string_const) + 1);
     strcpy(c_string, c_string_const);
 
     // Convert C char* to Python string
-    obj = JSON_decode_c(c_string);
+    py_object = JSON_decode_c(c_string);
 
     // Free memory and delete reference
     free(c_string);
     (*jni_env)->ReleaseStringUTFChars(jni_env, java_string, c_string_const);
     (*jni_env)->DeleteLocalRef(jni_env, java_string);
 
-    return obj;
+    return py_object;
 }
 
 
@@ -654,13 +701,16 @@ PyObject* jh_call(jclass class, jmethodID get_instance,
                   jmethodID cached_method, ...) {
 
     JNIEnv *jni_env;
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
+    va_list args;
+    PyObject* result;
+    jobject instance;
+
+    jni_env = jni_get_env();
 
     // Get the instance
-    jobject instance = jh_getInstance(class, get_instance);
+    instance = jh_getInstance(class, get_instance);
     // Call the JNI function in
-    PyObject* result;
-    va_list args;
+
     va_start(args, cached_method);
     result = (*_jh_call)(jni_env, instance, cached_method, args);
     va_end(args);
@@ -698,9 +748,10 @@ PyObject* jh_call(jclass class, jmethodID get_instance,
 PyObject* jh_callStaticVoid(jclass class, jmethodID cached_method, ...) {
 
     JNIEnv *jni_env;
-    (*cached_vm)->AttachCurrentThread(cached_vm, &jni_env, NULL);
-
     va_list args;
+
+    jni_env = jni_get_env();
+
     va_start(args, cached_method);
     // V for va_list
     (*jni_env)->CallStaticVoidMethodV(jni_env, class,
