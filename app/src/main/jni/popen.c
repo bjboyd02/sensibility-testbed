@@ -7,16 +7,13 @@
  * Service Process and run a python program
  *
  * This is a replacement for Python's subprocess.popen("python", ...)
- *
  */
 #include "popen.h"
 
 /*
  * Starts a new java service process which in turn calls interpreter.c
- *
  * C-python extension to replace subprocess.Popen(["python", ...])
  */
-
 PyObject* android_popen_python(PyObject *self, PyObject *args) {
 
   JNIEnv* jni_env;
@@ -39,9 +36,10 @@ PyObject* android_popen_python(PyObject *self, PyObject *args) {
     // Todo XXX: error checking and proper raising
   }
 
-  popen_args = jni_createStringArray(argc, argv);
-  jh_callStaticVoid(popen_class, popen_method, popen_args, cached_context);
-  jh_deleteReference((jobject) popen_args);
+  popen_args = jni_get_string_array(argc, argv);
+  jni_py_call_static_void(
+    cached_popen_class, cached_popen_python, popen_args, cached_context);
+  jni_delete_reference((jobject) popen_args);
 
   Py_RETURN_NONE;
 }

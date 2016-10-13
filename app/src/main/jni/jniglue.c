@@ -41,10 +41,10 @@
  *  - All of the helper functions calling a Java objects's method are
  *    wrapped themselves by another helper function  as well to perform
  *    tasks that are common to all of those, i.e.:
- *      jh_call attaches the thread to JVM,
+ *      jni_py_call attaches the thread to JVM,
  *      instantiates the required Java object, calls one of
- *      jh_callVoidMethod, jh_callBooleanMethod, jh_callJsonStringMethod, ...
- *      (passed as function pointer to jh_call), deletes the
+ *      _void, _boolean, _json, ...
+ *      (passed as function pointer to jni_py_call), deletes the
  *      reference to the Java object and returns the PyObject
  *      pointer received from the wrapped function
  *
@@ -56,36 +56,7 @@
  *
  */
 
-#include "jnihelper.h"
-
-jclass _createGlobalClassRef(const char *class_name) {
-    jclass local_class;
-    local_class = jh_getClass(class_name);
-    return (jclass)jni_createGlobalReference((jobject) local_class);
-}
-
-void jni_initialize(JavaVM *vm) {
-    JNIEnv *jni_env;
-
-    // Cache vm
-    cached_vm = vm;
-
-    // Define thread "destructor"
-    if (pthread_key_create(&jni_thread_key, jni_detach_current_thread) != 0) {
-        LOGI( "Error initializing pthread key");
-    }
-
-    popen_class = _createGlobalClassRef("com/snakei/PythonInterpreterService");
-    popen_method = jh_getStaticMethod(popen_class, "startService",
-            "([Ljava/lang/String;Landroid/content/Context;)V");
-
-    miscinfo_class = _createGlobalClassRef("com/snakei/MiscInfoService");
-    miscinfo_getter = jh_getGetter(miscinfo_class, "()Lcom/snakei/MiscInfoService;");
-    miscinfo_method_battery_info = jh_getMethod(miscinfo_class, "getBatteryInfo",
-            "(Landroid/content/Context;)Ljava/lang/String;");
-
-}
-
+#include "jniglue.h"
 
 /*
  * Attach current thread to Java VM and return a valid JNIEnv pointer
@@ -101,8 +72,10 @@ JNIEnv *jni_get_env(void) {
     return env;
 }
 
+
 /*
- * Detach current thread, called automatically
+ * Detach current thread from JavaVM
+ * called automatically
  */
 void jni_detach_current_thread(void *env) {
     JNIEnv *jni_env = (JNIEnv*) env;
@@ -112,14 +85,79 @@ void jni_detach_current_thread(void *env) {
     }
 }
 
-jobject jni_createGlobalReference(jobject local_ref) {
+/*
+ * Return a new JNI global reference
+ * Don't forget to free the reference!!!
+ */
+jobject jni_get_global_reference(jobject local_ref) {
     JNIEnv *jni_env;
     jni_env = jni_get_env();
     return (*jni_env)->NewGlobalRef(jni_env, local_ref);
 }
 
 
-jobjectArray jni_createStringArray(int argc, char *argv[]) {
+/*
+ * Takes a native reference and deletes it from JNI local reference table
+ *
+ * The JNI local reference table can only house 512 references at the same time
+ * and they only get deleted automatically if the native call returns, i.e. if
+ * the native process that was called FROM Java to e.g. start a
+ * Python Interpreter/ Seattle sandbox in which e.g. native calls
+ * to the JVM are performed
+ *
+ * Native references like jstring need to be casted to jobject before calling
+ * this method, e.g. jni_delete_reference((jobject) variable_of_type_string)
+ *
+ * <Arguments>
+ *   jobject - C character array pointer (char*)
+ *
+ * Note:
+ *  - Does not handle errors
+ *  - I'd like this not to be exposed to the extensions module (see doc string)
+ *
+ */
+void jni_delete_reference(jobject obj) {
+    JNIEnv *jni_env;
+    jni_env = jni_get_env();
+    (*jni_env)->DeleteLocalRef(jni_env, obj);
+}
+
+
+void jni_delete_global_reference(jobject obj) {
+    JNIEnv *jni_env;
+    jni_env = jni_get_env();
+    (*jni_env)->DeleteGlobalRef(jni_env, obj);
+}
+
+
+/*
+ * Takes a C character array pointer, creates a Java String from it
+ * and returns a reference to the Java String
+ *
+ * This is useful if we need to pass a Java String to one of the
+ * methods wrapped by jni_py_call which takes variadic arguments
+ *
+ * <Arguments>
+ *   string - C character array pointer (char*)
+ *
+ * <Returns>
+ *   StringUTF - Native reference to Java String (jstring)
+ *
+ * Note:
+ *  - REQUIRES CALL TO jni_delete_reference WHEN NO LONGER NEED !!!
+ *  - Only logs JAVA Errors, does not catch them (which can make the app crash)
+ *  - The JNI local reference table can only house 512 references
+ *  - I'd like this not to be exposed to the extensions module (see doc string)
+ *
+ */
+jstring jni_get_string(char *string) {
+    JNIEnv *jni_env;
+    jni_env = jni_get_env();
+    return (*jni_env)->NewStringUTF(jni_env, string);
+}
+
+
+jobjectArray jni_get_string_array(int argc, char *argv[]) {
     JNIEnv *jni_env;
     jobjectArray string_array;
     int i;
@@ -127,18 +165,17 @@ jobjectArray jni_createStringArray(int argc, char *argv[]) {
     jni_env = jni_get_env();
 
     string_array = (jobjectArray)(*jni_env)->NewObjectArray(jni_env, argc,
-                                             (*jni_env)->FindClass(jni_env, "java/lang/String"),
-                                             (*jni_env)->NewStringUTF(jni_env, ""));
+            (*jni_env)->FindClass(jni_env, "java/lang/String"),
+            (*jni_env)->NewStringUTF(jni_env, ""));
 
     for(i = 0; i < argc; i++) {
         LOGI(argv[i]);
         (*jni_env)->SetObjectArrayElement(jni_env, string_array, i,
-                                          (*jni_env)->NewStringUTF(jni_env, argv[i]));
+                (*jni_env)->NewStringUTF(jni_env, argv[i]));
     }
 
     return string_array;
 }
-
 
 
 /*
@@ -153,13 +190,13 @@ jobjectArray jni_createStringArray(int argc, char *argv[]) {
  *   class - Native reference to a Java Class (jclass)
  *
  * Note:
- *  - REQUIRES CALL TO jh_deleteReference WHEN NO LONGER NEED !!!
+ *  - REQUIRES CALL TO jni_delete_reference WHEN NO LONGER NEED !!!
  *  - Only logs JAVA Errors, does not catch them (which can make the app crash)
  *  - The JNI local reference table can only house 512 references
  *  - I'd like this not to be exposed to the extensions module (see doc string)
  *
  */
-jclass jh_getClass(const char *class_name) {
+jclass jni_find_class(const char *class_name) {
     JNIEnv *jni_env;
     jclass class;
 
@@ -167,18 +204,33 @@ jclass jh_getClass(const char *class_name) {
     class = (*jni_env)->FindClass(jni_env, class_name);
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
-        LOGI("jh_getClass: exception occurred");
+        LOGI("jni_find_class: exception occurred");
     }
     if (class == NULL) {
-        LOGI("jh_getClass: returned NULL");
+        LOGI("jni_find_class: returned NULL");
     }
     return class;
 }
 
 
 /*
+ * Convenience function to find class and create global reference from it.
+ *
+ * Note:
+ *  - REQUIRES CALL TO jni_delete_global_reference WHEN NO LONGER NEED !!!
+ * - while jmethodID objects are global references per default, jclass objects
+ * are not. We need them to be global to work accross multiple threads
+ */
+jclass jni_find_class_as_global(const char *class_name) {
+    jclass local_class;
+    local_class = jni_find_class(class_name);
+    return (jclass)jni_get_global_reference((jobject) local_class);
+}
+
+
+/*
  * Takes a Java Class reference and the JNI Method signature of a
- * static Java Method (usually a Singleton getter) and returns
+ * static Java Singleton getter "getInstance" and returns
  * the Java method reference
  *
  * <Arguments>
@@ -190,24 +242,24 @@ jclass jh_getClass(const char *class_name) {
  *   getter - Native reference to a Java Method (jMethodID)
  *
  * Note:
- *  - REQUIRES CALL TO jh_deleteReference WHEN NO LONGER NEED !!!
+ *  - REQUIRES CALL TO jni_delete_reference WHEN NO LONGER NEED !!!
  *  - Only logs JAVA Errors, does not catch them (which can make the app crash)
  *  - The JNI local reference table can only house 512 references
  *  - I'd like this not to be exposed to the extensions module (see doc string)
  *
  */
-jmethodID jh_getGetter(jclass class, const char *type_signature) {
+jmethodID jni_find_getter(jclass class, const char *type_signature) {
     JNIEnv *jni_env;
     jmethodID getter;
 
     jni_env = jni_get_env();
-    getter = (*jni_env)->GetStaticMethodID(jni_env, class,
-                                           "getInstance", type_signature);
+    getter = (*jni_env)->GetStaticMethodID(
+            jni_env, class, "getInstance", type_signature);
     if ((*jni_env)->ExceptionOccurred(jni_env)){
-        LOGI("jh_getGetter: exception occurred");
+        LOGI("jni_find_getter: exception occurred");
     }
     if (getter == NULL) {
-        LOGI("jh_getGetter: returned NULL");
+        LOGI("jni_find_getter: returned NULL");
     }
     return getter;
 }
@@ -228,25 +280,25 @@ jmethodID jh_getGetter(jclass class, const char *type_signature) {
  *   method - Native reference to a Java Method (jMethodID)
  *
  * Note:
- *  - REQUIRES CALL TO jh_deleteReference WHEN NO LONGER NEED !!!
+ *  - REQUIRES CALL TO jni_delete_reference WHEN NO LONGER NEED !!!
  *  - Only logs JAVA Errors, does not catch them (which can make the app crash)
  *  - The JNI local reference table can only house 512 references
  *  - I'd like this not to be exposed to the extensions module (see doc string)
  *
  */
-jmethodID jh_getMethod(jclass class, const char *method_name,
-                       const char *type_signature) {
+jmethodID jni_find_method(
+        jclass class, const char *method_name, const char *type_signature) {
     JNIEnv *jni_env;
     jmethodID method;
 
     jni_env = jni_get_env();
-    method = (*jni_env)->GetMethodID(jni_env, class,
-                                     method_name, type_signature);
+    method = (*jni_env)->GetMethodID(
+            jni_env, class, method_name, type_signature);
     if ((*jni_env)->ExceptionOccurred(jni_env)){
-        LOGI("jh_getMethod: exception occurred - %s", method_name);
+        LOGI("jni_find_method: exception occurred - %s", method_name);
     }
     if (method == NULL) {
-        LOGI("jh_getMethod: returned NULL");
+        LOGI("jni_find_method: returned NULL");
     }
     return method;
 }
@@ -267,14 +319,14 @@ jmethodID jh_getMethod(jclass class, const char *method_name,
  *   method - Native reference to a Java Method (jMethodID)
  *
  * Note:
- *  - REQUIRES CALL TO jh_deleteReference WHEN NO LONGER NEED !!!
+ *  - REQUIRES CALL TO jni_delete_reference WHEN NO LONGER NEED !!!
  *  - Only logs JAVA Errors, does not catch them (which can make the app crash)
  *  - The JNI local reference table can only house 512 references
  *  - I'd like this not to be exposed to the extensions module (see doc string)
  *
  */
-jmethodID jh_getStaticMethod(jclass class, const char *method_name,
-                             const char *type_signature) {
+jmethodID jni_find_static_method(
+            jclass class, const char *method_name, const char *type_signature) {
     JNIEnv *jni_env;
     jmethodID method;
 
@@ -282,10 +334,10 @@ jmethodID jh_getStaticMethod(jclass class, const char *method_name,
     method = (*jni_env)->GetStaticMethodID(jni_env, class, method_name,
                                            type_signature);
     if ((*jni_env)->ExceptionOccurred(jni_env)){
-        LOGI("jh_getStaticMethod: exception occurred - %s", method_name);
+        LOGI("jni_find_static_method: exception occurred - %s", method_name);
     }
     if (method == NULL) {
-        LOGI("jh_getStaticMethod: returned NULL");
+        LOGI("jni_find_static_method: returned NULL");
     }
     return method;
 }
@@ -303,13 +355,13 @@ jmethodID jh_getStaticMethod(jclass class, const char *method_name,
  *   object - Native reference to a Java Object (jobject)
  *
  * Note:
- *  - REQUIRES CALL TO jh_deleteReference WHEN NO LONGER NEED !!!
+ *  - REQUIRES CALL TO jni_delete_reference WHEN NO LONGER NEED !!!
  *  - Only logs JAVA Errors, does not catch them (which can make the app crash)
  *  - The JNI local reference table can only house 512 references
  *  - I'd like this not to be exposed to the extensions module (see doc string)
  *
  */
-jobject jh_getInstance(jclass class, jmethodID getter) {
+jobject jni_get_instance(jclass class, jmethodID getter) {
     JNIEnv *jni_env;
     jobject object;
 
@@ -317,70 +369,22 @@ jobject jh_getInstance(jclass class, jmethodID getter) {
     object = (*jni_env)->CallStaticObjectMethod(jni_env, class, getter);
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
-        LOGI("jh_getInstance: exception occurred");
+        LOGI("jni_get_instance: exception occurred");
     }
     if (object == NULL) {
-        LOGI("jg_getInstance: returned NULL");
+        LOGI("jni_get_instance: returned NULL");
     }
     return object;
 }
 
 
-/*
- * Takes a C character array pointer, creates a Java String from it
- * and returns a reference to the Java String
- *
- * This is useful if we need to pass a Java String to one of the
- * methods wrapped by jh_call which takes variadic arguments
- *
- * <Arguments>
- *   string - C character array pointer (char*)
- *
- * <Returns>
- *   StringUTF - Native reference to Java String (jstring)
- *
- * Note:
- *  - REQUIRES CALL TO jh_deleteReference WHEN NO LONGER NEED !!!
- *  - Only logs JAVA Errors, does not catch them (which can make the app crash)
- *  - The JNI local reference table can only house 512 references
- *  - I'd like this not to be exposed to the extensions module (see doc string)
- *
- */
-jstring jh_getJavaString(char *string) {
-    JNIEnv *jni_env;
-    jni_env = jni_get_env();
-    return (*jni_env)->NewStringUTF(jni_env, string);
-}
 
-/*
- * Takes a native reference and deletes it from JNI local reference table
- *
- * The JNI local reference table can only house 512 references at the same time
- * and they only get deleted automatically if the native call returns, i.e. if
- * the native process that was called FROM Java to e.g. start a
- * Python Interpreter/ Seattle sandbox in which e.g. native calls
- * to the JVM are performed
- *
- * Native references like jstring need to be casted to jobject before calling
- * this method, e.g. jh_deleteReference((jobject) variable_of_type_string)
- *
- * <Arguments>
- *   jobject - C character array pointer (char*)
- *
- *
- * Note:
- *  - Does not handle errors
- *  - I'd like this not to be exposed to the extensions module (see doc string)
- *
- */
-void jh_deleteReference(jobject obj) {
-    JNIEnv *jni_env;
-    jni_env = jni_get_env();
-    (*jni_env)->DeleteLocalRef(jni_env, obj);
-}
+/* JNI Python helpers - call Java return python */
 
 
 /*
+ * Internal function
+ *
  * Checks if an error was thrown in Java, clears (catches) the exception,
  * calls the toString method of the Java Exception, converts the returned
  * Java String to a Python String and raises a Python Exception with
@@ -400,7 +404,7 @@ void jh_deleteReference(jobject obj) {
  *    from which it receives the jni_env pointer has done this
  *
  */
-int _handle_errors(JNIEnv* jni_env, const char *where) {
+int __handle_errors(JNIEnv* jni_env, const char *where) {
 
     jthrowable error;
     const char *error_msg;
@@ -415,7 +419,8 @@ int _handle_errors(JNIEnv* jni_env, const char *where) {
 
         // Maybe cache java/lang/Object and toString
         class = (*jni_env)->FindClass(jni_env, "java/lang/Object");
-        method = (*jni_env)->GetMethodID(jni_env, class, "toString", "()Ljava/lang/String;");
+        method = (*jni_env)->GetMethodID(
+                jni_env, class, "toString", "()Ljava/lang/String;");
         error_msg_java = (*jni_env)->CallObjectMethod(jni_env, error, method);
         error_msg = (*jni_env)->GetStringUTFChars(jni_env, error_msg_java, 0);
         PyErr_SetString(PyExc_Exception, error_msg);
@@ -445,20 +450,19 @@ int _handle_errors(JNIEnv* jni_env, const char *where) {
  *
  * Note:
  *   Does not need to be called directly, but passed as function pointer to
- *   wrapper jh_call for this method that takes care of attaching thread to JVM
- *   and instantiating the needed object
+ *   wrapper jni_py_call for this method that takes care of attaching thread
+ *   to JVM and instantiating the needed object
  *
  */
-PyObject* jh_callVoidMethod(JNIEnv* jni_env, jobject object,
-                            jmethodID method, va_list args) {
+PyObject* _void(
+        JNIEnv* jni_env, jobject object, jmethodID method, va_list args) {
 
     // V for va_list
     (*jni_env)->CallVoidMethodV(jni_env, object, method, args);
-    if (_handle_errors(jni_env, "jh_callVoidMethod: exception occurred")) {
+    if (__handle_errors(jni_env, "_void: exception occurred")) {
         // If we want to re-raise the exception in Python we have to return NULL
         return NULL;
     }
-
     Py_RETURN_NONE;
 }
 
@@ -481,22 +485,18 @@ PyObject* jh_callVoidMethod(JNIEnv* jni_env, jobject object,
  *
  * Note:
  *   Does not need to be called directly, but passed as function pointer to
- *   wrapper jh_call for this method that takes care of attaching thread to JVM
- *   and instantiating the needed object
- *
+ *   wrapper jni_py_call for this method that takes care of attaching thread
+ *   to JVM and instantiating the needed object
  */
-PyObject* jh_callBooleanMethod(JNIEnv* jni_env, jobject object,
-                               jmethodID method, va_list args) {
-
-    // V for va_list
+PyObject* _boolean(
+        JNIEnv* jni_env, jobject object, jmethodID method, va_list args) {
     jboolean success;
 
     success = (*jni_env)->CallBooleanMethodV(jni_env, object, method, args);
-    if (_handle_errors(jni_env, "jh_callBooleanMethod: exception occurred")) {
+    if (__handle_errors(jni_env, "_boolean: exception occurred")) {
         //If we want to re-raise the exception in Python we have to return NULL
         return NULL;
     }
-
     if (success) {
         Py_RETURN_TRUE;
     } else {
@@ -523,22 +523,19 @@ PyObject* jh_callBooleanMethod(JNIEnv* jni_env, jobject object,
  *
  * Note:
  *   Does not need to be called directly, but passed as function pointer to
- *   wrapper jh_call for this method that takes care of attaching thread to JVM
- *   and instantiating the needed object
+ *   wrapper jni_py_call for this method that takes care of attaching thread
+ *   to JVM and instantiating the needed object
  *
  */
-PyObject* jh_callIntMethod(JNIEnv* jni_env, jobject object,
-                           jmethodID method, va_list args) {
-
-    // V for va_list
+PyObject* _int(
+        JNIEnv* jni_env, jobject object, jmethodID method, va_list args) {
     int retval;
 
     retval = (*jni_env)->CallIntMethodV(jni_env, object, method, args);
-    if (_handle_errors(jni_env, "jh_callIntMethod: exception occurred")) {
+    if (__handle_errors(jni_env, "_int: exception occurred")) {
         // If we want to re-raise the exception in Python we have to return NULL
         return NULL;
     }
-
     return Py_BuildValue("i", retval);
 }
 
@@ -562,13 +559,12 @@ PyObject* jh_callIntMethod(JNIEnv* jni_env, jobject object,
  *
  * Note:
  *   Does not need to be called directly, but passed as function pointer to
- *   wrapper jh_call for this method that takes care of attaching thread to JVM
- *   and instantiating the needed object
+ *   wrapper jni_py_call for this method that takes care of attaching thread
+ *   to JVM and instantiating the needed object
  *
  */
-PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object,
-                              jmethodID method, va_list args) {
-
+PyObject* _string(
+        JNIEnv* jni_env, jobject object, jmethodID method, va_list args) {
     jstring java_string;
     const char *c_string;
     PyObject *py_string = NULL;
@@ -576,7 +572,7 @@ PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object,
     // V for va_list
     java_string = (*jni_env)->CallObjectMethodV(jni_env, object, method, args);
 
-    if (_handle_errors(jni_env, "jh_callStringMethod: exception occurred")) {
+    if (__handle_errors(jni_env, "_string: exception occurred")) {
         // If we want to re-raise the exception in Python we have to return NULL
         return NULL;
     }
@@ -585,7 +581,6 @@ PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object,
     // have returned NULL without throwing an
     // Exception, in this case we should just return a Python None
     if(java_string == NULL) {
-        LOGI("jh_callStringMethod: returned NULL");
         Py_RETURN_NONE;
     }
 
@@ -623,13 +618,12 @@ PyObject* jh_callStringMethod(JNIEnv* jni_env, jobject object,
  *
  * Note:
  *   Does not need to be called directly, but passed as function pointer to
- *   wrapper jh_call for this method that takes care of attaching thread to JVM
- *   and instantiating the needed object
+ *   wrapper jni_py_call for this method that takes care of attaching thread
+ *   to JVM and instantiating the needed object
  *
  */
-PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object,
-                                  jmethodID method, va_list args) {
-
+PyObject* _json(
+        JNIEnv* jni_env, jobject object, jmethodID method, va_list args) {
     jstring java_string;
     const char *c_string_const;
     char *c_string;
@@ -638,14 +632,13 @@ PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object,
     java_string = (*jni_env)->CallObjectMethodV(jni_env, object, method, args);
 
     // V for va_list
-    if (_handle_errors(jni_env,
-                       "jh_callJsonStringMethod: exception occurred")) {
+    if (__handle_errors(jni_env, "_json: exception occurred")) {
         // If we want to re-raise the exception in Python we have to return NULL
         return NULL;
     }
 
     if(java_string == NULL) {
-        LOGI("jh_callJsonStringMethod: returned NULL");
+        LOGI("_json: returned NULL");
         Py_RETURN_NONE;
     }
 
@@ -671,7 +664,7 @@ PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object,
 
 
 /*
- * Wrapper for above jh_call* helper functions on Java Object Methods
+ * Wrapper for above jni_py_call* helper functions on Java Object Methods
  *
  * Takes a native reference to a Java Class, a native reference to a
  * Java Class Constructor(usually a Singleton constructor) of that class,
@@ -688,7 +681,7 @@ PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object,
  * <Arguments>
  *   class - Native reference to Java class of the Method to be called (jclass)
  *   get_instance - Native reference to Constructor of that class (jmethodID)
- *   _jh_call - Function pointer to helper that is used to call Java Method
+ *   _jni_py_call - Function pointer to helper that is used to call Java Method
  *   cached_method - Native reference to Java Method to be called (jmethodID)
  *   ... - Variadic arguments to be passed on to Java Method
  *
@@ -696,9 +689,9 @@ PyObject* jh_callJsonStringMethod(JNIEnv* jni_env, jobject object,
  *   A Python Object or NULL if Java threw an exception
  *
  */
-PyObject* jh_call(jclass class, jmethodID get_instance,
-                  PyObject* (*_jh_call)(JNIEnv*, jobject, jmethodID, va_list),
-                  jmethodID cached_method, ...) {
+PyObject* jni_py_call(
+        PyObject* (*_jni_py_call)(JNIEnv*, jobject, jmethodID, va_list),
+        jclass class, jmethodID get_instance, jmethodID cached_method, ...) {
 
     JNIEnv *jni_env;
     va_list args;
@@ -706,13 +699,10 @@ PyObject* jh_call(jclass class, jmethodID get_instance,
     jobject instance;
 
     jni_env = jni_get_env();
-
-    // Get the instance
-    instance = jh_getInstance(class, get_instance);
-    // Call the JNI function in
+    instance = jni_get_instance(class, get_instance);
 
     va_start(args, cached_method);
-    result = (*_jh_call)(jni_env, instance, cached_method, args);
+    result = (*_jni_py_call)(jni_env, instance, cached_method, args);
     va_end(args);
     (*jni_env)->DeleteLocalRef(jni_env, instance);
 
@@ -745,7 +735,7 @@ PyObject* jh_call(jclass class, jmethodID get_instance,
  *  be instantiated beforehand and released afterwards
  *
  */
-PyObject* jh_callStaticVoid(jclass class, jmethodID cached_method, ...) {
+PyObject* jni_py_call_static_void(jclass class, jmethodID cached_method, ...) {
 
     JNIEnv *jni_env;
     va_list args;
@@ -753,12 +743,11 @@ PyObject* jh_callStaticVoid(jclass class, jmethodID cached_method, ...) {
     jni_env = jni_get_env();
 
     va_start(args, cached_method);
-    // V for va_list
-    (*jni_env)->CallStaticVoidMethodV(jni_env, class,
-                                     cached_method, args);
+    (*jni_env)->CallStaticVoidMethodV(jni_env, class, cached_method, args);
     va_end(args);
 
-    if (_handle_errors(jni_env, "jh_callStaticVoid: exception occurred")) {
+    if (__handle_errors(
+            jni_env, "jni_py_call_static_void: exception occurred")) {
         return NULL;
     }
 

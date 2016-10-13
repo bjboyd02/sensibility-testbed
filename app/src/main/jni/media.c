@@ -8,8 +8,6 @@
  * Usage:
  * Module initialization - call initmedia() from C
  *  - Initializes Python module (media)
- *  - Caches native reference to Java Singleton Class MediaService.java
- *  - Caches native reference to Singleton getter and Java Methods
  *
  * Media initialization - call media_start_media from C
  *  - Calls start_media Java method to initialize Text-To-Speech engine
@@ -27,22 +25,6 @@
  */
 #include "media.h"
 
-
-/*
- * Caches native references of used Java Class and Java Methods
- */
-static struct media_cache {
-    jclass class;
-    jmethodID get_instance;
-    jmethodID stop_media;
-    jmethodID start_media;
-    jmethodID microphone_record;
-    jmethodID tts_speak;
-    jmethodID is_tts_speaking;
-    jmethodID is_media_playing;
-} m_cached;
-
-
 /*
  * Cf. start_media() in MediaService.java for details
  *
@@ -50,8 +32,9 @@ static struct media_cache {
  *
  */
 void media_start_media() {
-    jh_call(m_cached.class, m_cached.get_instance, jh_callVoidMethod,
-            m_cached.start_media);
+    jni_py_call(_void,
+            cached_media_class, cached_media_get_instance,
+            cached_media_start_media);
 }
 
 
@@ -62,8 +45,9 @@ void media_start_media() {
  *
  */
 void media_stop_media() {
-    jh_call(m_cached.class, m_cached.get_instance, jh_callVoidMethod,
-            m_cached.stop_media);
+    jni_py_call(_void,
+            cached_media_class, cached_media_get_instance,
+            cached_media_stop_media);
 }
 
 
@@ -81,11 +65,12 @@ PyObject* media_tts_speak(PyObject *self, PyObject *args) {
         LOGI("Wrong arguments. I guess I should raise an Exception.");
         Py_RETURN_NONE;
     }
-    java_text = jh_getJavaString(text);
-    PyObject* result = jh_call(m_cached.class, m_cached.get_instance,
-            jh_callVoidMethod, m_cached.tts_speak, java_text);
+    java_text = jni_get_string(text);
+    PyObject* result = jni_py_call(_void,
+            cached_media_class, cached_media_get_instance,
+            cached_media_tts_speak, java_text);
 
-    jh_deleteReference((jobject) java_text);
+    jni_delete_reference((jobject) java_text);
     return result;
 }
 
@@ -106,12 +91,13 @@ PyObject* media_microphone_record(PyObject *self, PyObject *args) {
         Py_RETURN_NONE;
     }
 
-    jstring java_file_name = jh_getJavaString(file_name);
-    PyObject* result = jh_call(m_cached.class, m_cached.get_instance,
-            jh_callVoidMethod, m_cached.microphone_record,
+    jstring java_file_name = jni_get_string(file_name);
+    PyObject* result = jni_py_call(_void,
+            cached_media_class, cached_media_get_instance,
+            cached_media_microphone_record,
             java_file_name, (jint) duration);
 
-    jh_deleteReference((jobject) file_name);
+    jni_delete_reference((jobject) file_name);
     return result;
 }
 
@@ -120,8 +106,9 @@ PyObject* media_microphone_record(PyObject *self, PyObject *args) {
  * Cf. isMediaPlaying() in MediaService.java for details
  */
 PyObject* media_is_media_playing(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callBooleanMethod, m_cached.is_media_playing);
+    return jni_py_call(_boolean,
+            cached_media_class, cached_media_get_instance,
+            cached_media_is_media_playing);
 }
 
 
@@ -129,8 +116,9 @@ PyObject* media_is_media_playing(PyObject *self) {
  * Cf. isTtsSpeaking() in MediaService.java for details
  */
 PyObject* media_is_tts_speaking(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callBooleanMethod, m_cached.is_tts_speaking);
+    return jni_py_call(_boolean,
+        cached_media_class, cached_media_get_instance,
+        cached_media_is_tts_speaking);
 }
 
 
@@ -152,8 +140,7 @@ static PyMethodDef AndroidMediaMethods[] = {
 
 
 /*
- * Initializes Python module (media), looks up Java class and Java methods
- * used to perform media tasks
+ * Initializes Python module (media),
  *
  * Note:
  * If we wanted to build the module as .so or .dll we could
@@ -163,17 +150,4 @@ static PyMethodDef AndroidMediaMethods[] = {
  */
 void initmedia() {
     Py_InitModule("media", AndroidMediaMethods);
-    jclass class = jh_getClass( "com/snakei/MediaService");
-
-    m_cached = (struct media_cache){
-            .class = class,
-            .start_media = jh_getMethod(class, "start_media", "()V"),
-            .stop_media = jh_getMethod(class, "stop_media", "()V"),
-            .get_instance = jh_getGetter(class, "()Lcom/snakei/MediaService;"),
-            .microphone_record = jh_getMethod(class, "microphoneRecord",
-                                              "(Ljava/lang/String;I)V"),
-            .tts_speak = jh_getMethod(class,"ttsSpeak",
-                                      "(Ljava/lang/String;)V"),
-            .is_tts_speaking = jh_getMethod(class, "isTtsSpeaking", "()Z"),
-            .is_media_playing = jh_getMethod(class, "isMediaPlaying", "()Z")};
 }

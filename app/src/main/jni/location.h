@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <Python.h>
 #include "snakei.h"
-#include "jnihelper.h"
+#include "jniglue.h"
 
 void initlocation();
 void location_start_location();

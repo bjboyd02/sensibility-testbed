@@ -87,7 +87,6 @@ decode_null(JSONData *jsondata)
         Py_INCREF(Py_None);
         return Py_None;
     } else {
-        LOGI("######################################1");
         // PyErr_Format(JSON_DecodeError, "cannot parse JSON description: %.20s",
         //              jsondata->ptr);
         return NULL;
@@ -111,7 +110,6 @@ decode_bool(JSONData *jsondata)
         Py_INCREF(Py_False);
         return Py_False;
     } else {
-        LOGI("######################################2");
         // PyErr_Format(JSON_DecodeError, "cannot parse JSON description: %.20s",
         //              jsondata->ptr);
         return NULL;
@@ -133,7 +131,6 @@ decode_string(JSONData *jsondata)
     while (True) {
         c = *ptr;
         if (c == 0) {
-            LOGI("######################################4");
             // PyErr_Format(JSON_DecodeError,
             //              "unterminated string starting at position " SSIZE_T_F,
             //              (Py_ssize_t)(jsondata->ptr - jsondata->str));
@@ -181,21 +178,18 @@ decode_string(JSONData *jsondata)
 
         PyErr_Fetch(&type, &value, &tb);
         if (type == NULL) {
-            LOGI("######################################5");
             // PyErr_Format(JSON_DecodeError,
             //              "invalid string starting at position " SSIZE_T_F,
             //              (Py_ssize_t)(jsondata->ptr - jsondata->str));
         } else {
             if (PyErr_GivenExceptionMatches(type, PyExc_UnicodeDecodeError)) {
                 reason = PyObject_GetAttrString(value, "reason");
-                LOGI("######################################6");
                 // PyErr_Format(JSON_DecodeError, "cannot decode string starting"
                 //              " at position " SSIZE_T_F ": %s",
                 //              (Py_ssize_t)(jsondata->ptr - jsondata->str),
                 //              reason ? PyString_AsString(reason) : "bad format");
                 Py_XDECREF(reason);
             } else {
-                LOGI("######################################7");
                 // PyErr_Format(JSON_DecodeError,
                 //              "invalid string starting at position " SSIZE_T_F,
                 //              (Py_ssize_t)(jsondata->ptr - jsondata->str));
@@ -233,7 +227,6 @@ decode_inf(JSONData *jsondata)
         object = PyFloat_FromDouble(-INFINITY);
         return object;
     } else {
-        LOGI("######################################8");
         // PyErr_Format(JSON_DecodeError, "cannot parse JSON description: %.20s",
         //              jsondata->ptr);
         return NULL;
@@ -254,7 +247,6 @@ decode_nan(JSONData *jsondata)
         object = PyFloat_FromDouble(NAN);
         return object;
     } else {
-        LOGI("######################################9");
         // PyErr_Format(JSON_DecodeError, "cannot parse JSON description: %.20s",
         //              jsondata->ptr);
         return NULL;
@@ -324,7 +316,6 @@ decode_number(JSONData *jsondata)
     return object;
 
 number_error:
-LOGI("######################################9");
     // PyErr_Format(JSON_DecodeError, "invalid number starting at position "
     //              SSIZE_T_F, (Py_ssize_t)(jsondata->ptr - jsondata->str));
     return NULL;
@@ -357,7 +348,6 @@ decode_array(JSONData *jsondata)
         skipSpaces(jsondata);
         c = *jsondata->ptr;
         if (c == 0) {
-            LOGI("######################################10");
             // PyErr_Format(JSON_DecodeError, "unterminated array starting at "
             //              "position " SSIZE_T_F,
             //              (Py_ssize_t)(start - jsondata->str));
@@ -372,7 +362,6 @@ decode_array(JSONData *jsondata)
             }
         case ArrayItem:
             if (c==',' || c==']') {
-                LOGI("######################################11");
                 // PyErr_Format(JSON_DecodeError, "expecting array item at "
                 //              "position " SSIZE_T_F,
                 //              (Py_ssize_t)(jsondata->ptr - jsondata->str));
@@ -395,7 +384,6 @@ decode_array(JSONData *jsondata)
                 jsondata->ptr++;
                 next_state = ArrayItem;
             } else {
-                LOGI("######################################12");
                 // PyErr_Format(JSON_DecodeError, "expecting ',' or ']' at "
                 //              "position " SSIZE_T_F,
                 //              (Py_ssize_t)(jsondata->ptr - jsondata->str));
@@ -442,7 +430,6 @@ decode_object(JSONData *jsondata)
         skipSpaces(jsondata);
         c = *jsondata->ptr;
         if (c == 0) {
-            LOGI("######################################13");
             // PyErr_Format(JSON_DecodeError, "unterminated object starting at "
             //              "position " SSIZE_T_F,
             //              (Py_ssize_t)(start - jsondata->str));
@@ -458,7 +445,6 @@ decode_object(JSONData *jsondata)
             }
         case DictionaryKey:
             if (c != '"') {
-                LOGI("######################################14");
                 // PyErr_Format(JSON_DecodeError, "expecting object property name "
                 //              "at position " SSIZE_T_F,
                 //              (Py_ssize_t)(jsondata->ptr - jsondata->str));
@@ -471,7 +457,6 @@ decode_object(JSONData *jsondata)
 
             skipSpaces(jsondata);
             if (*jsondata->ptr != ':') {
-                LOGI("######################################15");
                 // PyErr_Format(JSON_DecodeError, "missing colon after object "
                 //              "property name at position " SSIZE_T_F,
                 //              (Py_ssize_t)(jsondata->ptr - jsondata->str));
@@ -483,7 +468,6 @@ decode_object(JSONData *jsondata)
 
             skipSpaces(jsondata);
             if (*jsondata->ptr==',' || *jsondata->ptr=='}') {
-                LOGI("######################################16");
                 // PyErr_Format(JSON_DecodeError, "expecting object property "
                 //              "value at position " SSIZE_T_F,
                 //              (Py_ssize_t)(jsondata->ptr - jsondata->str));
@@ -512,7 +496,6 @@ decode_object(JSONData *jsondata)
                 jsondata->ptr++;
                 next_state = DictionaryKey;
             } else {
-                LOGI("######################################17");
                 // PyErr_Format(JSON_DecodeError, "expecting ',' or '}' at "
                 //              "position " SSIZE_T_F,
                 //              (Py_ssize_t)(jsondata->ptr - jsondata->str));
@@ -540,7 +523,6 @@ decode_json(JSONData *jsondata)
     skipSpaces(jsondata);
     switch(*jsondata->ptr) {
     case 0:
-    LOGI("######################################18");
         // PyErr_SetString(JSON_DecodeError, "empty JSON description");
         return NULL;
     case '{':
@@ -585,7 +567,6 @@ decode_json(JSONData *jsondata)
         object = decode_number(jsondata);
         break;
     default:
-    LOGI("######################################19");
         // PyErr_SetString(JSON_DecodeError, "cannot parse JSON description");
         return NULL;
     }

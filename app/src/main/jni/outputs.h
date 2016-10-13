@@ -4,7 +4,7 @@
 #include <jni.h>
 #include <Python.h>
 #include "snakei.h"
-#include "jnihelper.h"
+#include "jniglue.h"
 
 // Log messages of no more than this many characters
 #define MAX_MESSAGE_LENGTH 1024

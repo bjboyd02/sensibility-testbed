@@ -8,7 +8,7 @@
 #include <Python.h>
 #include "snakei.h"
 #include "cjson.h"
-#include "jnihelper.h"
+#include "jniglue.h"
 
 void initmiscinfo();
 

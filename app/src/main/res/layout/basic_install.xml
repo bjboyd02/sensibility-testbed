@@ -9,7 +9,7 @@
 		    android:id="@+id/showadvancedoptionsbutton"
 		    android:layout_width="wrap_content"
 		    android:layout_height="wrap_content"
-		    android:text="Advanced options" android:layout_alignParentBottom="true"/>
+		    android:text="Install Seattle" android:layout_alignParentBottom="true"/>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="fill_parent"
 	android:layout_height="wrap_content"
@@ -30,14 +30,15 @@
 </TextView>
 		<View android:layout_width="fill_parent" android:layout_height="30dp"/>
 
-		<Button
-		    android:id="@+id/basicinstallbutton"
-		    android:layout_width="fill_parent"
-		    android:layout_height="wrap_content"
-		    android:text="@string/Install"
-		    android:textSize="20sp" >
+	<Button
+        android:id="@+id/basicinstallbutton"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="COpy Seattle"
+        android:textSize="20sp" >
 </Button>
-		<View android:layout_width="fill_parent" android:layout_height="30dp"/>
+
+	<View android:layout_width="fill_parent" android:layout_height="30dp"/>
 		
 		<TextView
 		    android:id="@+id/referrerview"

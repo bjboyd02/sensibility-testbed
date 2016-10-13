@@ -8,11 +8,9 @@
  * Usage:
  * Module initialization - call initlocation() from C
  *  - Initializes Python module (location)
- *  - Caches native reference to Java Singleton Class LocationService.java
- *  - Caches native reference to Singleton getter and Java Methods
  *
  * Location initialization - call location_start_location from C
- *  - Calls start_location Java Method to register location update listener 
+ *  - Calls start_location Java Method to register location update listener
  *      on location provider
  *
  * Get location values - call location.get_* from Python
@@ -29,21 +27,6 @@
  */
 
 #include "location.h"
-
-/*
- * Caches native references of used Java Class and Java Methods
- */
-static struct location_cache {
-    jclass class;
-    jmethodID get_instance;
-    jmethodID start_location;
-    jmethodID stop_location;
-    jmethodID get_location;
-    jmethodID get_lastknown_location;
-    jmethodID get_geolocation;
-} m_cached;
-
-
 /*
  * Calls Java to connect to Google API and register LocationListeners for GPS,
  * network and fused location provider
@@ -52,8 +35,9 @@ static struct location_cache {
  *
  */
 void location_start_location() {
-    jh_call(m_cached.class, m_cached.get_instance, 
-            jh_callVoidMethod, m_cached.start_location);
+    jni_py_call(_void,
+            cached_location_class, cached_location_get_instance,
+            cached_location_start_location);
 }
 
 
@@ -65,8 +49,9 @@ void location_start_location() {
  *
  */
 void location_stop_location() {
-    jh_call(m_cached.class, m_cached.get_instance, 
-            jh_callVoidMethod, m_cached.stop_location);
+    jni_py_call(_void,
+            cached_location_class, cached_location_get_instance,
+            cached_location_stop_location);
 }
 
 
@@ -75,8 +60,9 @@ void location_stop_location() {
  * Cf. getLocation() in LocationService.java for details
  */
 PyObject* location_get_location() {
-    return jh_call(m_cached.class, m_cached.get_instance, 
-            jh_callJsonStringMethod, m_cached.get_location);
+    return jni_py_call(_json,
+            cached_location_class, cached_location_get_instance,
+            cached_location_get_location);
 }
 
 
@@ -84,8 +70,9 @@ PyObject* location_get_location() {
  * Cf. getLastKnownLocation() in LocationService.java for details
  */
 PyObject* location_get_lastknown_location() {
-    return jh_call(m_cached.class, m_cached.get_instance, 
-            jh_callJsonStringMethod, m_cached.get_lastknown_location);
+    return jni_py_call(_json,
+            cached_location_class, cached_location_get_instance,
+            cached_location_get_lastknown_location);
 }
 
 
@@ -108,9 +95,9 @@ PyObject* location_get_geolocation(PyObject *self, PyObject *args) {
         Py_RETURN_NONE;
     }
 
-    return jh_call(m_cached.class, m_cached.get_instance, 
-        jh_callJsonStringMethod, m_cached.get_geolocation, 
-        latitude, longitude, max_results);
+    return jni_py_call(_json,
+            cached_location_class, cached_location_get_instance,
+            cached_location_get_lastknown_location, latitude, longitude, max_results);
 }
 
 
@@ -120,10 +107,10 @@ PyObject* location_get_geolocation(PyObject *self, PyObject *args) {
 static PyMethodDef AndroidLocationMethods[] = {
     {"get_location", (PyCFunction) location_get_location, METH_NOARGS,
         "Get locations from GPS, Network and Fused"},
-    {"get_lastknown_location", 
+    {"get_lastknown_location",
         (PyCFunction) location_get_lastknown_location, METH_NOARGS,
         "Get last known locations from GPS, Network and Fused"},
-    {"get_geolocation", 
+    {"get_geolocation",
         (PyCFunction) location_get_geolocation, METH_VARARGS,
         "Get max count of address(es) from latitude and longitude"},
     {NULL, NULL, 0, NULL} // This is the end-of-array marker
@@ -142,18 +129,4 @@ static PyMethodDef AndroidLocationMethods[] = {
  */
 void initlocation() {
     Py_InitModule("location", AndroidLocationMethods);
-    jclass class = jh_getClass( "com/snakei/LocationService");
-
-    m_cached = (struct location_cache){
-            .class = class,
-            .start_location = jh_getMethod(class, "start_location", "()V"),
-            .stop_location = jh_getMethod(class, "stop_location", "()V"),
-            .get_instance = jh_getGetter(class, 
-                    "()Lcom/snakei/LocationService;"),
-            .get_location = jh_getMethod(class, "getLocation",
-                    "()Ljava/lang/String;"),
-            .get_lastknown_location = jh_getMethod(class,"getLastKnownLocation",
-                    "()Ljava/lang/String;"),
-            .get_geolocation = jh_getMethod(class, "getGeoLocation",
-                    "(DDI)Ljava/lang/String;")};
 }

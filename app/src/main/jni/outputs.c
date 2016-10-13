@@ -23,38 +23,17 @@
 #include "outputs.h"
 
 /*
- * Caches native references of used Java Class and Java Methods
- */
-//static struct output_cache {
-//    jclass class;
-//    jmethodID log_message;
-//} m_cached;
-
-
-/*
- * Logs a message from Python through JNI to Android Log
+ * Logs a message from Python to Android Log
  */
 PyObject* androidlog_log(PyObject *self, PyObject *python_message) {
   char* c_message;
-//  jstring java_message;
-//
+
   // Convert Python string to C string
   c_message = PyString_AsString(python_message);
 
   LOGI("NATIVE LOG: %s", c_message);
 
-//  // Convert C string to Java string
-//  java_message = jh_getJavaString(c_message);
-//
-//  PyObject* result = jh_callStaticVoid(m_cached.class, m_cached.log_message,
-//                                       java_message);
-//
-//  jh_deleteReference((jobject) java_message);
-//
-//  // XXX: do we have to delete the string reference?
-//  // We shouldn't have to, that's why it is called local, BUT
   Py_RETURN_NONE;
-//  return result;  // I.e., `return Py_None;` with reference counting
 }
 
 
@@ -62,14 +41,13 @@ PyObject* androidlog_log(PyObject *self, PyObject *python_message) {
  * Maps C functions to Python module methods
  */
 static PyMethodDef AndroidLogMethods[] = {
-        {"log", androidlog_log, METH_O,
-                "Write to Android Log."},
+        {"log", androidlog_log, METH_O,  "Write to Android Log."},
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
 
 /*
- * Initializes Python module (androidlog), looks up Java static log method
+ * Initializes Python module (androidlog)
  *
  * Note:
  * If we wanted to build the module as .so or .dll we could
@@ -79,9 +57,4 @@ static PyMethodDef AndroidLogMethods[] = {
  */
 void initandroidlog() {
   Py_InitModule("androidlog", AndroidLogMethods);
-//  jclass class = jh_getClass("com/snakei/OutputService");
-//  m_cached = (struct output_cache){
-//          .class = class,
-//          .log_message = jh_getStaticMethod(class, "logMessage",
-//                                            "(Ljava/lang/String;)V")};
 }

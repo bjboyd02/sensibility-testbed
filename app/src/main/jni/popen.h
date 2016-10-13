@@ -8,7 +8,7 @@
 #include <jni.h>
 #include <Python.h>
 #include "snakei.h"
-#include "jnihelper.h"
+#include "jniglue.h"
 
 void initandroid();
 PyObject* android_popen_python(PyObject *self, PyObject *args);

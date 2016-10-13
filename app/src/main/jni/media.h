@@ -7,7 +7,7 @@
 #include <jni.h>
 #include <Python.h>
 #include "snakei.h"
-#include "jnihelper.h"
+#include "jniglue.h"
 
 void initmedia();
 void media_start_media();

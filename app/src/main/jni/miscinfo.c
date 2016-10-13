@@ -8,8 +8,6 @@
  * Usage:
  * Module initialization - call initmiscinfo() from C
  *  - Initializes Python module (miscinfo)
- *  - Caches native reference to Java Singleton Class MiscInfoService.java
- *  - Caches native reference to Singleton getter and Java Methods
  *
  * Get miscinfo values - call miscinfo.get_* from Python
  *  - Calls the according get* method in Java
@@ -22,37 +20,13 @@
 
 #include "miscinfo.h"
 
-
-/*
- * Caches native references of used Java Class and Java Methods
- */
-static struct miscinfo_cache {
-    jclass class;
-    jmethodID get_instance;
-    jmethodID is_wifi_enabled;
-    jmethodID get_wifi_state;
-    jmethodID get_wifi_connection_info;
-    jmethodID get_battery_info;
-    jmethodID get_wifi_scan_info;
-    jmethodID get_bluetooth_info;
-    jmethodID get_bluetooth_scan_info;
-    jmethodID get_network_info;
-    jmethodID get_cellular_provider_info;
-    jmethodID get_cell_info;
-    jmethodID get_sim_info;
-    jmethodID get_phone_info;
-    jmethodID get_mode_settings;
-    jmethodID get_display_info;
-    jmethodID get_volume_info;
-} m_cached;
-
-
 /*
  * Cf. getBluetoothInfo() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_bluetooth_info(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod, m_cached.get_bluetooth_info);
+    return jni_py_call(_json,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_bluetooth_info);
 }
 
 
@@ -60,8 +34,9 @@ PyObject* miscinfo_get_bluetooth_info(PyObject *self) {
  * Cf. getBluetoothScanInfo() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_bluetooth_scan_info(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod, m_cached.get_bluetooth_scan_info);
+    return jni_py_call(_json,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_bluetooth_scan_info);
 }
 
 
@@ -69,8 +44,9 @@ PyObject* miscinfo_get_bluetooth_scan_info(PyObject *self) {
  * Cf. isWifiEnabled() in MiscInfoService.java for details
  */
 PyObject* miscinfo_is_wifi_enabled(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callBooleanMethod, m_cached.is_wifi_enabled);
+    return jni_py_call(_boolean,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_is_wifi_enabled);
 }
 
 
@@ -78,8 +54,9 @@ PyObject* miscinfo_is_wifi_enabled(PyObject *self) {
  * Cf. getWifiState() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_wifi_state(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callIntMethod, m_cached.get_wifi_state);
+    return jni_py_call(_int,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_wifi_state);
 }
 
 
@@ -87,8 +64,9 @@ PyObject* miscinfo_get_wifi_state(PyObject *self) {
  * Cf. getWifiConnectionInfo() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_wifi_connection_info(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod, m_cached.get_wifi_connection_info);
+    return jni_py_call(_json,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_wifi_connection_info);
 }
 
 
@@ -96,8 +74,9 @@ PyObject* miscinfo_get_wifi_connection_info(PyObject *self) {
  * Cf. getWifiScanInfo() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_wifi_scan_info(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod, m_cached.get_wifi_scan_info);
+    return jni_py_call(_json,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_wifi_scan_info);
 }
 
 
@@ -105,8 +84,9 @@ PyObject* miscinfo_get_wifi_scan_info(PyObject *self) {
  * Cf. getNetworkInfo() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_network_info(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod, m_cached.get_network_info);
+    return jni_py_call(_json,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_network_info);
 }
 
 
@@ -114,9 +94,9 @@ PyObject* miscinfo_get_network_info(PyObject *self) {
  * Cf. getCellularProviderInfo() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_cellular_provider_info(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod,
-                   m_cached.get_cellular_provider_info);
+    return jni_py_call(_json,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_cellular_provider_info);
 }
 
 
@@ -124,8 +104,9 @@ PyObject* miscinfo_get_cellular_provider_info(PyObject *self) {
  * Cf. getCellInfo() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_cell_info(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod, m_cached.get_cell_info);
+    return jni_py_call(_json,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_cell_info);
 }
 
 
@@ -133,8 +114,9 @@ PyObject* miscinfo_get_cell_info(PyObject *self) {
  * Cf. getSimInfo() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_sim_info(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod, m_cached.get_sim_info);
+    return jni_py_call(_json,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_sim_info);
 }
 
 
@@ -142,8 +124,9 @@ PyObject* miscinfo_get_sim_info(PyObject *self) {
  * Cf. getPhoneInfo() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_phone_info(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod, m_cached.get_phone_info);
+    return jni_py_call(_json,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_phone_info);
 }
 
 
@@ -151,8 +134,9 @@ PyObject* miscinfo_get_phone_info(PyObject *self) {
  * Cf. getModeSettings() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_mode_settings(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod, m_cached.get_mode_settings);
+    return jni_py_call(_json,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_mode_settings);
 }
 
 
@@ -160,8 +144,9 @@ PyObject* miscinfo_get_mode_settings(PyObject *self) {
  * Cf. getDisplayInfo() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_display_info(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod, m_cached.get_display_info);
+    return jni_py_call(_json,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_display_info);
 }
 
 
@@ -169,8 +154,9 @@ PyObject* miscinfo_get_display_info(PyObject *self) {
  * Cf. getVolumeInfo() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_volume_info(PyObject *self) {
-    return jh_call(m_cached.class, m_cached.get_instance,
-                   jh_callJsonStringMethod, m_cached.get_volume_info);
+    return jni_py_call(_json,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_volume_info);
 }
 
 
@@ -178,8 +164,9 @@ PyObject* miscinfo_get_volume_info(PyObject *self) {
  * Cf. getBatteryInfo() in MiscInfoService.java for details
  */
 PyObject* miscinfo_get_battery_info(PyObject *self) {
-    return jh_call(miscinfo_class, miscinfo_getter,
-                   jh_callJsonStringMethod, miscinfo_method_battery_info, cached_context);
+    return jni_py_call(_json,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_get_battery_info, cached_context);
 }
 
 
@@ -233,8 +220,7 @@ static PyMethodDef AndroidMiscinfoMethods[] = {
 
 
 /*
- * Initializes Python module (miscinfo), looks up Java class and Java Methods
- * used retrieve miscellaneous information about the Android device
+ * Initializes Python module (miscinfo)
  *
  * Note:
  * If we wanted to build the module as .so or .dll we could
@@ -244,56 +230,4 @@ static PyMethodDef AndroidMiscinfoMethods[] = {
  */
 void initmiscinfo() {
     Py_InitModule("miscinfo", AndroidMiscinfoMethods);
-
-//    jclass class = jh_getClass("com/snakei/MiscInfoService");
-//    m_cached = (struct miscinfo_cache){
-//            .class = class,
-//            .get_instance = jh_getGetter(class,
-//                                         "()Lcom/snakei/MiscInfoService;"),
-//            .is_wifi_enabled = jh_getMethod(class,
-//                                            "isWifiEnabled",
-//                                            "()Z"),
-//            .get_wifi_state = jh_getMethod(class,
-//                                           "getWifiState",
-//                                           "()I"),
-//            .get_wifi_connection_info = jh_getMethod(class,
-//                                                     "getWifiConnectionInfo",
-//                                                     "()Ljava/lang/String;"),
-//            .get_wifi_scan_info = jh_getMethod(class,
-//                                               "getWifiScanInfo",
-//                                               "()Ljava/lang/String;"),
-//            .get_bluetooth_scan_info = jh_getMethod(class,
-//                                                    "getBluetoothScanInfo",
-//                                                    "()Ljava/lang/String;"),
-//            .get_bluetooth_info = jh_getMethod(class,
-//                                               "getBluetoothInfo",
-//                                               "()Ljava/lang/String;"),
-//            .get_battery_info = jh_getMethod(class,
-//                                             "getBatteryInfo",
-//                                             "(Landroid/content/Context;)Ljava/lang/String;"),
-//            .get_network_info = jh_getMethod(class,
-//                                             "getNetworkInfo",
-//                                             "()Ljava/lang/String;"),
-//            .get_cellular_provider_info = jh_getMethod(class,
-//                                             "getCellularProviderInfo",
-//                                             "()Ljava/lang/String;"),
-//            .get_cell_info = jh_getMethod(class,
-//                                          "getCellInfo",
-//                                          "()Ljava/lang/String;"),
-//            .get_sim_info = jh_getMethod(class,
-//                                         "getSimInfo",
-//                                         "()Ljava/lang/String;"),
-//            .get_phone_info = jh_getMethod(class,
-//                                           "getPhoneInfo",
-//                                           "()Ljava/lang/String;"),
-//            .get_mode_settings = jh_getMethod(class,
-//                                              "getModeSettings",
-//                                              "()Ljava/lang/String;"),
-//            .get_display_info = jh_getMethod(class,
-//                                             "getDisplayInfo",
-//                                             "()Ljava/lang/String;"),
-//            .get_volume_info = jh_getMethod(class,
-//                                            "getVolumeInfo",
-//                                            "()Ljava/lang/String;")
-//    };
 }
