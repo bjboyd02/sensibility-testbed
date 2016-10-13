@@ -12,7 +12,9 @@
 #include "popen.h"
 
 /*
- * Caches native references of used Java Class and Java Methods
+ * Starts a new java service process which in turn calls interpreter.c
+ *
+ * C-python extension to replace subprocess.Popen(["python", ...])
  */
 
 PyObject* android_popen_python(PyObject *self, PyObject *args) {
@@ -31,28 +33,19 @@ PyObject* android_popen_python(PyObject *self, PyObject *args) {
 
   argc = PyList_Size(args_list);
 
-  char* argv[argc];
+  char *argv[argc];
   for (i = 0; i < argc; i++){
     argv[i] = PyString_AsString(PyList_GetItem(args_list, i));
     // Todo XXX: error checking and proper raising
   }
 
-  // Todo: Add this to jnihelper
-  jni_env = jni_get_env();
-
-  popen_args = (jobjectArray)(*jni_env)->NewObjectArray(jni_env, argc,
-                                                        (*jni_env)->FindClass(jni_env, "java/lang/String"),
-                                                        (*jni_env)->NewStringUTF(jni_env, ""));
-  for(i = 0; i < argc; i++) {
-    (*jni_env)->SetObjectArrayElement(jni_env, popen_args, i,
-                                      (*jni_env)->NewStringUTF(jni_env, argv[i]));
-  }
-
+  popen_args = jni_createStringArray(argc, argv);
   jh_callStaticVoid(popen_class, popen_method, popen_args, cached_context);
-
   jh_deleteReference((jobject) popen_args);
+
   Py_RETURN_NONE;
 }
+
 
 /*
  * Maps C functions to Python module methods
@@ -65,7 +58,7 @@ static PyMethodDef AndroidPythonMethods[] = {
 
 
 /*
- * Initializes Python module (android), looks up Java static runScript method
+ * Initializes Python module (android)
  *
  * Note:
  * If we wanted to build the module as .so or .dll we could
