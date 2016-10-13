@@ -688,12 +688,12 @@ public class MiscInfoService {
      * 'technology': 'Li-ion'
      * }
      */
-    public String getBatteryInfo() throws JSONException {
+    public String getBatteryInfo(Context context) throws JSONException {
         JSONObject battery_info_json = new JSONObject();
 
         // Register a null receiver which immediately returns Intent
         IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-        Intent battery_info = app_context.registerReceiver(null, ifilter);
+        Intent battery_info = context.registerReceiver(null, ifilter);
 
         // Retrieve values
         int status = battery_info.getIntExtra(
