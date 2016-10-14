@@ -43,6 +43,7 @@ jmethodID cached_popen_python;
 
 jclass cached_miscinfo_class;
 jmethodID cached_miscinfo_get_instance;
+jmethodID cached_miscinfo_init;
 jmethodID cached_miscinfo_is_wifi_enabled;
 jmethodID cached_miscinfo_get_wifi_state;
 jmethodID cached_miscinfo_get_wifi_connection_info;

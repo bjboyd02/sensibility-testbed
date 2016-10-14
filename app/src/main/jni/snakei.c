@@ -30,6 +30,8 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
             "com/snakei/MiscInfoService");
     cached_miscinfo_get_instance = jni_find_getter(
             cached_miscinfo_class, "()Lcom/snakei/MiscInfoService;");
+    cached_miscinfo_init = jni_find_method(
+            cached_miscinfo_class,"init","(Landroid/content/Context;)V");
     cached_miscinfo_is_wifi_enabled = jni_find_method(
             cached_miscinfo_class,"isWifiEnabled","()Z");
     cached_miscinfo_get_wifi_state = jni_find_method(
@@ -46,7 +48,7 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
             cached_miscinfo_class, "getBluetoothInfo", "()Ljava/lang/String;");
     cached_miscinfo_get_battery_info = jni_find_method(
             cached_miscinfo_class, "getBatteryInfo",
-            "(Landroid/content/Context;)Ljava/lang/String;");
+            "()Ljava/lang/String;");
     cached_miscinfo_get_network_info = jni_find_method(
             cached_miscinfo_class, "getNetworkInfo", "()Ljava/lang/String;");
     cached_miscinfo_get_cellular_provider_info = jni_find_method(

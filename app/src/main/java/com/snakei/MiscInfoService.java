@@ -1,5 +1,6 @@
 package com.snakei;
 
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -65,13 +66,13 @@ import java.util.List;
  * Java Initialization on Demand Holder pattern
  * (cf. SensorService.java for more info )
  *
- *   Exceptions should be raised
+ * Exceptions should be thrown
  *
  */
 public class MiscInfoService {
     static final String TAG = "MiscInfoService";
 
-    Context app_context;
+    Context cached_context;
 
     // CRUD query tool used for display and mode settings
     // which are stored in content providers
@@ -106,34 +107,39 @@ public class MiscInfoService {
 
 
     /* Classic Singleton Instance Getter */
+
     public static MiscInfoService getInstance(){
         return MiscInfoServiceHolder.instance;
     }
 
     /*
-     * Singleton Constructor
+     * Initializer
      *
-     * Fetches context from static application function
+     * Caches passed app context
      * Initializes required managers
      * Initializes BroadCastReceiver used for WiFi scanning
      * Initializes BroadCastReceiver used for Bluetooth scanning
      *
+     * XXX LP:
+     * We maybe want to make this thread
+     * We maybe want to add a "initialized" getter where we throw an exception if the singleton
+     * has not been initialized yet, or we simlply initialize there on the spot
      */
-    public MiscInfoService() {
-        app_context = SensibilityApplication.getAppContext();
-        content_resolver = app_context.getContentResolver();
-        connectivity_manager = (ConnectivityManager) app_context.getSystemService(
-                app_context.CONNECTIVITY_SERVICE);
-        telephony_manager = (TelephonyManager) app_context.getSystemService(
-                app_context.TELEPHONY_SERVICE);
-        audio_manager = (AudioManager)app_context.getSystemService(
-                app_context.AUDIO_SERVICE);
-        display_manager = (DisplayManager)app_context.getSystemService(
-                app_context.DISPLAY_SERVICE);
-        wifi_manager = (WifiManager) app_context.getSystemService(
-                app_context.WIFI_SERVICE);
-        bluetooth_manager = (BluetoothManager)app_context.getSystemService(
-                app_context.BLUETOOTH_SERVICE);
+    public void init(Context context) {
+        cached_context = context;
+        content_resolver = cached_context.getContentResolver();
+        connectivity_manager = (ConnectivityManager) cached_context.getSystemService(
+                cached_context.CONNECTIVITY_SERVICE);
+        telephony_manager = (TelephonyManager) cached_context.getSystemService(
+                cached_context.TELEPHONY_SERVICE);
+        audio_manager = (AudioManager)cached_context.getSystemService(
+                cached_context.AUDIO_SERVICE);
+        display_manager = (DisplayManager)cached_context.getSystemService(
+                cached_context.DISPLAY_SERVICE);
+        wifi_manager = (WifiManager) cached_context.getSystemService(
+                cached_context.WIFI_SERVICE);
+        bluetooth_manager = (BluetoothManager)cached_context.getSystemService(
+                cached_context.BLUETOOTH_SERVICE);
 
         wifi_sync = new Object();
         wifi_broadcast_receiver = new BroadcastReceiver() {
@@ -141,7 +147,7 @@ public class MiscInfoService {
             public void onReceive(Context context, Intent intent) {
                 synchronized(wifi_sync) {
                     // Discovery has finished, unregister receiver
-                    app_context.unregisterReceiver(wifi_broadcast_receiver);
+                    cached_context.unregisterReceiver(wifi_broadcast_receiver);
                     wifi_sync.notify();
                 }
             }
@@ -168,7 +174,7 @@ public class MiscInfoService {
                     // more page requests, unregister receiver and notify
                     // scan info function to stop waiting and return values
                     synchronized (bluetooth_sync){
-                        app_context.unregisterReceiver(
+                        cached_context.unregisterReceiver(
                                 bluetooth_broadcast_receiver);
                         bluetooth_sync.notify();
                     }
@@ -203,6 +209,7 @@ public class MiscInfoService {
      *
      */
     public String getNetworkInfo() throws JSONException {
+
         Network[] networks = connectivity_manager.getAllNetworks();
 
         if (networks.length > 0) {
@@ -546,7 +553,7 @@ public class MiscInfoService {
     public String getWifiScanInfo() throws InterruptedException, JSONException {
 
         // Register "onReceive" for scan results (gets called from main thread)
-        app_context.registerReceiver(wifi_broadcast_receiver,
+        cached_context.registerReceiver(wifi_broadcast_receiver,
                 new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
 
         // If scan was started wait until onReceive notifies us via
@@ -632,7 +639,7 @@ public class MiscInfoService {
         IntentFilter ifilter = new IntentFilter();
         ifilter.addAction(BluetoothDevice.ACTION_FOUND);
         ifilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        app_context.registerReceiver(bluetooth_broadcast_receiver, ifilter);
+        cached_context.registerReceiver(bluetooth_broadcast_receiver, ifilter);
 
         // Initialize list to which the broadcast receiver will append
         // paged bluetooth devices
@@ -651,7 +658,7 @@ public class MiscInfoService {
                         JSONObject bluetooth_json = new JSONObject();
                         bluetooth_json.put("address",
                                 remote_device.getAddress());
-                        bluetooth_json.put("name", remote_device.getName());
+                        //bluetooth_json.put("name", remote_device.getName());
                         bluetooth_json.put("bond_state",
                                 remote_device.getBondState());
                         bluetooth_json.put("type", remote_device.getType());
@@ -688,12 +695,12 @@ public class MiscInfoService {
      * 'technology': 'Li-ion'
      * }
      */
-    public String getBatteryInfo(Context context) throws JSONException {
+    public String getBatteryInfo() throws JSONException {
         JSONObject battery_info_json = new JSONObject();
 
         // Register a null receiver which immediately returns Intent
         IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-        Intent battery_info = context.registerReceiver(null, ifilter);
+        Intent battery_info = cached_context.registerReceiver(null, ifilter);
 
         // Retrieve values
         int status = battery_info.getIntExtra(
@@ -819,7 +826,6 @@ public class MiscInfoService {
                 audio_manager.getStreamVolume(AudioManager.STREAM_MUSIC));
         volume_json.put("max_media_volume",
                 audio_manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
-
         volume_json.put("ringer_volume",
                 audio_manager.getStreamVolume(AudioManager.STREAM_RING));
         volume_json.put("max_ringer_volume",

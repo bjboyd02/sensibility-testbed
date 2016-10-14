@@ -10,8 +10,9 @@
 #include "cjson.h"
 #include "jniglue.h"
 
-void initmiscinfo();
+void miscinfo_init_pymodule();
 
+PyObject* miscinfo_init();
 PyObject* miscinfo_is_wifi_enabled(PyObject *self);
 PyObject* miscinfo_get_wifi_state(PyObject *self);
 PyObject* miscinfo_get_wifi_connection_info(PyObject *self);

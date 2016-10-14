@@ -20,6 +20,12 @@
 
 #include "miscinfo.h"
 
+PyObject* miscinfo_init() {
+    jni_py_call(_void,
+            cached_miscinfo_class, cached_miscinfo_get_instance,
+            cached_miscinfo_init, cached_context);
+}
+
 /*
  * Cf. getBluetoothInfo() in MiscInfoService.java for details
  */
@@ -166,7 +172,7 @@ PyObject* miscinfo_get_volume_info(PyObject *self) {
 PyObject* miscinfo_get_battery_info(PyObject *self) {
     return jni_py_call(_json,
             cached_miscinfo_class, cached_miscinfo_get_instance,
-            cached_miscinfo_get_battery_info, cached_context);
+            cached_miscinfo_get_battery_info);
 }
 
 
@@ -228,6 +234,6 @@ static PyMethodDef AndroidMiscinfoMethods[] = {
  * PyMODINIT_FUNC initmiscinfo(void)
  *
  */
-void initmiscinfo() {
+void miscinfo_init_pymodule() {
     Py_InitModule("miscinfo", AndroidMiscinfoMethods);
 }
