@@ -87,10 +87,19 @@ void interpreter_init(char* home, char* path) {
   // Initialize C-Python Extensions
   initandroid();
   initandroidlog();
-  //Init python module
   miscinfo_init_pymodule();
-  miscinfo_init();
+  sensor_init_pymodule();
 
+  // Init Java Services (this could be done in Python)
+  miscinfo_init();
+  sensor_init();
+
+  // Start all the sensors (drains battery)
+  // Think of a way to do this in seattle
+  int i;
+  for (i = 1;  i <= 17; i++) {
+    sensor_start_sensing(i);
+  }
 
   PyObject *sys_module = PyImport_ImportModule("sys");
   PyObject *sys_attr_path = PyObject_GetAttrString(sys_module, "path");

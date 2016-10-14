@@ -5,10 +5,11 @@
 #include <Python.h>
 #include "snakei.h"
 
-void initsensor();
+void sensor_init_pymodule();
 void sensor_start_sensing(int sensor_type);
 void sensor_stop_sensing(int sensor_type);
 
+PyObject* sensor_init();
 PyObject* sensor_get_sensor_list(PyObject *self);
 PyObject* sensor_get_acceleration(PyObject *self);
 PyObject* sensor_get_ambient_temperature(PyObject *self);

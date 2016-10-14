@@ -51,6 +51,13 @@
  */
 #include "sensors.h"
 
+
+PyObject* sensor_init() {
+    jni_py_call(_void,
+                cached_sensor_class, cached_sensor_get_instance,
+                cached_sensor_init, cached_context);
+}
+
 /*
  * Calls Java to register a SensorEventListener for a specific
  * sensor to receive Sensor updates
@@ -324,6 +331,6 @@ static PyMethodDef AndroidSensorMethods[] = {
  * PyMODINIT_FUNC initsensor(void)
  *
  */
-void initsensor() {
+void sensor_init_pymodule() {
     Py_InitModule("sensor", AndroidSensorMethods);
 }

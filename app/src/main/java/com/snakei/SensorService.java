@@ -41,6 +41,8 @@ import java.util.List;
 public class SensorService implements SensorEventListener  {
     static final String TAG = "SensorService";
 
+    Context cached_context;
+
     // XXX: These values will be hardcoded in calls from native code, if we 
     // change them here, we have to change them in the calling function too
     // e.g. by looking for functions that get passed integers and compare them
@@ -124,18 +126,13 @@ public class SensorService implements SensorEventListener  {
 
 
     /*
-     * Singleton Constructor
-     *
-     * Fetches context from static application function
      * Initializes default sensors for each sensor type
      *
      */
-    private SensorService() {
-        // Fetch the context
-        // XXX: This is a hack, consider changing it
-        Context app_context = SensibilityApplication.getAppContext();
-        sensor_manager = (SensorManager)app_context.getSystemService(
-            app_context.SENSOR_SERVICE);
+    public void init(Context context) {
+        cached_context = context;
+        sensor_manager = (SensorManager)cached_context.getSystemService(
+            cached_context.SENSOR_SERVICE);
 
         // I guess we can get all the sensors right away
         accelerometer = sensor_manager.getDefaultSensor(
@@ -341,7 +338,7 @@ public class SensorService implements SensorEventListener  {
      * @return  String serialized JSON array of sensor values or null
      * i.e.:
      * [
-     * Time received, 
+     * Time received,
      * Time propagated,
      * Rate of rotation around the x axis,
      * Rate of rotation around the y axis,

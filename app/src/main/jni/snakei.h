@@ -62,6 +62,7 @@ jmethodID cached_miscinfo_get_volume_info;
 
 jclass cached_sensor_class;
 jmethodID cached_sensor_get_instance;
+jmethodID cached_sensor_init;
 jmethodID cached_sensor_start_sensing;
 jmethodID cached_sensor_stop_sensing;
 jmethodID cached_sensor_get_sensor_list;

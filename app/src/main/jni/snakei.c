@@ -71,6 +71,8 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     cached_sensor_class = jni_find_class_as_global("com/snakei/SensorService");
     cached_sensor_get_instance = jni_find_getter(
             cached_sensor_class, "()Lcom/snakei/SensorService;");
+    cached_sensor_init = jni_find_method(
+            cached_sensor_class,"init","(Landroid/content/Context;)V");
     cached_sensor_start_sensing = jni_find_method(
             cached_sensor_class, "start_sensing", "(I)V");
     cached_sensor_stop_sensing = jni_find_method(
