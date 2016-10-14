@@ -89,17 +89,20 @@ void interpreter_init(char* home, char* path) {
   initandroidlog();
   miscinfo_init_pymodule();
   sensor_init_pymodule();
+  media_init_pymodule();
 
   // Init Java Services (this could be done in Python)
   miscinfo_init();
   sensor_init();
+  media_init();
 
-  // Start all the sensors (drains battery)
-  // Think of a way to do this in seattle
+  // Some snakei components need to start resources (drains battery)
+  // Think of a way to start and STOP!!! in Seattle (only when needed)
   int i;
   for (i = 1;  i <= 17; i++) {
     sensor_start_sensing(i);
   }
+  media_start_media();
 
   PyObject *sys_module = PyImport_ImportModule("sys");
   PyObject *sys_attr_path = PyObject_GetAttrString(sys_module, "path");

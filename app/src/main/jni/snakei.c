@@ -145,6 +145,8 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
             cached_media_class, "stop_media", "()V");
     cached_media_get_instance = jni_find_getter(
             cached_media_class, "()Lcom/snakei/MediaService;");
+    cached_media_init = jni_find_method(
+            cached_media_class,"init","(Landroid/content/Context;)V");
     cached_media_microphone_record = jni_find_method(
             cached_media_class, "microphoneRecord","(Ljava/lang/String;I)V");
     cached_media_tts_speak = jni_find_method(

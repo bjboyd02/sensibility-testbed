@@ -45,7 +45,7 @@ import java.util.UUID;
 public class MediaService  {
     static final String TAG = "MediaService";
 
-    private Context app_context;
+    private Context cached_context;
 
     // Used for microphone recording
     private AudioManager audio_manager;
@@ -69,9 +69,9 @@ public class MediaService  {
         return MediaServiceHolder.instance;
     }
 
-    public MediaService() {
-        app_context = SensibilityApplication.getAppContext();
-        audio_manager = (AudioManager)app_context.getSystemService(
+    public void init(Context context) {
+        cached_context = context;
+        audio_manager = (AudioManager)cached_context.getSystemService(
                 Context.AUDIO_SERVICE);
         tts_sync = new Object();
     }
@@ -89,7 +89,7 @@ public class MediaService  {
      *
      */
     public void start_media() {
-        tts = new TextToSpeech(app_context,new TextToSpeech.OnInitListener() {
+        tts = new TextToSpeech(cached_context,new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
                 if (status == TextToSpeech.SUCCESS) {

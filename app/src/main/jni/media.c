@@ -25,6 +25,13 @@
  */
 #include "media.h"
 
+
+PyObject* media_init() {
+    jni_py_call(_void,
+                cached_media_class, cached_media_get_instance,
+                cached_media_init, cached_context);
+}
+
 /*
  * Cf. start_media() in MediaService.java for details
  *
@@ -140,7 +147,7 @@ static PyMethodDef AndroidMediaMethods[] = {
 
 
 /*
- * Initializes Python module (media),
+ * Initializes Python module (media)
  *
  * Note:
  * If we wanted to build the module as .so or .dll we could
@@ -148,6 +155,6 @@ static PyMethodDef AndroidMediaMethods[] = {
  * PyMODINIT_FUNC initmedia(void)
  *
  */
-void initmedia() {
+void media_init_pymodule() {
     Py_InitModule("media", AndroidMediaMethods);
 }

@@ -9,9 +9,11 @@
 #include "snakei.h"
 #include "jniglue.h"
 
-void initmedia();
+void media_init_pymodule();
 void media_start_media();
 void media_stop_media();
+
+PyObject* media_init();
 PyObject* media_microphone_record(PyObject *self, PyObject *args);
 PyObject* media_is_media_playing(PyObject *self);
 //PyObject* media_get_media_play_info(PyObject *self);

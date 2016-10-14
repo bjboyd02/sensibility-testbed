@@ -96,6 +96,7 @@ jclass cached_media_class;
 jmethodID cached_media_start_media;
 jmethodID cached_media_stop_media;
 jmethodID cached_media_get_instance;
+jmethodID cached_media_init;
 jmethodID cached_media_microphone_record;
 jmethodID cached_media_tts_speak;
 jmethodID cached_media_is_tts_speaking;
