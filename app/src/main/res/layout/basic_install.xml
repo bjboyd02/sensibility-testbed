@@ -9,7 +9,7 @@
 		    android:id="@+id/showadvancedoptionsbutton"
 		    android:layout_width="wrap_content"
 		    android:layout_height="wrap_content"
-		    android:text="Install Seattle" android:layout_alignParentBottom="true"/>
+		    android:text="Start nodemanager" android:layout_alignParentBottom="true"/>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="fill_parent"
 	android:layout_height="wrap_content"
@@ -34,21 +34,21 @@
         android:id="@+id/basicinstallbutton"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="COpy Seattle"
+        android:text="Install"
         android:textSize="20sp" >
 </Button>
 
 	<View android:layout_width="fill_parent" android:layout_height="30dp"/>
-		
-		<TextView
-		    android:id="@+id/referrerview"
-		    android:layout_width="wrap_content"
-		    android:layout_height="wrap_content"
-		    android:text="TextView"
-		    android:textAppearance="?android:attr/textAppearanceSmall"
-		    android:textSize="20sp" />
 
-		<View android:layout_width="fill_parent" android:layout_height="150dp"/>
+	<TextView
+        android:id="@+id/referrerview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Make the world a better place"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textSize="20sp" />
+
+	<View android:layout_width="fill_parent" android:layout_height="150dp"/>
 
 
 
