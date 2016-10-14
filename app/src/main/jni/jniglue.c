@@ -169,7 +169,6 @@ jobjectArray jni_get_string_array(int argc, char *argv[]) {
             (*jni_env)->NewStringUTF(jni_env, ""));
 
     for(i = 0; i < argc; i++) {
-        LOGI(argv[i]);
         (*jni_env)->SetObjectArrayElement(jni_env, string_array, i,
                 (*jni_env)->NewStringUTF(jni_env, argv[i]));
     }
