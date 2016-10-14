@@ -22,7 +22,7 @@ model {
 
         defaultConfig {
             applicationId = "com.sensibility_testbed"
-            minSdkVersion.apiLevel = 18
+            minSdkVersion.apiLevel = 23
             targetSdkVersion.apiLevel = 24
             versionCode = 1
             versionName = "1.0"
