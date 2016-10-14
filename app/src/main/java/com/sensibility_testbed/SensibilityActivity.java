@@ -1,8 +1,12 @@
 package com.sensibility_testbed;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -62,8 +66,13 @@ import static android.os.Process.myUid;
  * Functionality will be successively be copied over from "ScriptActivity" to
  * finally replace it
  *
- * I think we should Fragments for each of above items
+ * I think we should Fragments for each of above
  *
+ * Permissions:
+ * In API > 23 we have to ask for permissions at runtime and permissions can also be revoked
+ * But we cannot (verify this) request permissions from a background service process, therefor
+ * I suggest we request permissions when the activity starts and just pass on the exceptions
+ * in the services (if a needed permission was not granted or revoked)
  */
 public class SensibilityActivity extends Activity {
 
@@ -79,6 +88,9 @@ public class SensibilityActivity extends Activity {
     public final String PYTHON_LIB = FILES_ROOT + "python/lib/python2.7/";
     public final String PYTHON_SCRIPTS = FILES_ROOT + "scripts/";
 
+
+    // See document docstring - Permissions
+    public final int SENSIBILITY_RUNTIME_PERMISSIONS = 1;
 
     /*
      * Downloads zipped Seattle custom installer package from Clearinghouse
@@ -205,6 +217,13 @@ public class SensibilityActivity extends Activity {
         });
     }
 
+    // See document docstring - Permissions
+    protected void checkRequestPermission(String perm) {
+        String[] perms = new String[] {perm};
+        if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, perms, SENSIBILITY_RUNTIME_PERMISSIONS);
+        }
+    }
 
     /*
      * Shows the User Interface
@@ -214,6 +233,21 @@ public class SensibilityActivity extends Activity {
      */
     @Override
     protected void onStart() {
+        //Check all permissions
+        checkRequestPermission(Manifest.permission.INTERNET);
+        checkRequestPermission(Manifest.permission.ACCESS_WIFI_STATE);
+        checkRequestPermission(Manifest.permission.CHANGE_WIFI_STATE);
+        checkRequestPermission(Manifest.permission.BLUETOOTH);
+        checkRequestPermission(Manifest.permission.BLUETOOTH_ADMIN);
+        checkRequestPermission(Manifest.permission.READ_PHONE_STATE);
+        checkRequestPermission(Manifest.permission.RECEIVE_BOOT_COMPLETED);
+        checkRequestPermission(Manifest.permission.READ_EXTERNAL_STORAGE);
+        checkRequestPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        checkRequestPermission(Manifest.permission.ACCESS_NETWORK_STATE);
+        checkRequestPermission(Manifest.permission.BODY_SENSORS);
+        checkRequestPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
+        checkRequestPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+        checkRequestPermission(Manifest.permission.RECORD_AUDIO);
         super.onStart();
         showBasicInstallLayout();
     }
@@ -237,4 +271,24 @@ public class SensibilityActivity extends Activity {
     protected void onResume() {
         super.onResume();
     }
+
+
+    // See document docstring - Permissions
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode,
+//                                           String permissions[], int[] grantResults) {
+//        switch (requestCode) {
+//            case SENSIBILITY_RUNTIME_PERMISSIONS: {
+//                if (grantResults.length <= 0
+//                        || grantResults[0] == PackageManager.PERMISSION_DENIED) {
+//                    //Disable the functionality that depends on this permission?
+//                }
+//            }
+//        }
+//        return;
+//
+//    }
+
+
+
 }
