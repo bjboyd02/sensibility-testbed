@@ -104,7 +104,7 @@ PyObject* media_microphone_record(PyObject *self, PyObject *args) {
             cached_media_microphone_record,
             java_file_name, (jint) duration);
 
-    jni_delete_reference((jobject) file_name);
+    jni_delete_reference((jobject) java_file_name);
     return result;
 }
 
