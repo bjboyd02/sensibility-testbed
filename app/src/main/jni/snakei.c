@@ -127,6 +127,8 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
             cached_location_class, "start_location", "()V");
     cached_location_stop_location = jni_find_method(
             cached_location_class, "stop_location", "()V");
+    cached_location_init = jni_find_method(
+            cached_location_class,"init","(Landroid/content/Context;)V");
     cached_location_get_instance = jni_find_getter(
             cached_location_class, "()Lcom/snakei/LocationService;");
     cached_location_get_location = jni_find_method(
@@ -134,7 +136,7 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     cached_location_get_geolocation = jni_find_method(
             cached_location_class, "getGeoLocation", "(DDI)Ljava/lang/String;");
     cached_location_get_lastknown_location = jni_find_method(
-            cached_location_class,"getLastKnownLocation",
+            cached_location_class, "getLastKnownLocation",
             "()Ljava/lang/String;");
 
     /* Cache media */

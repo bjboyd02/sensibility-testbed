@@ -24,6 +24,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.security.Security;
 import java.util.List;
 import java.util.Locale;
 
@@ -64,6 +65,8 @@ public class LocationService implements android.location.LocationListener,
 
     static final String TAG = "LocationService";
 
+    private Context cached_context;
+
     // Used to start/stop listener on network and gps location provider
     private LocationManager location_manager;
 
@@ -101,16 +104,14 @@ public class LocationService implements android.location.LocationListener,
 
 
     /*
-     * Singleton Constructor
-     *
-     * Fetches context from static application function
-     * Initializes Android location manager and Google Play Service objects
+     * Initializes Android location manager, Google Play Service objects and
+     * a Geocoder
      *
      */
-    private LocationService() {
-        Context app_context = SensibilityApplication.getAppContext();
-        location_manager = (LocationManager)app_context.getSystemService(
-                app_context.LOCATION_SERVICE);
+    public void init(Context context) {
+        cached_context = context;
+        location_manager = (LocationManager)cached_context.getSystemService(
+                cached_context.LOCATION_SERVICE);
 
         // Set Google Play Service QoS parameters to "real-time"
         google_location_request = new LocationRequest();
@@ -118,7 +119,7 @@ public class LocationService implements android.location.LocationListener,
                 LocationRequest.PRIORITY_HIGH_ACCURACY);
         google_location_request.setInterval(5);
 
-        geocoder = new Geocoder(app_context, Locale.getDefault());
+        geocoder = new Geocoder(cached_context, Locale.getDefault());
     }
 
 
@@ -128,7 +129,7 @@ public class LocationService implements android.location.LocationListener,
      * a location update listener
      *
      */
-    public void start_location() {
+    public void start_location() throws SecurityException {
         // There is no use in listening for PASSIVE_PROVIDER if one of the
         // other two is registered
         // It only retrieves values if any other app is listening to a gps or
@@ -216,7 +217,7 @@ public class LocationService implements android.location.LocationListener,
      * Disconnects from Google Play Service
      *
      */
-    public void stop_location() {
+    public void stop_location() throws SecurityException {
 
         location_manager.removeUpdates(this);
 
@@ -285,6 +286,7 @@ public class LocationService implements android.location.LocationListener,
      *
      */
     public String getLocation() throws JSONException {
+        Log.i(TAG, "in get location");
         JSONObject locations_json = new JSONObject();
         if (location_gps_json != null) {
             locations_json.put("gps", location_gps_json);
@@ -310,7 +312,8 @@ public class LocationService implements android.location.LocationListener,
     * @return  String serialized JSON Object or null
     * e.g.: same as getLocation
     */
-    public String getLastKnownLocation() throws JSONException {
+    public String getLastKnownLocation() throws JSONException, SecurityException {
+        Log.i(TAG, "in get lastknown location");
 
         JSONObject locations_json = new JSONObject();
         Location location_gps = null;
@@ -387,6 +390,7 @@ public class LocationService implements android.location.LocationListener,
                                  int max_results) throws
         IOException, IllegalArgumentException, JSONException,
             GooglePlayServicesNotAvailableException {
+        Log.i(TAG, "in get geo location");
 
         List<Address> addresses = null;
         if (google_api_client.isConnected() &&

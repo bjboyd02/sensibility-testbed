@@ -27,6 +27,14 @@
  */
 
 #include "location.h"
+
+
+void location_init() {
+    jni_py_call(_void,
+                cached_location_class, cached_location_get_instance,
+                cached_location_init, cached_context);
+}
+
 /*
  * Calls Java to connect to Google API and register LocationListeners for GPS,
  * network and fused location provider
@@ -39,7 +47,6 @@ void location_start_location() {
             cached_location_class, cached_location_get_instance,
             cached_location_start_location);
 }
-
 
 /*
  * Calls Java to unregister LocationListeners for GPS, network and fused
@@ -97,7 +104,7 @@ PyObject* location_get_geolocation(PyObject *self, PyObject *args) {
 
     return jni_py_call(_json,
             cached_location_class, cached_location_get_instance,
-            cached_location_get_lastknown_location, latitude, longitude, max_results);
+            cached_location_get_geolocation, latitude, longitude, max_results);
 }
 
 
@@ -118,8 +125,7 @@ static PyMethodDef AndroidLocationMethods[] = {
 
 
 /*
- * Initializes Python module (location), looks up Java class and Java Methods
- * used to poll location values and stores them to cache
+ * Initializes Python module (location)
  *
  * Note:
  * If we wanted to build the module as .so or .dll we could
@@ -127,6 +133,6 @@ static PyMethodDef AndroidLocationMethods[] = {
  * PyMODINIT_FUNC initlocation(void)
  *
  */
-void initlocation() {
+void location_init_pymodule() {
     Py_InitModule("location", AndroidLocationMethods);
 }

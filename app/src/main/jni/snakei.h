@@ -88,6 +88,7 @@ jclass cached_location_class;
 jmethodID cached_location_start_location;
 jmethodID cached_location_stop_location;
 jmethodID cached_location_get_instance;
+jmethodID cached_location_init;
 jmethodID cached_location_get_location;
 jmethodID cached_location_get_geolocation;
 jmethodID cached_location_get_lastknown_location;
