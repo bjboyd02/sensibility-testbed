@@ -158,6 +158,14 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     cached_media_is_media_playing = jni_find_method(
             cached_media_class, "isMediaPlaying", "()Z");
 
+    /* Cache outputs */
+    cached_output_class = jni_find_class_as_global("com/snakei/OutputService");
+    cached_output_toast = jni_find_static_method(
+            cached_output_class, "toastMessage",
+            "(Landroid/content/Context;Ljava/lang/String;)V");
+    cached_output_prompt = jni_find_static_method(
+            cached_output_class, "promptMessage",
+            "(Landroid/content/Context;Ljava/lang/String;)Z");
 
     return JNI_VERSION_1_6;
 }

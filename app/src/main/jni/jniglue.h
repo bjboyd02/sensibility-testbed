@@ -54,5 +54,6 @@ PyObject* jni_py_call(
         jclass class, jmethodID get_instance, jmethodID cached_method, ...);
 
 PyObject* jni_py_call_static_void(jclass class, jmethodID cached_method, ...);
+PyObject* jni_py_call_static_boolean(jclass class, jmethodID cached_method, ...);
 
 #endif //SENSIBILITY_TESTBED_JNIHELPER_H

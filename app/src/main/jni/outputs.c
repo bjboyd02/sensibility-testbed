@@ -4,36 +4,65 @@
  * lukas.puehringer@nyu.edu
  * on 3/29/16
  *
- * C Python module uses OutputService.java via JNI to log messages
- * from Python to the Android log
+ * C Python module uses OutputService.java via JNI to send messages to UI (Toast) and prompts
+ * for user input.
+ * This involves conversion of that message from Python to C, and then to Java.
  *
- * This involves conversion of that message from Python to C, and
- * then to Java.
- *
- * Note:
- * Btw. this is currently the only C Python module in snakei that doesn't use
- * Java Singletons
- * There is no need to provide a global state to
- * subsequent calls to this method, like in sensor polling methods, where a
- * listener needs to stay registered as long as the sensor is polled natively
  *
  */
 
 
 #include "outputs.h"
 
+
 /*
- * Logs a message from Python to Android Log
+ * Logs a message to Android Log
  */
 PyObject* androidlog_log(PyObject *self, PyObject *python_message) {
   char* c_message;
 
   // Convert Python string to C string
   c_message = PyString_AsString(python_message);
-
   LOGI("NATIVE LOG: %s", c_message);
 
   Py_RETURN_NONE;
+}
+
+/*
+ * Logs a message as Android Toast (UI)
+ */
+PyObject* androidlog_toast(PyObject *self, PyObject *python_message) {
+  char* c_message;
+  jstring java_message;
+
+  c_message = PyString_AsString(python_message);
+  java_message = jni_get_string(c_message);
+
+  jni_py_call_static_void(
+    cached_output_class, cached_output_toast, cached_context, java_message);
+
+  jni_delete_reference((jobject) java_message);
+
+  Py_RETURN_NONE;
+}
+
+/*
+ * Prompt for user input (yes/no) using a Toast (UI)
+ */
+PyObject* androidlog_prompt(PyObject *self, PyObject *python_message) {
+  char* c_message;
+  jstring java_message;
+  PyObject* retval;
+
+  c_message = PyString_AsString(python_message);
+  java_message = jni_get_string(c_message);
+
+  retval = jni_py_call_static_boolean(cached_output_class, cached_output_prompt,
+    cached_context, java_message);
+
+  jni_delete_reference((jobject) java_message);
+
+  return retval;
 }
 
 
@@ -42,6 +71,8 @@ PyObject* androidlog_log(PyObject *self, PyObject *python_message) {
  */
 static PyMethodDef AndroidLogMethods[] = {
         {"log", androidlog_log, METH_O,  "Write to Android Log."},
+        {"toast", androidlog_toast, METH_O,  "Show Android Toast."},
+        {"prompt", androidlog_prompt, METH_O,  "Prompt for Yes/No input."},
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 
@@ -55,6 +86,6 @@ static PyMethodDef AndroidLogMethods[] = {
  * PyMODINIT_FUNC initandroidlog(void)
  *
  */
-void initandroidlog() {
+void androidlog_init_pymodule() {
   Py_InitModule("androidlog", AndroidLogMethods);
 }

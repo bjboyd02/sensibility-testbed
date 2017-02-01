@@ -754,3 +754,28 @@ PyObject* jni_py_call_static_void(jclass class, jmethodID cached_method, ...) {
 }
 
 
+
+
+PyObject* jni_py_call_static_boolean(jclass class, jmethodID cached_method, ...) {
+    JNIEnv *jni_env;
+    va_list args;
+    jboolean retval;
+
+    jni_env = jni_get_env();
+
+    va_start(args, cached_method);
+    retval = (*jni_env)->CallStaticBooleanMethodV(
+            jni_env, class, cached_method, args);
+    va_end(args);
+
+    if (__handle_errors(
+            jni_env, "jni_py_call_static_boolean: exception occurred")) {
+        return NULL;
+    }
+
+    if (retval) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}

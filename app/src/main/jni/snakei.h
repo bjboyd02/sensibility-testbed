@@ -103,5 +103,9 @@ jmethodID cached_media_tts_speak;
 jmethodID cached_media_is_tts_speaking;
 jmethodID cached_media_is_media_playing;
 
+jclass cached_output_class;
+jmethodID cached_output_toast;
+jmethodID cached_output_prompt;
+
 #endif /* defined _SNAKEI_H_ */
 

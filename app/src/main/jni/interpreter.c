@@ -86,7 +86,7 @@ void interpreter_init(char* home, char* path) {
 
   // Initialize C-Python Extensions
   initandroid();
-  initandroidlog();
+  androidlog_init_pymodule();
   miscinfo_init_pymodule();
   sensor_init_pymodule();
   media_init_pymodule();
@@ -113,7 +113,7 @@ void interpreter_init(char* home, char* path) {
 
   // Injecting Python print wrapper
   // cf.  https://github.com/kivy/python-for-android/blob/master/pythonforandroid/bootstraps/webview/build/jni/src/start.c#L181-L197
-  LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleString(
+  LOGI("INJECT PRINT WRAPPER returns %i\n", Verbose_PyRun_SimpleString(
         "import sys\n" \
         "import androidlog\n" \
         "class LogFile(object):\n" \
@@ -133,6 +133,5 @@ void interpreter_init(char* home, char* path) {
 void interpreter_run(int argc, char **argv) {
   PySys_SetArgv(argc, argv);
   Py_SetProgramName(argv[0]);
-
-  LOGI("PyRun returns %i\n", Verbose_PyRun_SimpleFile(argv[0]));
+  LOGI("RUNNING '%s' returns %i\n", argv[0], Verbose_PyRun_SimpleFile(argv[0]));
 }
