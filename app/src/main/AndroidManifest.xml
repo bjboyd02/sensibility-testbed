@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.sensibility_testbed"
-    android:versionCode="16"
-    android:versionName="20160324-1404CET-Alpha" >
+    package="com.sensibility_testbed">
 
+    <!-- Note: android:versionCode and android:versionName are pulled in from build.gradle! -->
 
     <application
         android:icon="@drawable/ic_launcher"
