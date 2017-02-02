@@ -199,8 +199,7 @@ public class LocationService implements android.location.LocationListener,
 
         // Create Google Play Service API client using its builder and pass
         // it the above created connection/failure listener ...
-        google_api_client = new GoogleApiClient.Builder(
-                SensibilityApplication.getAppContext())
+        google_api_client = new GoogleApiClient.Builder(cached_context)
                 .addConnectionCallbacks(google_api_connection_callbacks)
                 .addOnConnectionFailedListener(google_api_connection_failed_callbacks)
                 .addApi(LocationServices.API)

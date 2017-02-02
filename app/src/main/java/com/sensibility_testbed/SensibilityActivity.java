@@ -78,7 +78,7 @@ public class SensibilityActivity extends Activity {
 
     public final String TAG = "SensibilityActivity";
 
-    public final String FILES_ROOT = SensibilityApplication.getAppContext().getFilesDir().getPath() + "/";
+    public final String FILES_ROOT = getApplicationContext().getFilesDir().getPath() + "/";
     public final String SEATTLE_ZIP = FILES_ROOT + "seattle_android.zip";
     //Todo: this is definitely not going to be defined here
     String DOWNLOAD_URL =
