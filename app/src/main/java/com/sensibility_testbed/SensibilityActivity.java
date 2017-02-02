@@ -264,7 +264,7 @@ public class SensibilityActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.i(Common.LOG_TAG, "Into onCreate");
+        Log.i(TAG, "Into onCreate");
     }
 
     @Override

@@ -28,6 +28,8 @@ import com.googlecode.android_scripting.FileUtils;
  *
  */
 public class Utils {
+  static public final String TAG = "Utils";
+
   public static String getFileExtension(String sFileName) {
     int dotIndex = sFileName.lastIndexOf('.');
     if (dotIndex == -1) {
@@ -58,13 +60,13 @@ public class Utils {
             try {
               boolean b = deleteDir(file2);
               if (!b) {
-                Log.e(Common.LOG_TAG, "Unzip failed to delete " + dest
+                Log.e(TAG, "Unzip failed to delete " + dest
                         + zipEntryName);
               } else {
-                Log.i(Common.LOG_TAG, "Unzip deleted " + dest + zipEntryName);
+                Log.i(TAG, "Unzip deleted " + dest + zipEntryName);
               }
             } catch (Exception e) {
-              Log.e(Common.LOG_TAG, "Unzip failed to delete " + dest
+              Log.e(TAG, "Unzip failed to delete " + dest
                       + zipEntryName, e);
             }
           }
@@ -106,15 +108,15 @@ public class Utils {
                 || file.getName().endsWith(".pyo")) {
           FileUtils.chmod(file, 0755);
         }
-        Log.i(Common.LOG_TAG, "Unzip extracted " + dest + zipEntryName);
+        Log.i(TAG, "Unzip extracted " + dest + zipEntryName);
       }
       zipInputStream.close();
 
     } catch (FileNotFoundException e) {
-      Log.e(Common.LOG_TAG, "Unzip error, file not found", e);
+      Log.e(TAG, "Unzip error, file not found", e);
       throw e;
     } catch (Exception e) {
-      Log.e(Common.LOG_TAG, "Unzip error: ", e);
+      Log.e(TAG, "Unzip error: ", e);
       throw e;
     }
 
@@ -136,26 +138,26 @@ public class Utils {
       return dir.delete();
 
     } catch (Exception e) {
-      Log.e(Common.LOG_TAG, "Failed to delete " + dir + " : " + e);
+      Log.e(TAG, "Failed to delete " + dir + " : " + e);
       return false;
     }
   }
 
-  public static void createDirectoryOnExternalStorage(String path) {
-    try {
-      File file = new File(ScriptActivity.seattleInstallDirectory, path);
-      if (!file.exists()) {
-        try {
-          file.mkdirs();
-          Log.i(Common.LOG_TAG, "createDirectoryOnExternalStorage created "
-                  + ScriptActivity.seattleInstallDirectory.getAbsolutePath() + "/"
-                  + path);
-        } catch (Exception e) {
-          Log.e(Common.LOG_TAG, "createDirectoryOnExternalStorage error: ", e);
-        }
-      }
-    } catch (Exception e) {
-      Log.e(Common.LOG_TAG, "createDirectoryOnExternalStorage error: " + e);
-    }
-  }
+//  public static void createDirectoryOnExternalStorage(String path) {
+//    try {
+//      File file = new File(ScriptActivity.seattleInstallDirectory, path);
+//      if (!file.exists()) {
+//        try {
+//          file.mkdirs();
+//          Log.i(Common.LOG_TAG, "createDirectoryOnExternalStorage created "
+//                  + ScriptActivity.seattleInstallDirectory.getAbsolutePath() + "/"
+//                  + path);
+//        } catch (Exception e) {
+//          Log.e(Common.LOG_TAG, "createDirectoryOnExternalStorage error: ", e);
+//        }
+//      }
+//    } catch (Exception e) {
+//      Log.e(Common.LOG_TAG, "createDirectoryOnExternalStorage error: " + e);
+//    }
+//  }
 }
