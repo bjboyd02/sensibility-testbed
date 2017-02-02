@@ -37,8 +37,6 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Display;
 
-import com.sensibility_testbed.SensibilityApplication;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

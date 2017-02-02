@@ -16,11 +16,13 @@ import com.googlecode.android_scripting.FileUtils;
 import com.snakei.PythonInterpreterService;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -78,15 +80,12 @@ public class SensibilityActivity extends Activity {
 
     public final String TAG = "SensibilityActivity";
 
-    public final String FILES_ROOT = getApplicationContext().getFilesDir().getPath() + "/";
-    public final String SEATTLE_ZIP = FILES_ROOT + "seattle_android.zip";
-    //Todo: this is definitely not going to be defined here
-    String DOWNLOAD_URL =
-//            "https://sensibilityclearinghouse.poly.edu/geni/download/altruistic/seattle_android.zip";
-            "https://sensibilityclearinghouse.poly.edu/custominstallerbuilder/e3978fcf1a421d92d4d8b34313c829c52ed81da4/installers/android/";
-    public final String PYTHON = FILES_ROOT + "python/";
-    public final String PYTHON_LIB = FILES_ROOT + "python/lib/python2.7/";
-    public final String PYTHON_SCRIPTS = FILES_ROOT + "scripts/";
+    private String FILES_ROOT;
+    private String SEATTLE_ZIP;
+    String DOWNLOAD_URL;
+    public String PYTHON;
+    public String PYTHON_LIB;
+    public String PYTHON_SCRIPTS;
 
 
     // See document docstring - Permissions
@@ -225,6 +224,7 @@ public class SensibilityActivity extends Activity {
         }
     }
 
+
     /*
      * Shows the User Interface
      * Called by system,
@@ -264,6 +264,15 @@ public class SensibilityActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        FILES_ROOT = getApplicationContext().getFilesDir().getPath() + "/";
+        SEATTLE_ZIP = FILES_ROOT + "seattle_android.zip";
+        PYTHON = FILES_ROOT + "python/";
+        PYTHON_LIB = FILES_ROOT + "python/lib/python2.7/";
+        PYTHON_SCRIPTS = FILES_ROOT + "scripts/";
+        //String DOWNLOAD_URL =
+        //            "https://sensibilityclearinghouse.poly.edu/geni/download/altruistic/seattle_android.zip";
+        //"https://sensibilityclearinghouse.poly.edu/custominstallerbuilder/e3978fcf1a421d92d4d8b34313c829c52ed81da4/installers/android/";
+
         Log.i(TAG, "Into onCreate");
     }
 

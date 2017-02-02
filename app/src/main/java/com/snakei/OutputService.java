@@ -12,8 +12,6 @@ import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.sensibility_testbed.SensibilityApplication;
-
 
 /**
  * Created by

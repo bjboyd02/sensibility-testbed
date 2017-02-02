@@ -9,8 +9,6 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 
-import com.sensibility_testbed.SensibilityApplication;
-
 import org.w3c.dom.Text;
 
 import java.io.IOException;

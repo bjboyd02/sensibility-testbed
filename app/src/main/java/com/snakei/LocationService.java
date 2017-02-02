@@ -28,7 +28,6 @@ import java.security.Security;
 import java.util.List;
 import java.util.Locale;
 
-import com.sensibility_testbed.SensibilityApplication;
 
 /**
  * Created by lukas.puehringer@nyu.edu

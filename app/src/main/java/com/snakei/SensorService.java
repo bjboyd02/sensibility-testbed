@@ -1,6 +1,5 @@
 package com.snakei;
 
-import com.sensibility_testbed.SensibilityApplication;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
