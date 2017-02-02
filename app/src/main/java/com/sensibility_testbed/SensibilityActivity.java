@@ -176,18 +176,18 @@ public class SensibilityActivity extends Activity {
             public void onClick(View v) {
 
                 // Install python
-//                Log.i(TAG, String.format("Unpacking python archive to %s", FILES_ROOT));
-//                try {
-//                    Utils.unzip(getResources().openRawResource(R.raw.python_lib), FILES_ROOT, true);
-//                } catch (IOException e) {
-//                    Log.i(TAG, "Couldn't unpack python archive");
-//                    e.printStackTrace();
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//
-//                // Download Seattle
-//                // XXX for now we just copy over a zip with the WIP seattle files
+                Log.i(TAG, String.format("Unpacking python archive to %s", FILES_ROOT));
+                try {
+                    Utils.unzip(getResources().openRawResource(R.raw.python_lib), FILES_ROOT, true);
+                } catch (IOException e) {
+                    Log.i(TAG, "Couldn't unpack python archive");
+                    e.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+               // Download Seattle
+               // XXX for now we just copy over a zip with the WIP seattle files
                 Log.i(TAG, String.format("Unpacking python archive to %s", FILES_ROOT));
                 try {
                     Utils.unzip(getResources().openRawResource(R.raw.seattle_android), FILES_ROOT, true);
