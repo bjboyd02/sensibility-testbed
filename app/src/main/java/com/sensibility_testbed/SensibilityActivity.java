@@ -27,6 +27,9 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -70,23 +73,20 @@ import static android.os.Process.myUid;
  *
  * I think we should Fragments for each of above
  *
- * Permissions:
- * In API > 23 we have to ask for permissions at runtime and permissions can also be revoked
- * But we cannot (verify this) request permissions from a background service process, therefor
- * I suggest we request permissions when the activity starts and just pass on the exceptions
- * in the services (if a needed permission was not granted or revoked)
  */
 public class SensibilityActivity extends Activity {
 
     public final String TAG = "SensibilityActivity";
 
+    // XXX REPLACE!!
+    private String DOWNLOAD_URL =
+            "https://alpha-ch.poly.edu/cib/87fb8a4763eb8bc76d058123f629986e85c65f7a/installers/android";
+
     private String FILES_ROOT;
     private String SEATTLE_ZIP;
-    String DOWNLOAD_URL;
-    public String PYTHON;
-    public String PYTHON_LIB;
-    public String PYTHON_SCRIPTS;
-
+    private String PYTHON;
+    private String PYTHON_LIB;
+    private String PYTHON_SCRIPTS;
 
     // See document docstring - Permissions
     public final int SENSIBILITY_RUNTIME_PERMISSIONS = 1;
@@ -103,32 +103,58 @@ public class SensibilityActivity extends Activity {
      *   Add logging
      *   Error handling
      */
+    private void installPython() {
+        Log.i(TAG, String.format("Unpacking python archive to %s", FILES_ROOT));
+        try {
+            Utils.unzip(getResources().openRawResource(R.raw.python_lib), FILES_ROOT, true);
+        } catch (IOException e) {
+            Log.i(TAG, "Couldn't unpack python archive");
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void installSeattle() {
+        Log.i(TAG, String.format("Unpacking python zip archive to %s", FILES_ROOT));
+        try {
+            Utils.unzip(getResources().openRawResource(R.raw.seattle_android), FILES_ROOT, true);
+        } catch (IOException e) {
+            Log.i(TAG, "Couldn't unpack python archive");
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
+        Log.i(TAG, "Starting seattleinstaller.py");
+        String[] python_args = {"seattleinstaller.py",
+                "--percent", "50",
+                "--disable-startup-script",
+                "True"};
+        PythonInterpreterService.startService(python_args, getBaseContext());
+    }
 
+    private void downloadAndInstallSeattle() {
         Thread t = new Thread() {
             @Override
             public void run() {
                 try {
                     Log.i(TAG, String.format("Downloading seattle from %s to %s", DOWNLOAD_URL, SEATTLE_ZIP));
                     // Download seattle installer package and unpack to internal storage
-                    InputStream input = null;
-                    OutputStream output = null;
+                    InputStream input;
+                    OutputStream output;
 
                     URL url = new URL(DOWNLOAD_URL);
 
                     HttpsURLConnection connection;
                     connection = (HttpsURLConnection) url.openConnection();
-
                     connection.connect();
 
                     if (connection.getResponseCode() != HttpsURLConnection.HTTP_OK) {
                         Log.i(TAG, connection.getResponseMessage());
                         return;
                     }
-
                     input = connection.getInputStream();
-                    // Todo: don't hardcode file name
                     output = new FileOutputStream(SEATTLE_ZIP);
 
                     byte data[] = new byte[4096];
@@ -136,24 +162,16 @@ public class SensibilityActivity extends Activity {
                     while ((count = input.read(data)) != -1) {
                         output.write(data, 0, count);
                     }
-
-
                     if (input != null) {
                         input.close();
                     }
-
                     if (output != null) {
                         output.close();
                     }
-
                     if (connection != null) {
                         connection.disconnect();
                     }
-
-
-                    Log.i(TAG, String.format("Unpacking seattle zip to %s", FILES_ROOT));
-                    Utils.unzip(new FileInputStream(SEATTLE_ZIP), FILES_ROOT, true);
-
+                    installSeattle();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -162,68 +180,103 @@ public class SensibilityActivity extends Activity {
         t.start();
     }
 
-    // Show install layout
-    private void showBasicInstallLayout() {
-        setContentView(R.layout.basic_install);
-//
-        final Button installButton = (Button) findViewById(R.id.basicinstallbutton);
-        final Button startButton = (Button) findViewById(R.id.showadvancedoptionsbutton);
+    private void startSeattle() {
+        String[] python_args = {"nmmain.py", "--foreground"};
+        PythonInterpreterService.startService(python_args, getBaseContext());
+    }
 
-        // XXX Todo: Disable if already installed
-        installButton.setOnClickListener(new View.OnClickListener() {
+    private void killSeattle() {
+        Log.i(TAG, "Killing not implemented");
+    }
+
+    private void initializeSimpleLayout() {
+        setContentView(R.layout.simple_layout);
+
+        //Initialize buttons
+        final Button btn_install_python = (Button) findViewById(R.id.install_python);
+        final Button btn_install_seattle_ref = (Button) findViewById(R.id.install_seattle_referrer);
+        final Button btn_install_seattle_zip = (Button) findViewById(R.id.install_seattle_zip);
+        final Button btn_start = (Button) findViewById(R.id.start);
+        final Button btn_kill = (Button) findViewById(R.id.kill);
+
+        // Define listeners for buttons
+
+        btn_install_python.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                // Install python
-                Log.i(TAG, String.format("Unpacking python archive to %s", FILES_ROOT));
-                try {
-                    Utils.unzip(getResources().openRawResource(R.raw.python_lib), FILES_ROOT, true);
-                } catch (IOException e) {
-                    Log.i(TAG, "Couldn't unpack python archive");
-                    e.printStackTrace();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-               // Download Seattle
-               // XXX for now we just copy over a zip with the WIP seattle files
-                Log.i(TAG, String.format("Unpacking python archive to %s", FILES_ROOT));
-                try {
-                    Utils.unzip(getResources().openRawResource(R.raw.seattle_android), FILES_ROOT, true);
-                } catch (IOException e) {
-                    Log.i(TAG, "Couldn't unpack python archive");
-                    e.printStackTrace();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                // Install seattle
-                String[] python_args = {"seattleinstaller.py", "--percent", "50", "--disable-startup-script", "True"};
-                PythonInterpreterService.startService(python_args, getBaseContext());
+                installPython();
             }
         });
-
-        // XXX Todo: Disable if already running
-        startButton.setOnClickListener(new View.OnClickListener() {
+        btn_install_seattle_ref.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                // Start a new python interpreter service process that runs nmmain.py
-                // (foreground skips daemonizing)
-                String[] python_args = {"nmmain.py", "--foreground"};
-                PythonInterpreterService.startService(python_args, getBaseContext());
+                downloadAndInstallSeattle();
+            }
+        });
+        btn_install_seattle_zip.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                installSeattle();
+            }
+        });
+        btn_start.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startSeattle();
+            }
+        });
+        btn_kill.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                killSeattle();
             }
         });
     }
 
-    // See document docstring - Permissions
-    protected void checkRequestPermission(String perm) {
-        String[] perms = new String[] {perm};
-        if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, perms, SENSIBILITY_RUNTIME_PERMISSIONS);
+    /*
+     * Check every required permission and request in case we don't have it yet
+     * In API > 23 we have to ask for permissions at runtime and permissions can also be revoked
+     * But we cannot (verify this) request permissions from a background service process, therefor
+     * I suggest we request permissions when the activity starts and just pass on the exceptions
+     * in the services (if a needed permission was not granted or revoked)
+     */
+    protected void checkRequestPermissions() {
+        String[] permissions = {
+                Manifest.permission.INTERNET,
+                Manifest.permission.ACCESS_WIFI_STATE,
+                Manifest.permission.CHANGE_WIFI_STATE,
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.READ_PHONE_STATE,
+                Manifest.permission.RECEIVE_BOOT_COMPLETED,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.ACCESS_NETWORK_STATE,
+                Manifest.permission.BODY_SENSORS,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.RECORD_AUDIO
+        };
+        for (String permission : permissions) {
+            if (ContextCompat.checkSelfPermission(this, permission)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                        this, new String[]{permission}, SENSIBILITY_RUNTIME_PERMISSIONS);
+            }
         }
     }
 
+    /*
+     * Initialize "constant" global paths which cannot be initialized in class scope because they
+     * need a context.
+     */
+    private void initializePaths() {
+        FILES_ROOT = getApplicationContext().getFilesDir().getPath() + "/";
+        SEATTLE_ZIP = FILES_ROOT + "seattle_android.zip";
+        PYTHON = FILES_ROOT + "python/";
+        PYTHON_LIB = FILES_ROOT + "python/lib/python2.7/";
+        PYTHON_SCRIPTS = FILES_ROOT + "scripts/";
+    }
 
     /*
      * Shows the User Interface
@@ -233,23 +286,9 @@ public class SensibilityActivity extends Activity {
      */
     @Override
     protected void onStart() {
-        //Check all permissions
-        checkRequestPermission(Manifest.permission.INTERNET);
-        checkRequestPermission(Manifest.permission.ACCESS_WIFI_STATE);
-        checkRequestPermission(Manifest.permission.CHANGE_WIFI_STATE);
-        checkRequestPermission(Manifest.permission.BLUETOOTH);
-        checkRequestPermission(Manifest.permission.BLUETOOTH_ADMIN);
-        checkRequestPermission(Manifest.permission.READ_PHONE_STATE);
-        checkRequestPermission(Manifest.permission.RECEIVE_BOOT_COMPLETED);
-        checkRequestPermission(Manifest.permission.READ_EXTERNAL_STORAGE);
-        checkRequestPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        checkRequestPermission(Manifest.permission.ACCESS_NETWORK_STATE);
-        checkRequestPermission(Manifest.permission.BODY_SENSORS);
-        checkRequestPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
-        checkRequestPermission(Manifest.permission.ACCESS_FINE_LOCATION);
-        checkRequestPermission(Manifest.permission.RECORD_AUDIO);
         super.onStart();
-        showBasicInstallLayout();
+        checkRequestPermissions();
+        initializeSimpleLayout();
     }
 
     /*
@@ -259,20 +298,11 @@ public class SensibilityActivity extends Activity {
      *  - Activity launched
      *  - App process was killed and user navigates back to the activity
      *
-     *
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        FILES_ROOT = getApplicationContext().getFilesDir().getPath() + "/";
-        SEATTLE_ZIP = FILES_ROOT + "seattle_android.zip";
-        PYTHON = FILES_ROOT + "python/";
-        PYTHON_LIB = FILES_ROOT + "python/lib/python2.7/";
-        PYTHON_SCRIPTS = FILES_ROOT + "scripts/";
-        //String DOWNLOAD_URL =
-        //            "https://sensibilityclearinghouse.poly.edu/geni/download/altruistic/seattle_android.zip";
-        //"https://sensibilityclearinghouse.poly.edu/custominstallerbuilder/e3978fcf1a421d92d4d8b34313c829c52ed81da4/installers/android/";
-
+        initializePaths();
         Log.i(TAG, "Into onCreate");
     }
 
@@ -297,7 +327,4 @@ public class SensibilityActivity extends Activity {
 //        return;
 //
 //    }
-
-
-
 }

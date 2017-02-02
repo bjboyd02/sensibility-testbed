@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:fillViewport="true" >
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical"
+		android:layout_margin="20sp"
+        android:id="@+id/root">
+
+	<Button
+		android:id="@+id/install_python"
+		android:layout_width="fill_parent"
+		android:layout_marginTop="20sp"
+		android:layout_height="wrap_content"
+		android:text="Install Python"
+		android:textSize="20sp"
+		android:layout_below="@+id/view"
+		android:textAllCaps="false"
+		android:layout_alignParentStart="true">
+	</Button>
+	<Button
+		android:layout_marginTop="20sp"
+		android:id="@+id/install_seattle_referrer"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:text="Install Seattle (download)"
+		android:textSize="20sp"
+		android:layout_below="@+id/view"
+		android:textAllCaps="false"
+		android:layout_alignParentStart="true">
+	</Button>
+	<Button
+		android:id="@+id/install_seattle_zip"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:text="Install Seattle (from zip)"
+		android:textSize="20sp"
+		android:layout_below="@+id/view"
+		android:textAllCaps="false"
+		android:layout_alignParentStart="true">
+	</Button>
+	<Button
+		android:id="@+id/start"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:text="Start"
+		android:textSize="20sp"
+		android:layout_marginTop="20sp"
+
+		android:layout_below="@+id/view"
+		android:textAllCaps="false"
+		android:layout_alignParentStart="true">
+	</Button>
+	<Button
+		android:id="@+id/kill"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:text="Kill"
+		android:textSize="20sp"
+		android:layout_below="@+id/view"
+		android:textAllCaps="false"
+		android:layout_alignParentStart="true">
+	</Button>
+
+	</LinearLayout>
+</ScrollView>
