@@ -76,7 +76,7 @@ user@ !> run <YOUR SENSOR-ENABLED-REPY-PROGRAM>.r2py
 
 ## Detailed System Overview
 
-![Sensibility Implementation Overview](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/docs/sensibility_overview.png "Sensibility Implementation Overview")
+![Sensibility Implementation Overview](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/docs/sensibility_overview.png "Sensibility Implementation Overview")
 
 ### JVM
  - **Activity** - `com.sensibility_testbed.ScriptActivity`
@@ -121,7 +121,7 @@ user@ !> run <YOUR SENSOR-ENABLED-REPY-PROGRAM>.r2py
 
 ## Accelerometer Sensor Extension Example
 
-![Sensibility Sequence Diagram for Acceleration Extension](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/docs/sensibility_sequence.png "Sequence Diagram for Acceleration Extension")
+![Sensibility Sequence Diagram for Acceleration Extension](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/docs/sensibility_sequence.png "Sequence Diagram for Acceleration Extension")
 
 1. The native method `Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter()` is declared in [PythonInterpreterService.java](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/java/com/snakei/PythonInterpreterService.java) and defined in [interpreter.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/interpreter.c) and gets called from the JVM
 1. This method calls [sensor.c's](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/sensors.c#L340)`initsensor()` which initializes the sensor extensions in a Python module (not shown in sequence diagram) and
