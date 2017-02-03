@@ -245,7 +245,7 @@ public class SensibilityActivity extends Activity {
     }
 
     private void initializeSimpleLayout() {
-        setContentView(R.layout.simple_layout);
+        setContentView(R.layout.dev_layout);
 
         //Initialize buttons
         final Button btn_install_python = (Button) findViewById(R.id.install_python);
