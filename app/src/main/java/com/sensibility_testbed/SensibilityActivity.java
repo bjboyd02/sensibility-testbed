@@ -91,7 +91,7 @@ public class SensibilityActivity extends Activity {
 
     // XXX REPLACE!!
     private String DOWNLOAD_URL =
-            "https://alpha-ch.poly.edu/cib/87fb8a4763eb8bc76d058123f629986e85c65f7a/installers/android";
+            "https://alpha-ch.poly.edu/cib/60466ed2cc73477b874d7e72a2ebfb55bbc0d7f3/installers/android";
 
     private String ALPHA_CIB_CERTIFICATE;
     private String FILES_ROOT;
@@ -146,40 +146,6 @@ public class SensibilityActivity extends Activity {
         PythonInterpreterService.startService(python_args, getBaseContext());
     }
 
-    private SSLContext getSSLContextForSelfSignedCertificate(InputStream cert_stream)
-            throws CertificateException, IOException, KeyStoreException,
-            NoSuchAlgorithmException, KeyManagementException {
-
-        // Load CAs from an InputStream
-        // (could be from a resource or ByteArrayInputStream or ...)
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-
-
-        Certificate ca;
-        try {
-            ca = cf.generateCertificate(cert_stream);
-        } finally {
-            cert_stream.close();
-        }
-
-        // Create a KeyStore containing our trusted CAs
-        String keyStoreType = KeyStore.getDefaultType();
-        KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-        keyStore.load(null, null);
-        keyStore.setCertificateEntry("ca", ca);
-
-        // Create a TrustManager that trusts the CAs in our KeyStore
-        String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
-        tmf.init(keyStore);
-
-        // Create an SSLContext that uses our TrustManager
-        SSLContext ssl_context = SSLContext.getInstance("TLS");
-        ssl_context.init(null, tmf.getTrustManagers(), null);
-
-        return ssl_context;
-    }
-
     private void downloadAndInstallSeattle() {
         Thread t = new Thread() {
             @Override
@@ -197,10 +163,6 @@ public class SensibilityActivity extends Activity {
 
                     HttpsURLConnection connection;
                     connection = (HttpsURLConnection) url.openConnection();
-
-                    InputStream alpha_cib_cert = getResources().openRawResource(R.raw.alpha_cib);
-                    SSLContext ssl_context = getSSLContextForSelfSignedCertificate(alpha_cib_cert);
-                    connection.setSSLSocketFactory(ssl_context.getSocketFactory());
 
                     connection.connect();
 
