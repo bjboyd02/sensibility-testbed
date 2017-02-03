@@ -5,36 +5,73 @@ This is the source repo for SensibilityTestbed (Android app).
 See https://sensibilitytestbed.com/ for details
 
 -----
-We are currently moving away from SL4A towards an embedded Python 
-interpreter with native-looking sensor interfaces (i.e. Python 
-functions that you can call from Python code in order to get 
+We are currently moving away from SL4A towards an embedded Python
+interpreter with native-looking sensor interfaces (i.e. Python
+functions that you can call from Python code in order to get
 sensor values).
 
-How this works approximately:
+How this works:
 * The required sensor event listening stuff is implemented in Java
-* The Python interpreter is [embedded](https://docs.python.org/2/extending/embedding.html) 
+* The Python interpreter is [embedded](https://docs.python.org/2/extending/embedding.html)
   into C code, where we use
- * the Java Native Interface (JNI) to call into Java, and 
- * the proper Python bindings to make these JNI calls available 
+ * the Java Native Interface (JNI) to call into Java, and
+ * the proper Python bindings to make these JNI calls available
   to Python code.
 
 Read the **docstrings** and **comments** for detailed information about the different components!
 
-## Installation and Usage
+## Installation and Usage (**alpha**)
 
-* Clone the project
-* Use `ndk-build` in `sensibility-testbed/app/src/main/jni` to build the 
-  native module, `snakei`.
-* Copy the shared objects for Snakei and Python from 
-  `sensibility-testbed/app/src/main/libs/armeabi` into `sensibility-testbed/app/jniLibs` 
-  where [the Gradle config currently expects them](https://github.com/aaaaalbert/sensibility-testbed/blob/use-android-studio/app/build.gradle#L39).
-* Import the `sensibility-testbed` project into Android Studio.
-* Android Studio should (TM) download all of the Gradle etc. stuff it 
-  needs to build the APK.
-* Add Python scripts - `*.py` - to the [assets directory](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/assets) and modify [interpreter.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/interpreter.c#L55-L73) to execute them.
-* Build the APK
-* `adb install` it on your device
-* Look at `adb logcat` to see interesting debug messages
+- Clone [sensibility-testbed](https://github.com/aaaaalbert/sensibility-testbed.git)'s `use-pure-gradle` branch
+```shell
+git clone -b use-pure-gradle https://github.com/aaaaalbert/sensibility-testbed.git
+```
+- Download [Android Studio](https://developer.android.com/studio/index.html)
+- Import `sensibility-testbed` into Android studio
+- Android Studio will ask you to download some requirements. Do it!
+- Browse to https://alpha-ch.poly.edu/cib/fastlane (and ignore the Android installation instructions).
+- Download private and public keys and unzip them
+- Chose one of the following options to prepare Seattle for Android:
+
+    - Download `android_seattle.zip` from
+        `https://alpha-ch.poly.edu/cib/<INSERT YOUR SESSION STRING HERE>/installers/android`
+         and move it to `sensibility-testbed/app/src/main/res/raw/seattle_android.zip` locally.
+    - and later in the running app click the `Install Seattle (from zip)` button
+
+    OR
+
+    - Replace [this line in  your local SensibilityActivity.java](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/java/com/sensibility_testbed/SensibilityActivity.java#L93-L94):
+    ```java
+    // in sensibility-testbed/app/src/main/java/com/sensibility_testbed/SensibilityActivity.java#L93-L94
+    private String DOWNLOAD_URL =
+        https://alpha-ch.poly.edu/cib/<insert your session string from yellow box here>/installers/android
+    ```
+    - and later in the running app click the `Install Seattle (download)` button
+
+- Connect Android device to your development machine (USB debugging must be enabled)
+- Use Android Studio to `build`, `install` and `run` the app your Android device
+- On your Android device in the Sensibility Testbed app
+  - Click on `Install Python`
+  - Click on either `Install Seattle (download)` or `Install Seattle (from zip)` depending on what you chose above
+  - Click on `Start`
+- Download [`sensibility-demokit`](https://sensibilityclearinghouse.poly.edu/demokit/sensibility-testbed-demokit.zip)
+- Place the keys you downloaded above - `user.publickey` and `user.privatekey` - into the demokit directory
+- Fire up the `seash` and issue the following commands:
+```shell
+$ python seash.py
+- You can save seash's current state using 'savestate' command.
+
+Enabled modules: execute, factoids, geoip, modules, uploaddir, variables
+
+ !> loadkeys user
+ !> as user
+user@ !> contact <IP OF YOUR ANDROID DEVICE (btw, you need to be in the same network)>:1224
+Added targets: %1(<IP OF YOUR ANDROID DEVICE>:1224:v3)
+user@ !> %1
+user@ !> run <YOUR SENSOR-ENABLED-REPY-PROGRAM>.r2py
+```
+- Check out the API modules below or Seattle's [`namespace.py`](https://github.com/SensibilityTestbed/repy_v2/blob/jni-sensors/namespace.py#L780-L966) to see what Android functions you can use in your repy programs
+- Use `logcat` (in Android Studio or via `adb` to debug)
 
 
 ## Detailed System Overview
@@ -44,14 +81,14 @@ Read the **docstrings** and **comments** for detailed information about the diff
 ### JVM
  - **Activity** - `com.sensibility_testbed.ScriptActivity`
    - `onCreate` is the entry point to the app
-   - sets up UI and handles user interaction 
+   - sets up UI and handles user interaction
    - starts `PythonInterpreterService`
    - *Seattle installation is currently commented out*
- - **Python Interpreter Service** - `com.snakei.PythonInterpreterService` 
+ - **Python Interpreter Service** - `com.snakei.PythonInterpreterService`
    - runs in background
    - loads native libraries (Python) and native modules (Snakei)
    - starts new thread (Android `Service`s don't run in their own thread a priori)
-   - calls its native method which is defined in `interpreter.c` 
+   - calls its native method which is defined in `interpreter.c`
  - **Application** - `com.sensibility_testbed.SensibilityApplication`
    - workaround to provide a static reference of the application context to Sensor Service Facades
  - **Android Manifest** - `AndroidManifest.xml`
@@ -94,8 +131,8 @@ Read the **docstrings** and **comments** for detailed information about the diff
 1. retrieve a Singleton instance of `SensorService` and
 1. call `start_sensing()` on the instance which registers a listener on the main thread (not the thread the method was called from). The listener henceforth receives regular updates from the device's Accelerometer until it gets unregistered
 1. The interpreter then runs a Python script which simply imports the previously initialized Python module `sensor` and calls its `get_acceleration()` function. The script is executed using a custom C wrapper defined in [pyhelper.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/pyhelper.c)/
-1. The Python function `get_acceleration()` is defined as C-Python extension in `sensors.c`, where it again 
-1. uses `jnihelper.c` to get a Singleton instance of `SensorService.java` and call `getAcceleration()` on that instance, which 
+1. The Python function `get_acceleration()` is defined as C-Python extension in `sensors.c`, where it again
+1. uses `jnihelper.c` to get a Singleton instance of `SensorService.java` and call `getAcceleration()` on that instance, which
 1. returns the last Sensor update, received in the previously registered Listener, as String serialized JSON Object
 1. `jnihelper.c` then uses [cjson.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/cjson.c) to decode the returned String as Python Object which gets returned to the calling Python script
 1. Eventually, the interpreter calls `sensor_stop_sensing()` to unregister the listener in Java
@@ -119,7 +156,7 @@ To avoid redundant calls into the JVM, classes and methods that get repeatedly c
 
 
 ## API modules
-The following modules are available in Python. Detailed information about each method can be found in the source code comments. 
+The following modules are available in Python. Detailed information about each method can be found in the source code comments.
 
 ### sensor
 `sensors.c`
@@ -180,7 +217,9 @@ The following modules are available in Python. Detailed information about each m
 ### androidlog
 `outputs.c`
 
- - log(message)
+ - androidlog(message)
+ - toast(message)
+ - prompt(message)
 
  ## Caveats, pitfalls and notes
  *Most of them are already mentioned in the source code comments but they should also be mentioned here.*
