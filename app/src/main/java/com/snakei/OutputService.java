@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -43,7 +44,7 @@ public class OutputService {
      *
      */
     public static void toastMessage(final Context context, final String message) throws Exception {
-
+        Log.d(TAG, String.format("toastMessage: %s", message));
         final Handler handler = new Handler(context.getMainLooper());
         handler.post(new Runnable() {
             @Override
@@ -60,7 +61,7 @@ public class OutputService {
      * Prints message (toast) to Android GUI and returns user input.
      *
      * FIXME: This should only be used for debugging, I don't know how it behaves if multiple
-     * threads simultaniously prompt for user input.
+     * threads simultaneously prompt for user input.
      *
      * Notes:
      * Prompting AlertDialogs from a Service and waiting for user input is generally discouraged
@@ -76,11 +77,12 @@ public class OutputService {
      *
      */
     public static boolean promptMessage(final Context context, final String message) throws Exception {
+        Log.d(TAG, String.format("promptMessage: %s", message));
 
         final Object click_sync = new Object();
         final Handler handler = new Handler(context.getMainLooper());
 
-        // Post prompt disguised as Tast to the main thread (UI)
+        // Post prompt disguised as Toast to the main thread (UI)
         handler.post(new Runnable() {
              @Override
              public void run() {
@@ -94,6 +96,7 @@ public class OutputService {
                          new DialogInterface.OnClickListener() {
                              public void onClick(DialogInterface dialog, int which) {
                                  synchronized(click_sync){
+                                     Log.d(TAG, "User clicked YES");
                                      click_sync.notify();
                                      click_value = true;
                                      dialog.dismiss();
@@ -105,6 +108,7 @@ public class OutputService {
                  dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "no",
                          new DialogInterface.OnClickListener() {
                              public void onClick(DialogInterface dialog, int which) {
+                                 Log.d(TAG, "User clicked NO");
                                  synchronized (click_sync) {
                                      click_sync.notify();
                                      click_value = false;

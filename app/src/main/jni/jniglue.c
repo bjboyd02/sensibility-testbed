@@ -65,7 +65,7 @@ JNIEnv *jni_get_env(void) {
     JNIEnv *env;
     int status = (*cached_vm)->AttachCurrentThread(cached_vm, &env, NULL);
     if(status < 0) {
-        LOGI("jni_get_env: could not attach thread");
+        LOGI("Could not attach thread in jni_get_env");
         return 0;
     }
     pthread_setspecific(jni_thread_key, (void*) env);
@@ -203,10 +203,10 @@ jclass jni_find_class(const char *class_name) {
     class = (*jni_env)->FindClass(jni_env, class_name);
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
-        LOGI("jni_find_class: exception occurred");
+        LOGI("jni_find_class(%s)", class_name);
     }
     if (class == NULL) {
-        LOGI("jni_find_class: returned NULL");
+        LOGI("jni_find_class received NULL");
     }
     return class;
 }
@@ -255,10 +255,10 @@ jmethodID jni_find_getter(jclass class, const char *type_signature) {
     getter = (*jni_env)->GetStaticMethodID(
             jni_env, class, "getInstance", type_signature);
     if ((*jni_env)->ExceptionOccurred(jni_env)){
-        LOGI("jni_find_getter: exception occurred");
+        LOGI("jni_find_getter");
     }
     if (getter == NULL) {
-        LOGI("jni_find_getter: returned NULL");
+        LOGI("jni_find_getter received NULL");
     }
     return getter;
 }
@@ -294,10 +294,10 @@ jmethodID jni_find_method(
     method = (*jni_env)->GetMethodID(
             jni_env, class, method_name, type_signature);
     if ((*jni_env)->ExceptionOccurred(jni_env)){
-        LOGI("jni_find_method: exception occurred - %s", method_name);
+        LOGI("jni_find_method(%s, %s)", method_name, type_signature);
     }
     if (method == NULL) {
-        LOGI("jni_find_method: returned NULL");
+        LOGI("jni_find_method received NULL");
     }
     return method;
 }
@@ -333,10 +333,10 @@ jmethodID jni_find_static_method(
     method = (*jni_env)->GetStaticMethodID(jni_env, class, method_name,
                                            type_signature);
     if ((*jni_env)->ExceptionOccurred(jni_env)){
-        LOGI("jni_find_static_method: exception occurred - %s", method_name);
+        LOGI("jni_find_static_method(%s, %s)", method_name, type_signature);
     }
     if (method == NULL) {
-        LOGI("jni_find_static_method: returned NULL");
+        LOGI("jni_find_static_method received NULL");
     }
     return method;
 }
@@ -368,10 +368,10 @@ jobject jni_get_instance(jclass class, jmethodID getter) {
     object = (*jni_env)->CallStaticObjectMethod(jni_env, class, getter);
 
     if ((*jni_env)->ExceptionOccurred(jni_env)){
-        LOGI("jni_get_instance: exception occurred");
+        LOGI("jni_get_instance");
     }
     if (object == NULL) {
-        LOGI("jni_get_instance: returned NULL");
+        LOGI("jni_get_instance received NULL");
     }
     return object;
 }
@@ -413,7 +413,6 @@ int __handle_errors(JNIEnv* jni_env, const char *where) {
 
     error = (*jni_env)->ExceptionOccurred(jni_env);
     if (error) {
-        LOGI("%s", where);
         (*jni_env)->ExceptionClear(jni_env);
 
         // Maybe cache java/lang/Object and toString
@@ -422,6 +421,8 @@ int __handle_errors(JNIEnv* jni_env, const char *where) {
                 jni_env, class, "toString", "()Ljava/lang/String;");
         error_msg_java = (*jni_env)->CallObjectMethod(jni_env, error, method);
         error_msg = (*jni_env)->GetStringUTFChars(jni_env, error_msg_java, 0);
+        LOGI("%s caught an exception: %s", where, error_msg);
+
         PyErr_SetString(PyExc_Exception, error_msg);
         (*jni_env)->ReleaseStringUTFChars(jni_env, error_msg_java, error_msg);
         (*jni_env)->DeleteLocalRef(jni_env, error_msg_java);
@@ -458,7 +459,7 @@ PyObject* _void(
 
     // V for va_list
     (*jni_env)->CallVoidMethodV(jni_env, object, method, args);
-    if (__handle_errors(jni_env, "_void: exception occurred")) {
+    if (__handle_errors(jni_env, "_void")) {
         // If we want to re-raise the exception in Python we have to return NULL
         return NULL;
     }
@@ -492,7 +493,7 @@ PyObject* _boolean(
     jboolean success;
 
     success = (*jni_env)->CallBooleanMethodV(jni_env, object, method, args);
-    if (__handle_errors(jni_env, "_boolean: exception occurred")) {
+    if (__handle_errors(jni_env, "_boolean")) {
         //If we want to re-raise the exception in Python we have to return NULL
         return NULL;
     }
@@ -531,7 +532,7 @@ PyObject* _int(
     int retval;
 
     retval = (*jni_env)->CallIntMethodV(jni_env, object, method, args);
-    if (__handle_errors(jni_env, "_int: exception occurred")) {
+    if (__handle_errors(jni_env, "_int")) {
         // If we want to re-raise the exception in Python we have to return NULL
         return NULL;
     }
@@ -571,7 +572,7 @@ PyObject* _string(
     // V for va_list
     java_string = (*jni_env)->CallObjectMethodV(jni_env, object, method, args);
 
-    if (__handle_errors(jni_env, "_string: exception occurred")) {
+    if (__handle_errors(jni_env, "_string")) {
         // If we want to re-raise the exception in Python we have to return NULL
         return NULL;
     }
@@ -631,13 +632,13 @@ PyObject* _json(
     java_string = (*jni_env)->CallObjectMethodV(jni_env, object, method, args);
 
     // V for va_list
-    if (__handle_errors(jni_env, "_json: exception occurred")) {
+    if (__handle_errors(jni_env, "_json")) {
         // If we want to re-raise the exception in Python we have to return NULL
         return NULL;
     }
 
     if(java_string == NULL) {
-        LOGI("_json: returned NULL");
+        LOGI("_json received NULL");
         Py_RETURN_NONE;
     }
 
@@ -746,7 +747,7 @@ PyObject* jni_py_call_static_void(jclass class, jmethodID cached_method, ...) {
     va_end(args);
 
     if (__handle_errors(
-            jni_env, "jni_py_call_static_void: exception occurred")) {
+            jni_env, "jni_py_call_static_void")) {
         return NULL;
     }
 

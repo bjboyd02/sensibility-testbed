@@ -77,14 +77,18 @@ void interpreter_init(char* home, char* path) {
   // We could iterate through all python paths and try to find the file
   // or we just cd into passed path and execute passed script
   // CAUTION!! in this case path must be a single path (no : delimiter)
+  LOGI("Chdir into path: %s", path);
   chdir(path);
 
+  LOGI("Setting python home: %s", home);
   Py_SetPythonHome(home);
   // Apparently we can call Py_Initialize several times without problems
+  LOGI("Initializing C-Python and threads");
   Py_Initialize();
   PyEval_InitThreads();
 
   // Initialize C-Python Extensions
+  LOGI("Initializing C-Python Extensions (Py_InitModule)");
   initandroid();
   androidlog_init_pymodule();
   miscinfo_init_pymodule();
@@ -93,6 +97,7 @@ void interpreter_init(char* home, char* path) {
   location_init_pymodule();
 
   // Init Java Services (this could be done in Python)
+  LOGI("Initializing C-Python Extension Java targets");
   miscinfo_init();
   sensor_init();
   media_init();
@@ -100,6 +105,7 @@ void interpreter_init(char* home, char* path) {
 
   // Some snakei components need to start resources (drains battery)
   // Think of a way to start and STOP!!! in Seattle (only when needed)
+  LOGI("Starting C-Python Extension Java targets");
   int i;
   for (i = 1;  i <= 17; i++) {
     sensor_start_sensing(i);
@@ -113,7 +119,8 @@ void interpreter_init(char* home, char* path) {
 
   // Injecting Python print wrapper
   // cf.  https://github.com/kivy/python-for-android/blob/master/pythonforandroid/bootstraps/webview/build/jni/src/start.c#L181-L197
-  LOGI("INJECT PRINT WRAPPER returns %i\n", Verbose_PyRun_SimpleString(
+  LOGI("Wrapping python 'print' with androidlog.log");
+  Verbose_PyRun_SimpleString(
         "import sys\n" \
         "import androidlog\n" \
         "class LogFile(object):\n" \
@@ -123,15 +130,16 @@ void interpreter_init(char* home, char* path) {
         "        s = self.buffer + s\n" \
         "        lines = s.split(\"\\n\")\n" \
         "        for l in lines[:-1]:\n" \
-        "            androidlog.log(l)\n" \
+        "            androidlog.log('PYTHON PRINTS:' + str(l))\n" \
         "        self.buffer = lines[-1]\n" \
         "    def flush(self):\n" \
         "        return\n" \
-        "sys.stdout = sys.stderr = LogFile()"));
+        "sys.stdout = sys.stderr = LogFile()");
 }
 
 void interpreter_run(int argc, char **argv) {
   PySys_SetArgv(argc, argv);
   Py_SetProgramName(argv[0]);
-  LOGI("RUNNING '%s' returns %i\n", argv[0], Verbose_PyRun_SimpleFile(argv[0]));
+  LOGI("Starting Python script '%s'",  argv[0]);
+  LOGI("Python script '%s' returns %i", argv[0], Verbose_PyRun_SimpleFile(argv[0]));
 }

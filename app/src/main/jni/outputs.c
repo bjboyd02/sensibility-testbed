@@ -23,7 +23,7 @@ PyObject* androidlog_log(PyObject *self, PyObject *python_message) {
 
   // Convert Python string to C string
   c_message = PyString_AsString(python_message);
-  LOGI("NATIVE LOG: %s", c_message);
+  LOGI("%s", c_message);
 
   Py_RETURN_NONE;
 }

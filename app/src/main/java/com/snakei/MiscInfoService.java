@@ -121,28 +121,39 @@ public class MiscInfoService {
      * XXX LP:
      * We maybe want to make this thread
      * We maybe want to add a "initialized" getter where we throw an exception if the singleton
-     * has not been initialized yet, or we simlply initialize there on the spot
+     * has not been initialized yet, or we simply initialize there on the spot
      */
     public void init(Context context) {
+        Log.d(TAG, "Entering init");
+
+
         cached_context = context;
+        Log.d(TAG, "Requesting android connectivity system service");
         content_resolver = cached_context.getContentResolver();
         connectivity_manager = (ConnectivityManager) cached_context.getSystemService(
                 cached_context.CONNECTIVITY_SERVICE);
+        Log.d(TAG, "Requesting android telephony system service");
         telephony_manager = (TelephonyManager) cached_context.getSystemService(
                 cached_context.TELEPHONY_SERVICE);
+        Log.d(TAG, "Requesting android audio system service");
         audio_manager = (AudioManager)cached_context.getSystemService(
                 cached_context.AUDIO_SERVICE);
+        Log.d(TAG, "Requesting android display system service");
         display_manager = (DisplayManager)cached_context.getSystemService(
                 cached_context.DISPLAY_SERVICE);
+        Log.d(TAG, "Requesting android wifi system service");
         wifi_manager = (WifiManager) cached_context.getSystemService(
                 cached_context.WIFI_SERVICE);
+        Log.d(TAG, "Requesting android bluetooth system service");
         bluetooth_manager = (BluetoothManager)cached_context.getSystemService(
                 cached_context.BLUETOOTH_SERVICE);
 
+        Log.d(TAG, "Registering wifi broadcast receiver");
         wifi_sync = new Object();
         wifi_broadcast_receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                Log.d(TAG, "Called wifi broadcast receiver onReceive");
                 synchronized(wifi_sync) {
                     // Discovery has finished, unregister receiver
                     cached_context.unregisterReceiver(wifi_broadcast_receiver);
@@ -151,6 +162,7 @@ public class MiscInfoService {
             }
         };
 
+        Log.d(TAG, "Registering bluetooth broadcast receiver");
         bluetooth_adapter = bluetooth_manager.getAdapter();
         bluetooth_sync = new Object();
         bluetooth_broadcast_receiver = new BroadcastReceiver() {
@@ -159,6 +171,7 @@ public class MiscInfoService {
             // requests have finished (ACTION_DISCOVERY_FINISHED)
             @Override
             public void onReceive(Context context, Intent intent) {
+                Log.d(TAG, "Called bluetooth broadcast receiver onReceive");
                 String action = intent.getAction();
                 if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                     // Bluetooth discovery has received info
@@ -207,6 +220,7 @@ public class MiscInfoService {
      *
      */
     public String getNetworkInfo() throws JSONException {
+        Log.d(TAG, "Entering getNetworkInfo");
 
         Network[] networks = connectivity_manager.getAllNetworks();
 
@@ -257,6 +271,7 @@ public class MiscInfoService {
      * }
      */
     public String getCellularProviderInfo() throws JSONException {
+        Log.d(TAG, "Entering getCellularProviderInfo");
         JSONObject provider_info_json = new JSONObject();
 
         provider_info_json.put("network_operator",
@@ -291,6 +306,7 @@ public class MiscInfoService {
      *
      */
     public String getCellInfo() throws JSONException {
+        Log.d(TAG, "Entering getCellInfo");
 
         List<CellInfo> cell_infos = telephony_manager.getAllCellInfo();
 
@@ -421,6 +437,8 @@ public class MiscInfoService {
      *
      */
     public String getSimInfo() throws JSONException {
+        Log.d(TAG, "Entering getSimInfo");
+
         JSONObject sim_info_json = new JSONObject();
         sim_info_json.put("SIM_operator", telephony_manager.getSimOperator());
         sim_info_json.put("SIM_state", telephony_manager.getSimState());
@@ -453,6 +471,8 @@ public class MiscInfoService {
      *
      */
     public String getPhoneInfo() throws JSONException {
+        Log.d(TAG, "Entering getPhoneInfo");
+
         JSONObject phone_info_json = new JSONObject();
 
         phone_info_json.put("subscriber_id",
@@ -478,6 +498,8 @@ public class MiscInfoService {
      * @return  Is WiFi enabled (bool)
      */
     public boolean isWifiEnabled() {
+        Log.d(TAG, "Entering isWifiEnabled");
+
         return wifi_manager.isWifiEnabled();
     }
 
@@ -489,6 +511,8 @@ public class MiscInfoService {
      * @return  WiFi state (int)
      */
     public int getWifiState() {
+        Log.d(TAG, "Entering getWifiState");
+
         return wifi_manager.getWifiState();
     }
 
@@ -513,6 +537,7 @@ public class MiscInfoService {
      *
      */
     public String getWifiConnectionInfo() throws JSONException {
+        Log.d(TAG, "Entering getWifiConnectionInfo");
         JSONObject wifi_info_json = new JSONObject();
         WifiInfo wifi_info = wifi_manager.getConnectionInfo();
 
@@ -549,6 +574,7 @@ public class MiscInfoService {
      *
      */
     public String getWifiScanInfo() throws InterruptedException, JSONException {
+        Log.d(TAG, "Entering getWifiScanInfo");
 
         // Register "onReceive" for scan results (gets called from main thread)
         cached_context.registerReceiver(wifi_broadcast_receiver,
@@ -556,6 +582,7 @@ public class MiscInfoService {
 
         // If scan was started wait until onReceive notifies us via
         // the wifi_sync object that scan results are available
+        Log.d(TAG, "Starting wifi scan");
         if (wifi_manager.startScan()) {
             synchronized (wifi_sync) {
                 wifi_sync.wait();
@@ -576,6 +603,7 @@ public class MiscInfoService {
                 return wifi_json_array.toString();
             }
         } else {
+            Log.d(TAG, "Wifi Scan could not be started");
             // XXX raise couldn't start scan exception ?
         }
         return null;
@@ -596,6 +624,8 @@ public class MiscInfoService {
      * }
      */
     public String getBluetoothInfo() throws JSONException {
+        Log.d(TAG, "Entering getBluetoothInfo");
+
         JSONObject bluetooth_info_json = new JSONObject();
         BluetoothAdapter bluetooth_adapter = bluetooth_manager.getAdapter();
 
@@ -631,6 +661,7 @@ public class MiscInfoService {
      */
     public String getBluetoothScanInfo()
             throws JSONException, InterruptedException {
+        Log.d(TAG, "Entering getBluetoothScanInfo");
 
         // Register receiver for page scan result
         // and discovery finished
@@ -643,6 +674,7 @@ public class MiscInfoService {
         // paged bluetooth devices
         scanned_bluetooth_devices = new ArrayList<BluetoothDevice>();
 
+        Log.d(TAG, "Entering start bluetooth discovery");
         // Start discovery and wait until it is finished
         if (bluetooth_adapter.startDiscovery()) {
             synchronized(bluetooth_sync) {
@@ -667,6 +699,7 @@ public class MiscInfoService {
                 }
             }
         } else {
+            Log.d(TAG, "Bluetooth discovery got not be started");
             // XXX raise couldn't start discovery exception ?
         }
         return null;
@@ -694,6 +727,8 @@ public class MiscInfoService {
      * }
      */
     public String getBatteryInfo() throws JSONException {
+        Log.d(TAG, "Entering getBatteryInfo");
+
         JSONObject battery_info_json = new JSONObject();
 
         // Register a null receiver which immediately returns Intent
@@ -743,6 +778,8 @@ public class MiscInfoService {
      */
     public String getModeSettings()
             throws Settings.SettingNotFoundException, JSONException {
+        Log.d(TAG, "Entering getModeSettings");
+
         JSONObject mode_settings_json = new JSONObject();
         boolean airplane_mode = (android.provider.Settings.System
                 .getString(content_resolver,
@@ -775,6 +812,8 @@ public class MiscInfoService {
      *
      */
     public String getDisplayInfo() throws JSONException {
+        Log.d(TAG, "Entering getDisplayInfo");
+
         JSONObject screen_settings_json = new JSONObject();
         Display display = display_manager.getDisplay(Display.DEFAULT_DISPLAY);
         Point size = new Point();
@@ -818,6 +857,8 @@ public class MiscInfoService {
      * }
      */
     public String getVolumeInfo() throws JSONException {
+        Log.d(TAG, "Entering getVolumeInfo");
+
         JSONObject volume_json = new JSONObject();
 
         volume_json.put("media_volume",

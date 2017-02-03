@@ -68,7 +68,9 @@ public class MediaService  {
     }
 
     public void init(Context context) {
+        Log.d(TAG, "Entering init");
         cached_context = context;
+        Log.d(TAG, "Requesting android audio system service");
         audio_manager = (AudioManager)cached_context.getSystemService(
                 Context.AUDIO_SERVICE);
         tts_sync = new Object();
@@ -87,14 +89,20 @@ public class MediaService  {
      *
      */
     public void start_media() {
+        Log.d(TAG, "Entering start_media");
+        Log.d(TAG, "Defining TTS init callback");
+
         tts = new TextToSpeech(cached_context,new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
+                Log.d(TAG, "Entering TTS init callback");
                 if (status == TextToSpeech.SUCCESS) {
                     synchronized (tts_sync) {
                         tts_initialized = true;
                         tts_sync.notify();
                     }
+                } else {
+                    Log.d(TAG, String.format("TTS was init was not successful, Status: %d", status));
                 }
             }
         });
@@ -106,9 +114,13 @@ public class MediaService  {
      *
      */
     public void stop_media() {
+        Log.d(TAG, "Entering stop_media");
         tts_initialized = false;
         if(tts != null) {
+            Log.d(TAG, "Shutting down TTS");
             tts.shutdown();
+        } else {
+            Log.d(TAG, "TTS already shut down");
         }
     }
 
@@ -145,6 +157,8 @@ public class MediaService  {
     public void microphoneRecord(String file_name, int duration)
             throws InterruptedException, IOException {
         // Create new media recorder and start with default settings
+        Log.d(TAG, "Entering microphoneRecord");
+
         MediaRecorder recorder = new MediaRecorder();
         recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
@@ -161,6 +175,7 @@ public class MediaService  {
         recorder.release();
     }
 
+
     /*
      * Returns whether music is currently playing by any app on the device
      *
@@ -171,6 +186,7 @@ public class MediaService  {
      * That is why we don't need to return a serialized JSON Object
      */
     public boolean isMediaPlaying() {
+        Log.d(TAG, "Entering isMediaPlaying");
         return audio_manager.isMusicActive();
     }
 
@@ -186,11 +202,13 @@ public class MediaService  {
      * That is why we don't need to return a serialized JSON Object
      */
     public boolean isTtsSpeaking() {
+        Log.d(TAG, "Entering isTtsSpeaking");
         if (tts_initialized) {
             return tts.isSpeaking();
         }
         return false;
     }
+
 
     /*
      * Takes a String and synthesizes it to speech using the tts default engine
@@ -219,6 +237,8 @@ public class MediaService  {
      *  - Engine specific parameters
      */
     public void ttsSpeak(String message) throws Throwable {
+        Log.d(TAG, "Entering ttsSpeak");
+
         if (tts != null) {
             synchronized (tts_sync) {
                 if (!tts_initialized) {

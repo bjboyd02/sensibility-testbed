@@ -129,7 +129,10 @@ public class SensorService implements SensorEventListener  {
      *
      */
     public void init(Context context) {
+        Log.d(TAG, "Entering init");
+
         cached_context = context;
+        Log.d(TAG, "Requesting android sensor system service");
         sensor_manager = (SensorManager)cached_context.getSystemService(
             cached_context.SENSOR_SERVICE);
 
@@ -188,6 +191,8 @@ public class SensorService implements SensorEventListener  {
      *   'min_delay': 0}, ...]
      */
     public String getSensorList() throws JSONException {
+        Log.d(TAG, "Entering getSensorList");
+
         List<Sensor> sensors = sensor_manager.getSensorList(Sensor.TYPE_ALL);
         if (sensors.size() > 0) {
             JSONArray sensors_json = new JSONArray();
@@ -233,6 +238,8 @@ public class SensorService implements SensorEventListener  {
      *
      */
     public String getAcceleration() {
+        Log.d(TAG, "Entering getAcceleration");
+
         if (accelerometer_json != null) {
             return accelerometer_json.toString();
         }
@@ -254,6 +261,8 @@ public class SensorService implements SensorEventListener  {
      *
      */
     public String getAmbientTemperature() {
+        Log.d(TAG, "Entering getAmbientTemperature");
+
         if (ambient_temperature_json != null) {
             return ambient_temperature_json.toString();
         }
@@ -277,6 +286,8 @@ public class SensorService implements SensorEventListener  {
      *
      */
     public String getGameRotationVector() {
+        Log.d(TAG, "Entering getGameRotationVector");
+
         if (game_rotation_vector_json != null) {
             return game_rotation_vector_json.toString();
         }
@@ -300,6 +311,8 @@ public class SensorService implements SensorEventListener  {
      *
      */
     public String getGeomagneticRotationVector() {
+        Log.d(TAG, "Entering getGeomagneticRotationVector");
+
         if (geomagnetic_rotation_vector_json != null) {
             return geomagnetic_rotation_vector_json.toString();
         }
@@ -323,6 +336,8 @@ public class SensorService implements SensorEventListener  {
      * 
      */
     public String getGravity() {
+        Log.d(TAG, "Entering getGravity");
+
         if (gravity_json != null) {
             return gravity_json.toString();
         }
@@ -346,6 +361,8 @@ public class SensorService implements SensorEventListener  {
      * 
      */
     public String getGyroscope() {
+        Log.d(TAG, "Entering getGyroscope");
+
         if (gyroscope_json != null) {
             return gyroscope_json.toString();
         }
@@ -372,6 +389,8 @@ public class SensorService implements SensorEventListener  {
      * 
      */
     public String getGyroscopeUncalibrated() {
+        Log.d(TAG, "Entering getGyroscopeUncalibrated");
+
         if (gyroscope_uncalibrated_json != null) {
             return gyroscope_uncalibrated_json.toString();
         }
@@ -394,6 +413,8 @@ public class SensorService implements SensorEventListener  {
      *
      */
     public String getHeartRate() {
+        Log.d(TAG, "Entering getHeartRate");
+
         if (heart_rate_json != null) {
             return heart_rate_json.toString();
         }
@@ -415,6 +436,8 @@ public class SensorService implements SensorEventListener  {
      *
      */
     public String getLight() {
+        Log.d(TAG, "Entering getLight");
+
         if (light_json != null) {
             return light_json.toString();
         }
@@ -437,6 +460,8 @@ public class SensorService implements SensorEventListener  {
      * 
      */
     public String getLinearAcceleration() {
+        Log.d(TAG, "Entering getLinearAcceleration");
+
         if (linear_acceleration_json != null) {
             return linear_acceleration_json.toString();
         }
@@ -460,6 +485,8 @@ public class SensorService implements SensorEventListener  {
      * 
      */
     public String getMagneticField() {
+        Log.d(TAG, "Entering getMagneticField");
+
         if (magnetic_field_json != null) {
             return magnetic_field_json.toString();
         }
@@ -486,6 +513,8 @@ public class SensorService implements SensorEventListener  {
      * 
      */
     public String getMagneticFieldUncalibrated() {
+        Log.d(TAG, "Entering getMagneticFieldUncalibrated");
+
         if (magnetic_field_uncalibrated_json != null) {
             return magnetic_field_uncalibrated_json.toString();
         }
@@ -507,6 +536,8 @@ public class SensorService implements SensorEventListener  {
      * 
      */
     public String getPressure() {
+        Log.d(TAG, "Entering getPressure");
+
         if (pressure_json != null) {
             return pressure_json.toString();
         }
@@ -528,6 +559,8 @@ public class SensorService implements SensorEventListener  {
      * 
      */
     public String getProximity() {
+        Log.d(TAG, "Entering getProximity");
+
         if (proximity_json != null) {
             return proximity_json.toString();
         }
@@ -549,6 +582,8 @@ public class SensorService implements SensorEventListener  {
      * 
      */
     public String getRelativeHumidity() {
+        Log.d(TAG, "Entering getRelativeHumidity");
+
         if (relative_humidity_json != null) {
             return relative_humidity_json.toString();
         }
@@ -573,6 +608,8 @@ public class SensorService implements SensorEventListener  {
      * 
      */
     public String getRotationVector() {
+        Log.d(TAG, "Entering getRotationVector");
+
         if (rotation_vector_json != null) {
             return rotation_vector_json.toString();
         }
@@ -595,6 +632,8 @@ public class SensorService implements SensorEventListener  {
      * 
      */ 
     public String getStepCounter() {
+        Log.d(TAG, "Entering getStepCounter");
+
         if (step_counter_json != null) {
             return step_counter_json.toString();
         }
@@ -607,6 +646,7 @@ public class SensorService implements SensorEventListener  {
      * @params  int - Sensor type (c.f. CUSTOM_TYPE_* constants)
      */
     public void start_sensing(int sensor_type) {
+        Log.d(TAG, "Entering start_sensing");
 
         Sensor tmp_sensor = null;
 
@@ -645,8 +685,7 @@ public class SensorService implements SensorEventListener  {
         } else if (sensor_type == CUSTOM_TYPE_STEP_COUNTER) {
             tmp_sensor = step_counter;
         } else {
-            Log.i(TAG, 
-            "Sensor does not exist or app has not the necessary permissions.");
+            Log.d(TAG, String.format("Sensor %d does not exist or app has not the necessary permissions.", sensor_type));
         }
 
         // All generally existing sensors were declared in the constructor
@@ -669,6 +708,7 @@ public class SensorService implements SensorEventListener  {
      * 
      */
     public void stop_sensing(int sensor_type) {
+        Log.d(TAG, "Entering stop_sensing");
 
         Sensor tmp_sensor = null;
 
@@ -708,7 +748,7 @@ public class SensorService implements SensorEventListener  {
             tmp_sensor = step_counter;
         } else {
             // XXX: Maybe raise an exception here
-            Log.i(TAG, "Can't unregister a Sensor that does not exist.");
+            Log.d(TAG, String.format("Can't unregister a Sensor that does not exist: $d", sensor_type));
         }
         if (tmp_sensor != null) {
             sensor_manager.unregisterListener(this, tmp_sensor);

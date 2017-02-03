@@ -46,7 +46,8 @@ import static android.os.Process.myUid;
  */
 public class PythonInterpreterService extends Service {
 
-    static String TAG = "Interpreter";
+
+    static String TAG = "PyInterpreterService"; // (sic!) len(TAG) must be < 23
 
     // Todo: don't hardcode here
     private static String python_home =
@@ -81,9 +82,10 @@ public class PythonInterpreterService extends Service {
      *
      */
     public static void startService(String[] python_args, Context context) {
+        Log.d(TAG, "Entering static startService");
 
         // Find a Service we can use
-        Log.i(TAG, "Searching for an idle service proc");
+        Log.d(TAG, "Start searching for idle services");
         Class idle_service_class = getIdleServiceClass(context);
 
         // XXX LP: What should we do if there is no idle service around?
@@ -91,12 +93,15 @@ public class PythonInterpreterService extends Service {
         // Throw an exception?
         // Return not 0 ?
         if (idle_service_class == null) {
-            Log.i(TAG, "No idle Service");
+            Log.d(TAG, "No idle service process was found (we only have 9)");
             return;
         }
-        Log.i(TAG, "Idle service proc found");
+        Log.d(TAG, "Found idle service process");
 
         Intent intent = new Intent(context, idle_service_class);
+
+        Log.d(TAG, String.format("Starting interpreter service with args: $s", python_args));
+
         intent.putExtra("python_args", python_args);
         context.startService(intent);
     }
@@ -118,7 +123,7 @@ public class PythonInterpreterService extends Service {
             for (ActivityManager.RunningServiceInfo running_service : running_services) {
 
                 if (enabled_service.getName().equals(running_service.service.getClassName())) {
-                    Log.i(TAG, String.format("Service '%s' is not idle", enabled_service.getName()));
+                    Log.d(TAG, String.format("Service '%s' is not idle", enabled_service.getName()));
 
                     // If we find the enabled service in the list of running services
                     // we can continue checking the next enabled service (outer loop)
@@ -147,11 +152,16 @@ public class PythonInterpreterService extends Service {
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
         // Log.i(this.getPackageName(), "**** UID is " + Integer.toString(myUid()));
+        Log.d(TAG, "Called service onStartCommand");
+
 
         // Worker thread for Python Interpreter Process to run Python code
         new Thread(new Runnable() {
             public void run() {
+
                 String[] python_args = intent.getStringArrayExtra("python_args");
+                Log.d(TAG, String.format("Calling native runScript method with args: %s", python_args));
+
                 runScript(python_args, python_home, python_path, getApplicationContext());
 
                 // Once the work is done, the service should stop itself (go idle)

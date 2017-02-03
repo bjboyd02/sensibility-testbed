@@ -87,7 +87,7 @@ import static android.os.Process.myUid;
  */
 public class SensibilityActivity extends Activity {
 
-    public final String TAG = "SensibilityActivity";
+    public static final String TAG = "SensibilityActivity";
 
     // XXX REPLACE!!
     private String DOWNLOAD_URL =
@@ -100,7 +100,7 @@ public class SensibilityActivity extends Activity {
     private String PYTHON_LIB;
     private String PYTHON_SCRIPTS;
 
-    // See document docstring - Permissions
+    // A code to filter permission requests issued by us in the permission request callback
     public final int SENSIBILITY_RUNTIME_PERMISSIONS = 1;
 
     /*
@@ -116,58 +116,54 @@ public class SensibilityActivity extends Activity {
      *   Error handling
      */
     private void installPython() {
-        Log.i(TAG, String.format("Unpacking python archive to %s", FILES_ROOT));
+        Log.d(TAG, "Entering installPython");
+        Log.d(TAG, String.format("Unpacking python to %s", FILES_ROOT));
         try {
             Utils.unzip(getResources().openRawResource(R.raw.python_lib), FILES_ROOT, true);
-        } catch (IOException e) {
-            Log.i(TAG, "Couldn't unpack python archive");
-            e.printStackTrace();
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.d(TAG, String.format("Couldn't unpack python archive: %s", e.getMessage()));
         }
     }
 
     private void installSeattle() {
-        Log.i(TAG, String.format("Unpacking python zip archive to %s", FILES_ROOT));
+        Log.d(TAG, "Entering installSeattle");
+        Log.d(TAG, String.format("Unpacking seattle to %s", FILES_ROOT));
         try {
             Utils.unzip(getResources().openRawResource(R.raw.seattle_android), FILES_ROOT, true);
-        } catch (IOException e) {
-            Log.i(TAG, "Couldn't unpack python archive");
-            e.printStackTrace();
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.d(TAG, String.format("Could not unpack seattle: %s", e.getMessage()));
+            Log.d(TAG, "Aborting installation");
+            return;
         }
 
-        Log.i(TAG, "Starting seattleinstaller.py");
-        String[] python_args = {"seattleinstaller.py",
-                "--percent", "50",
-                "--disable-startup-script",
-                "True"};
+        String[] python_args = {
+                "seattleinstaller.py", "--percent", "50", "--disable-startup-script", "True"};
+        Log.d(TAG, String.format("Calling PythonInterpreterService.startService with args %s", python_args));
+
         PythonInterpreterService.startService(python_args, getBaseContext());
     }
 
     private void downloadAndInstallSeattle() {
+        Log.d(TAG, "Entering downloadAndInstallSeattle");
+
         Thread t = new Thread() {
             @Override
             public void run() {
                 try {
-                    Log.i(TAG, String.format("Downloading seattle from %s to %s", DOWNLOAD_URL, SEATTLE_ZIP));
+                    Log.d(TAG, String.format("Downloading installer from %s to %s", DOWNLOAD_URL, SEATTLE_ZIP));
                     // Download seattle installer package and unpack to internal storage
                     InputStream input;
                     OutputStream output;
 
-                    // Use example code from
-                    // https://developer.android.com/training/articles/security-ssl.html#HttpsExample
-                    // to handle self-signed certificate
                     URL url = new URL(DOWNLOAD_URL);
-
                     HttpsURLConnection connection;
                     connection = (HttpsURLConnection) url.openConnection();
-
                     connection.connect();
 
                     if (connection.getResponseCode() != HttpsURLConnection.HTTP_OK) {
-                        Log.i(TAG, connection.getResponseMessage());
+                        Log.d(TAG, String.format("Connection failed, Code: %d, Message: %s",
+                                connection.getResponseCode(), connection.getResponseMessage()));
+                        Log.d(TAG, "Aborting installation");
                         return;
                     }
 
@@ -188,28 +184,38 @@ public class SensibilityActivity extends Activity {
                     if (connection != null) {
                         connection.disconnect();
                     }
-                    installSeattle();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.d(TAG, String.format("Download failed: %s", e.getMessage()));
+                    Log.d(TAG, "Aborting installation");
+                    return;
                 }
+                installSeattle();
             }
         };
         t.start();
     }
 
     private void startSeattle() {
+        Log.d(TAG, "Entering startSeattle");
         String[] python_args = {"nmmain.py", "--foreground"};
+        Log.d(TAG, String.format(
+                "Calling PythonInterpreterService.startService with args %s", python_args));
         PythonInterpreterService.startService(python_args, getBaseContext());
     }
 
     private void killSeattle() {
-        Log.i(TAG, "Killing not implemented");
+        Log.d(TAG, "Killing not implemented");
     }
 
     private void initializeSimpleLayout() {
+        Log.d(TAG, "Entering initializeSimpleLayout");
+
+        Log.d(TAG, "Setting content view to dev_layout");
         setContentView(R.layout.dev_layout);
 
+
         //Initialize buttons
+        Log.d(TAG, "Initializing buttons");
         final Button btn_install_python = (Button) findViewById(R.id.install_python);
         final Button btn_install_seattle_ref = (Button) findViewById(R.id.install_seattle_referrer);
         final Button btn_install_seattle_zip = (Button) findViewById(R.id.install_seattle_zip);
@@ -217,34 +223,40 @@ public class SensibilityActivity extends Activity {
         final Button btn_kill = (Button) findViewById(R.id.kill);
 
         // Define listeners for buttons
+        Log.d(TAG, "Defining button listeners");
 
         btn_install_python.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.d(TAG, "Clicked 'Install Python' button");
                 installPython();
             }
         });
         btn_install_seattle_ref.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.d(TAG, "Clicked 'Install Seattle (download)' button");
                 downloadAndInstallSeattle();
             }
         });
         btn_install_seattle_zip.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.d(TAG, "Clicked 'Install Seattle (from zip)' button");
                 installSeattle();
             }
         });
         btn_start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.d(TAG, "Clicked 'Start' button");
                 startSeattle();
             }
         });
         btn_kill.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.d(TAG, "Clicked 'Stop' button");
                 killSeattle();
             }
         });
@@ -258,6 +270,7 @@ public class SensibilityActivity extends Activity {
      * in the services (if a needed permission was not granted or revoked)
      */
     protected void checkRequestPermissions() {
+        Log.d(TAG, "Entering checkRequestPermissions");
         String[] permissions = {
                 Manifest.permission.INTERNET,
                 Manifest.permission.ACCESS_WIFI_STATE,
@@ -275,12 +288,46 @@ public class SensibilityActivity extends Activity {
                 Manifest.permission.RECORD_AUDIO
         };
         for (String permission : permissions) {
+            Log.d(TAG, String.format("Checking permission %s", permission));
             if (ContextCompat.checkSelfPermission(this, permission)
                     != PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, String.format("Requesting permission %s", permission));
                 ActivityCompat.requestPermissions(
                         this, new String[]{permission}, SENSIBILITY_RUNTIME_PERMISSIONS);
+            } else {
+                Log.d(TAG, String.format("Permission %s already granted", permission));
             }
         }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        Log.d(TAG, "Entering onRequestPermissionsResult");
+        switch (requestCode) {
+            case SENSIBILITY_RUNTIME_PERMISSIONS: {
+                Log.d(TAG, "Permission was requested by Sensibility");
+
+                Log.d(TAG, String.format("Requested %d permission(s)", permissions.length));
+                Log.d(TAG, String.format("Received %d permission request result(s)", grantResults.length));
+
+                for (int grantResult : grantResults){
+                    if (grantResult == PackageManager.PERMISSION_DENIED) {
+                        Log.d(TAG, "Permission denied by user");
+
+                    } else if (grantResult == PackageManager.PERMISSION_GRANTED) {
+                        Log.d(TAG, "Permission granted by user");
+                    } else {
+                        Log.d(TAG, "Permission result unknown");
+                    }
+                }
+//                if (grantResults.length <= 0 || permissions.length <= 0 ||
+//                        grantResults[0] == PackageManager.PERMISSION_DENIED) {
+//
+//                }
+            }
+        }
+        return;
     }
 
     /*
@@ -288,6 +335,7 @@ public class SensibilityActivity extends Activity {
      * need a context.
      */
     private void initializePaths() {
+        Log.d(TAG, "Entering initializePaths");
         FILES_ROOT = getApplicationContext().getFilesDir().getPath() + "/";
         SEATTLE_ZIP = FILES_ROOT + "seattle_android.zip";
         PYTHON = FILES_ROOT + "python/";
@@ -303,8 +351,11 @@ public class SensibilityActivity extends Activity {
      */
     @Override
     protected void onStart() {
+        Log.d(TAG, "Entering onStart");
         super.onStart();
+        Log.d(TAG, "Calling checkRequestPermissions");
         checkRequestPermissions();
+        Log.d(TAG, "Calling initializeSimpleLayout");
         initializeSimpleLayout();
     }
 
@@ -318,30 +369,16 @@ public class SensibilityActivity extends Activity {
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "Entering onCreate");
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "Calling initializePaths");
         initializePaths();
-        Log.i(TAG, "Into onCreate");
     }
 
     @Override
     protected void onResume() {
+        Log.d(TAG, "Entering onResume");
         super.onResume();
     }
 
-
-    // See document docstring - Permissions
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode,
-//                                           String permissions[], int[] grantResults) {
-//        switch (requestCode) {
-//            case SENSIBILITY_RUNTIME_PERMISSIONS: {
-//                if (grantResults.length <= 0
-//                        || grantResults[0] == PackageManager.PERMISSION_DENIED) {
-//                    //Disable the functionality that depends on this permission?
-//                }
-//            }
-//        }
-//        return;
-//
-//    }
 }

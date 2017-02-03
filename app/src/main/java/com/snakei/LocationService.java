@@ -108,11 +108,14 @@ public class LocationService implements android.location.LocationListener,
      *
      */
     public void init(Context context) {
+        Log.d(TAG, "Entering init");
         cached_context = context;
+        Log.d(TAG, "Requesting android location system service");
         location_manager = (LocationManager)cached_context.getSystemService(
                 cached_context.LOCATION_SERVICE);
 
         // Set Google Play Service QoS parameters to "real-time"
+        Log.d(TAG, "Requesting google location system service");
         google_location_request = new LocationRequest();
         google_location_request.setPriority(
                 LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -129,6 +132,8 @@ public class LocationService implements android.location.LocationListener,
      *
      */
     public void start_location() throws SecurityException {
+        Log.d(TAG, "Entering start_location");
+
         // There is no use in listening for PASSIVE_PROVIDER if one of the
         // other two is registered
         // It only retrieves values if any other app is listening to a gps or
@@ -136,8 +141,10 @@ public class LocationService implements android.location.LocationListener,
         // If they can we can too, furthermore we need the same permissions
         // for passive as for gps and network.
         // Current Sensibility API returns values from all three providers
+        Log.d(TAG, "Requesting GPS location updates");
         location_manager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                 0, 0, this, Looper.getMainLooper());
+        Log.d(TAG, "Requesting NETWORK location updates");
         location_manager.requestLocationUpdates(
                 LocationManager.NETWORK_PROVIDER, 0, 0,
                 this, Looper.getMainLooper());
@@ -147,9 +154,12 @@ public class LocationService implements android.location.LocationListener,
         final LocationService _this = this;
 
         // Initialize here and pass to google_api_client builder later
+        Log.d(TAG, "Defining Google API Client Callback");
         google_api_connection_callbacks = new ConnectionCallbacks() {
             @Override
             public void onConnected(@Nullable Bundle bundle) {
+                Log.d(TAG, "Called Google API Client onConnected");
+
                 LocationServices.FusedLocationApi
                         .requestLocationUpdates(_this.google_api_client,
                         _this.google_location_request, _this,
@@ -174,6 +184,7 @@ public class LocationService implements android.location.LocationListener,
         };
 
         // Initialize here and pass to google_api_client builder later
+        Log.d(TAG, "Initializing Google API Client Callback");
         google_api_connection_failed_callbacks = new OnConnectionFailedListener() {
             @Override
             public void onConnectionFailed(@NonNull
@@ -182,9 +193,8 @@ public class LocationService implements android.location.LocationListener,
                 // XXX: This happens asynchronously, so we won't be able
                 // to tell the user but s/he will figure out sooner or later
                 // when s/he wants to use the Google API
-                Log.wtf(TAG, String.format("Connection failed with code: %d. " +
-                        "Check com.google.android.gms.common.ConnectionResult" +
-                        " constants",
+                Log.d(TAG, String.format("Google API Client connection failed with code: %d. " +
+                        "Check com.google.android.gms.common.ConnectionResult constants",
                         connectionResult.getErrorCode()));
 
                 // Once failed we can unregister the connection listener
@@ -195,9 +205,9 @@ public class LocationService implements android.location.LocationListener,
             }
         };
 
-
         // Create Google Play Service API client using its builder and pass
         // it the above created connection/failure listener ...
+        Log.d(TAG, "Connecting to Google API Client ");
         google_api_client = new GoogleApiClient.Builder(cached_context)
                 .addConnectionCallbacks(google_api_connection_callbacks)
                 .addOnConnectionFailedListener(google_api_connection_failed_callbacks)
@@ -216,6 +226,7 @@ public class LocationService implements android.location.LocationListener,
      *
      */
     public void stop_location() throws SecurityException {
+        Log.d(TAG, "Entering stop_location");
 
         location_manager.removeUpdates(this);
 
@@ -284,7 +295,7 @@ public class LocationService implements android.location.LocationListener,
      *
      */
     public String getLocation() throws JSONException {
-        Log.i(TAG, "in get location");
+        Log.d(TAG, "Entering getLocation");
         JSONObject locations_json = new JSONObject();
         if (location_gps_json != null) {
             locations_json.put("gps", location_gps_json);
@@ -311,7 +322,7 @@ public class LocationService implements android.location.LocationListener,
     * e.g.: same as getLocation
     */
     public String getLastKnownLocation() throws JSONException, SecurityException {
-        Log.i(TAG, "in get lastknown location");
+        Log.d(TAG, "Entering getLastKnownLocation");
 
         JSONObject locations_json = new JSONObject();
         Location location_gps = null;
@@ -388,7 +399,7 @@ public class LocationService implements android.location.LocationListener,
                                  int max_results) throws
         IOException, IllegalArgumentException, JSONException,
             GooglePlayServicesNotAvailableException {
-        Log.i(TAG, "in get geo location");
+        Log.d(TAG, "Entering getGeoLocation");
 
         List<Address> addresses = null;
         if (google_api_client.isConnected() &&
@@ -449,6 +460,8 @@ public class LocationService implements android.location.LocationListener,
      */
     private JSONObject jsonify_location(Location location)
             throws JSONException {
+        Log.d(TAG, "Entering jsonify_location");
+
         JSONObject location_json = new JSONObject();
 
         location_json.put("time_polled", System.currentTimeMillis());
@@ -505,6 +518,8 @@ public class LocationService implements android.location.LocationListener,
      */
     @Override
     public void onLocationChanged(Location location) {
+        Log.d(TAG, "Entering onLocationChanged");
+
         JSONObject location_json = null;
 
         // We catch the exception here because the callback is asynchronous
@@ -524,7 +539,7 @@ public class LocationService implements android.location.LocationListener,
             location_fused_json = location_json;
         } else {
             // WHAT THE terrible failure?!!
-            Log.wtf(TAG, String.format(
+            Log.d(TAG, String.format(
                     "Received location from unknown Provider: %s",
                     location.getProvider()));
         }
