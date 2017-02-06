@@ -24,7 +24,7 @@ Read the **docstrings** and **comments** for detailed information about the diff
 
 - Clone [sensibility-testbed](https://github.com/aaaaalbert/sensibility-testbed.git)'s `use-pure-gradle` branch
 ```shell
-git clone -b use-pure-gradle https://github.com/aaaaalbert/sensibility-testbed.git
+git clone https://github.com/aaaaalbert/sensibility-testbed.git
 ```
 - Download [Android Studio](https://developer.android.com/studio/index.html)
 - Import `sensibility-testbed` into Android studio
@@ -45,7 +45,7 @@ git clone -b use-pure-gradle https://github.com/aaaaalbert/sensibility-testbed.g
     ```java
     // in sensibility-testbed/app/src/main/java/com/sensibility_testbed/SensibilityActivity.java#L93-L94
     private String DOWNLOAD_URL =
-        https://alpha-ch.poly.edu/cib/<insert your session string from yellow box here>/installers/android
+        "https://alpha-ch.poly.edu/cib/<INSERT YOUR SESSION STRING HERE>/installers/android"
     ```
     - and later in the running app click the `Install Seattle (download)` button
 
@@ -120,12 +120,14 @@ user@ !> run <YOUR SENSOR-ENABLED-REPY-PROGRAM>.r2py
    - we use [Python CJSON](https://pypi.python.org/pypi/python-cjson) to decode String serialized JSON objects received from Java and convert them directly to Python objects
 
 
-## Accelerometer Sensor Extension Example
+## ~~Accelerometer Sensor Extension Example~~
+** Needs update, add `Context` passing!**
+
 
 ![Sensibility Sequence Diagram for Acceleration Extension](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/docs/sensibility_sequence.png "Sequence Diagram for Acceleration Extension")
 
 1. The native method `Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter()` is declared in [PythonInterpreterService.java](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/java/com/snakei/PythonInterpreterService.java) and defined in [interpreter.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/interpreter.c) and gets called from the JVM
-1. This method calls [sensor.c's](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/sensors.c#L340)`initsensor()` which initializes the sensor extensions in a Python module (not shown in sequence diagram) and
+1. This method calls [sensor.c's](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/sensors.c#L340) `initsensor()` which initializes the sensor extensions in a Python module (not shown in sequence diagram) and
 1. uses the custom JNI glue - [jnihelper.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/jnihelper.c) - to lookup the required Java class and methods defined in [SensorService.java](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/java/com/snakei/SensorService.java) and caches them for later use.
 1. The interpreter then calls sensor.c's `sensor_start_sensing()`, which
 1. passes the previously cached Java class and methods to the the JNI glue, in order to
