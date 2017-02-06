@@ -110,10 +110,14 @@ int Verbose_PyRun_SimpleFile(const char *filename) {
     len = strlen(filename);
     ext = filename + len - (len > 4 ? 4 : 0);
 
+    // This returns in `v` the result of executing the code as a Python object,
+    // or NULL if an exception was raised.
     v = PyRun_FileExFlags(fp, filename, Py_file_input, d, d,
                               closeit, flags);
 
     if (v == NULL) {
+        // We encountered an exception. Print its type and value, and
+        // recurse to show the full stack trace.
         PyObject *errtype, *errvalue, *traceback;
         PyObject *errstring = NULL;
 
@@ -127,12 +131,17 @@ int Verbose_PyRun_SimpleFile(const char *filename) {
             errstring = PyObject_Str(errvalue);
             LOGI("Errvalue: %s\n", PyString_AS_STRING(errstring));
         }
-      if (traceback != NULL) {
-        PyTracebackObject *traceback_obj = (PyTracebackObject*) traceback;
-        int err_lineno = traceback_obj->tb_lineno;
-        const char* err_filename = PyString_AsString(traceback_obj->tb_frame->f_code->co_filename);
-        LOGI("Short Traceback: Line %d in file %s", err_lineno, err_filename);
-      }
+
+        PyTracebackObject *traceback_obj = (PyTracebackObject *) traceback;
+        while (traceback_obj != NULL) {
+            int err_lineno = traceback_obj->tb_lineno;
+            const char *err_filename = PyString_AsString(
+                    traceback_obj->tb_frame->f_code->co_filename);
+            LOGI("Short Traceback: Line %d in file %s", err_lineno,
+                 err_filename);
+            traceback_obj = traceback_obj->tb_next;
+        }
+
         Py_XDECREF(errvalue);
         Py_XDECREF(errtype);
         Py_XDECREF(traceback);
