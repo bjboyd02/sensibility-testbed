@@ -10,13 +10,13 @@ interpreter with native-looking sensor interfaces (i.e. Python
 functions that you can call from Python code in order to get
 sensor values).
 
-How this works:
+## Overview
 * The required sensor event listening stuff is implemented in Java
 * The Python interpreter is [embedded](https://docs.python.org/2/extending/embedding.html)
   into C code, where we use
- * the Java Native Interface (JNI) to call into Java, and
- * the proper Python bindings to make these JNI calls available
-  to Python code.
+* the Java Native Interface (JNI) to call into Java, and
+* the proper Python bindings to make these JNI calls available
+to Python code.
 
 Read the **docstrings** and **comments** for detailed information about the different components!
 
@@ -80,53 +80,60 @@ user@ !> run <YOUR SENSOR-ENABLED-REPY-PROGRAM>.r2py
 ![Sensibility Implementation Overview](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/docs/sensibility_overview.png "Sensibility Implementation Overview")
 
 ### JVM
- - **Activity** - `com.sensibility_testbed.ScriptActivity`
+ - **Main Activity** - [`com.sensibility_testbed.SensibilityActivity`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/java/com/sensibility_testbed/SensibilityActivity.java)
    - `onCreate` is the entry point to the app
    - sets up UI and handles user interaction
-   - starts `PythonInterpreterService`
-   - *Seattle installation is currently commented out*
- - **Python Interpreter Service** - `com.snakei.PythonInterpreterService`
-   - runs in background
-   - loads native libraries (Python) and native modules (Snakei)
-   - starts new thread (Android `Service`s don't run in their own thread a priori)
-   - calls its native method which is defined in `interpreter.c`
- - **Application** - `com.sensibility_testbed.SensibilityApplication`
-   - workaround to provide a static reference of the application context to Sensor Service Facades
- - **Android Manifest** - `AndroidManifest.xml`
-   - defines above components and required permissions
- - **Sensor Service Facades** -  `com.snakei.SensorService`, `com.snakei.LocationService`, `com.snakei.MediaService`,  `com.snakei.MiscInfoService`, `com.snakei.OutputService`
-   - provide fFacades for Android resource access, i.e. sensors, location providers, media components and miscellaneous device information
-   - made available to native code via JNI calls to functions that return either simple data types or String serialized JSON Objects
-   - *currently access the application context using a static call to `SensibilityApplication`*
-   - *these aren't Android Services, as they do not implement `android.app.Service`, but we call them Service because they run in the background*
+   - provides buttons to install Python and Seattle and to start the nodemanager
+ - **Python Interpreter Service** - [`com.snakei.PythonInterpreterService`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/java/com/snakei/PythonInterpreterService.java)
+   - super class for individual process background services
+   - statically loads native libraries (Python) and native modules (Snakei)
+   - provides static methods to find and start idle service processes
+   - calls its native method defined in [`interpreter.c`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/jni/interpreter.c) to run an embedded Python interpreter
+   - passes python script/lib paths and service context to interpreter
+   - interpreter runs in its own thread to avoid ANR errors (Android `Service`s don't run in their own thread a priori)
+ - **Python Interpreter Service sub-classes** [`com.snakei.PythonInterpreterService[0-9]`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/java/com/snakei/)
+   - Android services started as separate processes have to be defined in the [`AndroidManifest.xml`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/AndroidManifest.xml) and require individual class files
+   - `PythonInterpreterService[0-9]` are used to run Python scripts in a sub process and still having access to the App context
+
+ - **Sensor Service Facades** -  [`com.snakei.SensorService`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/java/com/snakei/SensorService.java), [`com.snakei.LocationService`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/java/com/snakei/LocationService.java), [`com.snakei.MediaService`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/java/com/snakei/MediaService.java), [`com.snakei.MiscInfoService`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/java/com/snakei/MiscInfoService.java), [`com.snakei.OutputService`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/java/com/snakei/OutputService.java)
+   - provide facades for Android resource access, i.e. sensors, location providers, media components and miscellaneous device information
+   - made available to Python via C-Python extensions using JNI calls to functions that return either simple data types or String serialized JSON Objects
+   - *these aren't Android Services, as they do not implement `android.app.Service`, nevertheless we call them Service because they run in the context of a `PythonInterpreterService`*
 
 
 ### Native Code
- - **Snakei** - `snakei.c`
-   - receives and caches a reference to JVM when loaded via `System.loadLibrary()`
-   - the cached reference is used by all native extension modules
- - **Python Interpreter** - `interpreter.c`
+ - **Snakei** - [`snakei.c`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/jni/snakei.c)
+   - receives and caches a reference to JVM when loaded via `System.loadLibrary()` in `PythonInterpreterService`
+   - initializes and caches JNI references to Sensor Service Facades
+   - caches the `PythonInterpreterService` context which is passed on to Sensor Service Facades in order to access Android resources
+ - **Python Interpreter** - [`interpreter.c`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/jni/interpreter.c)
    - defines native function, declared in `PythonInterpreterService.java`, from where it gets called
-   - currently used to initialize Python modules - `init*()`, acquire resources in Java - `*_start_*()`, run some Python scripts that use the new modules, and eventually release the resources - `*_stop_*()`
- - **Sensor Init/Deint Function /  Python Extensions** - `sensors.c`, `location.c`, `media.c`, `miscinfo.c`, `outputs.c`
+   - initializes Python modules - [`*_init_pymodule()`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/jni/interpreter.c#L93-L97)
+   - initializes Sensor Service Facades - [`*_init()`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/jni/interpreter.c#L101-L104)
+   - acquires Android resources through Sensor Service Facades - [`*_start_*()`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/jni/interpreter.c#L106-L114)
+   - prepares embedded Python interpreter
+   - injects print wrapper to write Python print statements to Android log
+   - executes passed Python script
+   - eventually release the Android resources - `*_stop_*()`
+ - **Python Extensions** - [`sensors.c`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/jni/sensors.c), [`location.c`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/jni/location.c), [`media.c`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/jni/media.c), [`miscinfo.c`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/jni/miscinfo.c), [`outputs.c`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/jni/outputs.c)
+   - provide Python extensions to access Android resources
    - initialize Python module
    - acquire Android resources
-   - provide Python extensions to access Android resources
-   - release Android resources
- - **JNI glue** - `jnihelper.c`
+ - **JNI glue** - [`jniglue.c`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/jni/jniglue.c)
    - helper functions that can be used by extension to call into the Android Java Virtual Machine (JVM) using the Java Native Interface (JNI)
    - some of the functions convert Java's return values to Python objects
- - **CJSON** - `cjson.c`
+ - **CJSON** - [`cjson.c`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/jni/cjson.c)
    - we use [Python CJSON](https://pypi.python.org/pypi/python-cjson) to decode String serialized JSON objects received from Java and convert them directly to Python objects
 
 
 ## ~~Accelerometer Sensor Extension Example~~
-** Needs update, add `Context` passing!**
+*TODO: Needs update, add `Context` passing!*
 
 
+<!--
 ![Sensibility Sequence Diagram for Acceleration Extension](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/docs/sensibility_sequence.png "Sequence Diagram for Acceleration Extension")
 
-1. The native method `Java_com_snakei_PythonInterpreterService_startNativePythonInterpreter()` is declared in [PythonInterpreterService.java](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/java/com/snakei/PythonInterpreterService.java) and defined in [interpreter.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/interpreter.c) and gets called from the JVM
+1. The native method `...runScript()` is declared in [PythonInterpreterService.java](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/java/com/snakei/PythonInterpreterService.java) and defined in [interpreter.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/interpreter.c) and gets called from the JVM
 1. This method calls [sensor.c's](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/sensors.c#L340) `initsensor()` which initializes the sensor extensions in a Python module (not shown in sequence diagram) and
 1. uses the custom JNI glue - [jnihelper.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/jnihelper.c) - to lookup the required Java class and methods defined in [SensorService.java](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/java/com/snakei/SensorService.java) and caches them for later use.
 1. The interpreter then calls sensor.c's `sensor_start_sensing()`, which
@@ -138,7 +145,7 @@ user@ !> run <YOUR SENSOR-ENABLED-REPY-PROGRAM>.r2py
 1. uses `jnihelper.c` to get a Singleton instance of `SensorService.java` and call `getAcceleration()` on that instance, which
 1. returns the last Sensor update, received in the previously registered Listener, as String serialized JSON Object
 1. `jnihelper.c` then uses [cjson.c](https://github.com/aaaaalbert/sensibility-testbed/blob/native-sensors-jni/app/src/main/jni/cjson.c) to decode the returned String as Python Object which gets returned to the calling Python script
-1. Eventually, the interpreter calls `sensor_stop_sensing()` to unregister the listener in Java
+1. Eventually, the interpreter calls `sensor_stop_sensing()` to unregister the listener in Java -->
 
 ## Notes on Java Native Interface (JNI)
 In general the JNI can be used to call native methods from Java and vice versa. This application uses the JNI in both ways. It starts a Python interpreter - a native method that runs Python scripts - from Java and it calls into the JVM from native code, to access Android resources and make them available to Python via C-Python extensions. Most of the JNI specific calls are hidden from the extensions by `jnihelper.c`.
@@ -150,7 +157,7 @@ and call back into the JVM to first find each object's class and all the getters
 To avoid this, all Java functions that are called from native code either directly return primitive data types that don't require reaching back into the JVM or convert the returned data to JSON and give back a serialized String that gets decoded in native code.
 
 ### Caching
-To avoid redundant calls into the JVM, classes and methods that get repeatedly called are cached in the init function of the Python extension modules
+To avoid redundant calls into the JVM, classes and methods that get repeatedly called are cached in `snakei.c`
 
 ### Helpful resources
  - [Android JNI Tips](https://developer.android.com/training/articles/perf-jni.html)
@@ -225,12 +232,4 @@ The following modules are available in Python. Detailed information about each m
  - prompt(message)
 
  ## Caveats, pitfalls and notes
- *Most of them are already mentioned in the source code comments but they should also be mentioned here.*
-
-
------
-## Todo
- - Clean up build and config scripts (I think there are redundancies in gradle, AndroidManifest and Android.mk)
- - Take care of `thread-from-JVM` removal
- - Take care of save file system access
- - Install and start Seattle using JNI (don't forget about vessel management)
+ *TODO: Most of them are already mentioned in the source code comments but they should also be mentioned here.*
