@@ -33,9 +33,10 @@ git clone -b use-pure-gradle https://github.com/aaaaalbert/sensibility-testbed.g
 - Download private and public keys and unzip them
 - Chose one of the following options to prepare Seattle for Android:
 
-    - Download `android_seattle.zip` from
+    - Download `seattle_android.zip` from
         `https://alpha-ch.poly.edu/cib/<INSERT YOUR SESSION STRING HERE>/installers/android`
-         and move it to `sensibility-testbed/app/src/main/res/raw/seattle_android.zip` locally.
+         and move it to your local copy of the Sensibility repo,
+         `sensibility-testbed/app/src/main/res/raw/seattle_android.zip`.
     - and later in the running app click the `Install Seattle (from zip)` button
 
     OR
