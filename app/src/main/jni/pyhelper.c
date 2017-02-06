@@ -119,11 +119,11 @@ int Verbose_PyRun_SimpleFile(const char *filename) {
 
         PyErr_Fetch(&errtype, &errvalue, &traceback);
 
-        if(errtype != NULL) {
+        if (errtype != NULL) {
             errstring = PyObject_Str(errtype);
             LOGI("Errtype: %s\n", PyString_AS_STRING(errstring));
         }
-        if(errvalue != NULL) {
+        if (errvalue != NULL) {
             errstring = PyObject_Str(errvalue);
             LOGI("Errvalue: %s\n", PyString_AS_STRING(errstring));
         }
