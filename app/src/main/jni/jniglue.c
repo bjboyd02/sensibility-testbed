@@ -159,18 +159,25 @@ jstring jni_get_string(char *string) {
 
 jobjectArray jni_get_string_array(int argc, char *argv[]) {
     JNIEnv *jni_env;
+    jclass string_class;
+    jstring s;
     jobjectArray string_array;
     int i;
 
     jni_env = jni_get_env();
 
+    string_class = (*jni_env)->FindClass(jni_env, "java/lang/String");
+    s = jni_get_string("");
+
     string_array = (jobjectArray)(*jni_env)->NewObjectArray(jni_env, argc,
-            (*jni_env)->FindClass(jni_env, "java/lang/String"),
-            (*jni_env)->NewStringUTF(jni_env, ""));
+            string_class, s);
+    (*jni_env)->DeleteLocalRef(jni_env, s);
+    (*jni_env)->DeleteLocalRef(jni_env, string_class);
 
     for(i = 0; i < argc; i++) {
-        (*jni_env)->SetObjectArrayElement(jni_env, string_array, i,
-                (*jni_env)->NewStringUTF(jni_env, argv[i]));
+        s = (*jni_env)->NewStringUTF(jni_env, argv[i]);
+        (*jni_env)->SetObjectArrayElement(jni_env, string_array, i, s);
+        (*jni_env)->DeleteLocalRef(jni_env, s);
     }
 
     return string_array;
