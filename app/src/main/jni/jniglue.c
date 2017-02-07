@@ -171,13 +171,13 @@ jobjectArray jni_get_string_array(int argc, char *argv[]) {
 
     string_array = (jobjectArray)(*jni_env)->NewObjectArray(jni_env, argc,
             string_class, s);
-    (*jni_env)->DeleteLocalRef(jni_env, s);
-    (*jni_env)->DeleteLocalRef(jni_env, string_class);
+    jni_delete_reference(s);
+    jni_delete_reference(string_class);
 
     for(i = 0; i < argc; i++) {
-        s = (*jni_env)->NewStringUTF(jni_env, argv[i]);
+        s = jni_get_string(argv[i]);
         (*jni_env)->SetObjectArrayElement(jni_env, string_array, i, s);
-        (*jni_env)->DeleteLocalRef(jni_env, s);
+        jni_delete_reference(s);
     }
 
     return string_array;
