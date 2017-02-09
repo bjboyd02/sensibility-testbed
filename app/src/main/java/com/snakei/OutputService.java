@@ -1,17 +1,19 @@
 package com.snakei;
 // TODO Should we make this a proper Library Module? https://developer.android.com/tools/projects/index.html#LibraryModules
 
-import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.nfc.Tag;
-import android.os.Bundle;
+
 import android.os.Handler;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Toast;
+import android.support.v4.app.NotificationCompat.Builder;
+
+import com.sensibility_testbed.R;
 
 
 /**
@@ -45,6 +47,7 @@ public class OutputService {
      */
     public static void toastMessage(final Context context, final String message) throws Exception {
         Log.d(TAG, String.format("toastMessage: %s", message));
+
         final Handler handler = new Handler(context.getMainLooper());
         handler.post(new Runnable() {
             @Override
@@ -133,4 +136,32 @@ public class OutputService {
         }
     }
 
+
+    /*
+     * Simpler than simple notification function to print message to Android UI notification
+     * drawer.
+     *
+     * The notification has no click handler, so if the message is too long for the screen it gets
+     * truncated by the system and there is no way to see the entire message.
+     *
+     * See https://developer.android.com/guide/topics/ui/notifiers/notifications.html
+     *
+     */
+    public static void notifyMessage(final Context context, String message) {
+
+        Log.d(TAG, String.format("notifyMessage: %s", message));
+
+        Builder mBuilder =
+                new NotificationCompat.Builder(context)
+                        .setContentTitle("Repy says...")
+                        .setContentText(message)
+                        .setSmallIcon(R.drawable.ic_launcher);
+
+        NotificationManager mNotificationManager =
+                (NotificationManager)context.getSystemService(context.NOTIFICATION_SERVICE);
+        // First argument is an id to identify and e.g. update the notification
+        // Because the ID remains unchanged an existing notification is updated
+        mNotificationManager.notify(0, mBuilder.build());
+
+    }
 }

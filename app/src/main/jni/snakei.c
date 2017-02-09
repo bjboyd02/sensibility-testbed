@@ -163,6 +163,9 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     cached_output_toast = jni_find_static_method(
             cached_output_class, "toastMessage",
             "(Landroid/content/Context;Ljava/lang/String;)V");
+    cached_output_notify = jni_find_static_method(
+            cached_output_class, "notifyMessage",
+            "(Landroid/content/Context;Ljava/lang/String;)V");
     cached_output_prompt = jni_find_static_method(
             cached_output_class, "promptMessage",
             "(Landroid/content/Context;Ljava/lang/String;)Z");
