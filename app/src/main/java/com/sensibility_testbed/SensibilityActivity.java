@@ -300,7 +300,7 @@ public class SensibilityActivity extends Activity {
         }
     }
 
-    @Override
+/*    @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
         Log.d(TAG, "Entering onRequestPermissionsResult");
@@ -328,7 +328,7 @@ public class SensibilityActivity extends Activity {
             }
         }
         return;
-    }
+    }*/
 
     /*
      * Initialize "constant" global paths which cannot be initialized in class scope because they
