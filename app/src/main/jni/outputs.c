@@ -65,6 +65,20 @@ PyObject* androidlog_prompt(PyObject *self, PyObject *python_message) {
   return retval;
 }
 
+PyObject* androidlog_notify(PyObject *self, PyObject *python_message) {
+  char* c_message;
+  jstring java_message;
+
+  c_message = PyString_AsString(python_message);
+  java_message = jni_get_string(c_message);
+
+  jni_py_call_static_void(
+          cached_output_class, cached_output_notify, cached_context, java_message);
+
+  jni_delete_reference((jobject) java_message);
+
+  Py_RETURN_NONE;
+}
 
 /*
  * Maps C functions to Python module methods
@@ -72,6 +86,7 @@ PyObject* androidlog_prompt(PyObject *self, PyObject *python_message) {
 static PyMethodDef AndroidLogMethods[] = {
         {"log", androidlog_log, METH_O,  "Write to Android Log."},
         {"toast", androidlog_toast, METH_O,  "Show Android Toast."},
+        {"notify", androidlog_notify, METH_O,  "Show Android Notification."},
         {"prompt", androidlog_prompt, METH_O,  "Prompt for Yes/No input."},
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
