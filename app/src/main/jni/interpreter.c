@@ -56,6 +56,12 @@ Java_com_snakei_PythonInterpreterService_runScript(
   // Cache the application context to use it in the extensions
   cached_context = (*jni_env)->NewGlobalRef(jni_env, context);
   interpreter_init(home, path);
+
+  // Show all args that we received
+  for (i=0; i<argc; i++) {
+    LOGI("Interpreter arg[%i]: %s", i, argv[i]);
+  }
+
   interpreter_run(argc, argv);
 
   // Once interpreter_run returns we should be done with this process
