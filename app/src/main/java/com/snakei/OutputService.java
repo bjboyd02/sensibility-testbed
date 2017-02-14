@@ -158,7 +158,7 @@ public class OutputService {
                         .setSmallIcon(R.drawable.ic_launcher);
 
         NotificationManager mNotificationManager =
-                (NotificationManager)context.getSystemService(context.NOTIFICATION_SERVICE);
+                (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
         // First argument is an id to identify and e.g. update the notification
         // Because the ID remains unchanged an existing notification is updated
         mNotificationManager.notify(0, mBuilder.build());
