@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.StatFs;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -136,8 +138,14 @@ public class SensibilityActivity extends Activity {
             return;
         }
 
+        // Get free disk space
+        StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
+        long availableDiskSpace = statFs.getAvailableBlocksLong() * statFs.getBlockSizeLong();
+
         String[] python_args = {
-                "seattleinstaller.py", "--percent", "50", "--disable-startup-script", "True"};
+                "seattleinstaller.py", "--percent", "50",
+                "--disable-startup-script",
+                "--diskused", Long.toString(availableDiskSpace)};
         Log.d(TAG, String.format("Calling PythonInterpreterService.startService with args %s", python_args));
 
         PythonInterpreterService.startService(python_args, getBaseContext());
