@@ -80,6 +80,19 @@ PyObject* androidlog_notify(PyObject *self, PyObject *python_message) {
   Py_RETURN_NONE;
 }
 
+
+PyObject* androidlog_vibrate(PyObject *self, PyObject *python_vibrate_length) {
+  double vibrate_length;
+
+  vibrate_length = PyFloat_AsDouble(python_vibrate_length);
+
+  jni_py_call_static_void(cached_output_class, cached_output_vibrate,
+                          cached_context, vibrate_length);
+
+  Py_RETURN_NONE;
+}
+
+
 /*
  * Maps C functions to Python module methods
  */
@@ -88,6 +101,8 @@ static PyMethodDef AndroidLogMethods[] = {
         {"toast", androidlog_toast, METH_O,  "Show Android Toast."},
         {"notify", androidlog_notify, METH_O,  "Show Android Notification."},
         {"prompt", androidlog_prompt, METH_O,  "Prompt for Yes/No input."},
+        {"vibrate", androidlog_vibrate, METH_O,
+                "Turn on the vibrator for a number of seconds"},
         {NULL, NULL, 0, NULL} // This is the end-of-array marker
 };
 

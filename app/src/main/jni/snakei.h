@@ -107,6 +107,7 @@ jclass cached_output_class;
 jmethodID cached_output_toast;
 jmethodID cached_output_prompt;
 jmethodID cached_output_notify;
+jmethodID cached_output_vibrate;
 
 
 #endif /* defined _SNAKEI_H_ */

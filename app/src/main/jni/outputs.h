@@ -14,6 +14,7 @@ PyObject* androidlog_log(PyObject *self, PyObject *python_message);
 PyObject* androidlog_toast(PyObject *self, PyObject *python_message);
 PyObject* androidlog_notify(PyObject *self, PyObject *python_message);
 PyObject* androidlog_prompt(PyObject *self, PyObject *python_message);
+PyObject* androidlog_vibrate(PyObject *self, PyObject *python_vibrate_length);
 
 #endif /* defined _SNAKEI_OUTPUTS_H_ */
 

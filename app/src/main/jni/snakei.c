@@ -169,6 +169,8 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     cached_output_prompt = jni_find_static_method(
             cached_output_class, "promptMessage",
             "(Landroid/content/Context;Ljava/lang/String;)Z");
+    cached_output_vibrate = jni_find_static_method(
+            cached_output_class, "vibrate", "(Landroid/content/Context;D)V");
 
     return JNI_VERSION_1_6;
 }

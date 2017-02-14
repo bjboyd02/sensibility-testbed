@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 
 import android.os.Handler;
+import android.os.Vibrator;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.WindowManager;
@@ -163,5 +164,11 @@ public class OutputService {
         // Because the ID remains unchanged an existing notification is updated
         mNotificationManager.notify(0, mBuilder.build());
 
+    }
+
+    public static void vibrate(final Context context, double seconds) {
+        long milliseconds = (long) (1000 * seconds);
+        Vibrator v = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+        v.vibrate(milliseconds);
     }
 }
