@@ -9,7 +9,10 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *  Created by lukas.puehringer@nyu.edu
@@ -173,6 +176,8 @@ public class SensorService implements SensorEventListener  {
      * sensor specific information
      * 
      * @return  String serialized JSON array of sensor info objects or null
+     *
+     * @todo We should loop better, and perform better error checking and signaling
      * 
      * e.g. (de-serialized):
      * [{'max_range': 100,
@@ -193,31 +198,46 @@ public class SensorService implements SensorEventListener  {
     public String getSensorList() throws JSONException {
         Log.d(TAG, "Entering getSensorList");
 
-        List<Sensor> sensors = sensor_manager.getSensorList(Sensor.TYPE_ALL);
-        if (sensors.size() > 0) {
-            JSONArray sensors_json = new JSONArray();
-            for (Sensor sensor : sensors) {
+        List<Sensor> sensor_list = sensor_manager.getSensorList(Sensor.TYPE_ALL);
+        if (sensor_list.size() > 0) {
+            JSONArray sensors_properties_array_json = new JSONArray();
+            for (Sensor sensor : sensor_list) {
                 JSONObject sensor_json = new JSONObject();
-                sensor_json.put("fifo_max_event_count", 
-                    sensor.getFifoMaxEventCount());
-                sensor_json.put("fifo_reserved_event_count", 
-                    sensor.getFifoReservedEventCount());
-                sensor_json.put("max_delay", sensor.getMaxDelay());
-                sensor_json.put("max_range", sensor.getMaximumRange());
-                sensor_json.put("min_delay", sensor.getMinDelay());
-                sensor_json.put("name", sensor.getName());
-                sensor_json.put("power", sensor.getPower());
-                sensor_json.put("reporting_mode", sensor.getReportingMode());
-                sensor_json.put("resolution", sensor.getResolution());
-                sensor_json.put("string_type", sensor.getStringType());
-                sensor_json.put("type", sensor.getType());
-                sensor_json.put("vendor", sensor.getVendor());
-                sensor_json.put("version", sensor.getVersion());
-                sensor_json.put("is_wakeup_sensor", sensor.isWakeUpSensor());
+                try {
+                    sensor_json.put("fifo_max_event_count",
+                            sensor.getFifoMaxEventCount());
+                    sensor_json.put("fifo_reserved_event_count",
+                            sensor.getFifoReservedEventCount());
+                    sensor_json.put("max_delay", sensor.getMaxDelay());
+                    sensor_json.put("min_delay", sensor.getMinDelay());
+                    sensor_json.put("name", sensor.getName());
+                    sensor_json.put("reporting_mode", sensor.getReportingMode());
+                    sensor_json.put("string_type", sensor.getStringType());
+                    sensor_json.put("type", sensor.getType());
+                    sensor_json.put("vendor", sensor.getVendor());
+                    sensor_json.put("version", sensor.getVersion());
+                    sensor_json.put("is_wakeup_sensor", sensor.isWakeUpSensor());
 
-                sensors_json.put(sensor_json);
+                    // Properties encoded as floats may contain NaN's.
+                    // JSON and the JSON encoder cannot handle them.
+                    // Thus, suppress these properties.
+                    Map<String, Float> m = new HashMap<String, Float>();
+                    m.put("max_range", sensor.getMaximumRange());
+                    m.put("power", sensor.getPower());
+                    m.put("resolution", sensor.getResolution());
+                    for (Map.Entry<String, Float> entry : m.entrySet()) {
+                        if (! Float.isNaN(entry.getValue())) {
+                            sensor_json.put(entry.getKey(), entry.getValue());
+                        }
+                    }
+
+                } catch (org.json.JSONException e) {
+                    sensor_json.put("***ERROR***", e.toString());
+                }
+
+                sensors_properties_array_json.put(sensor_json);
             }
-            return sensors_json.toString();
+            return sensors_properties_array_json.toString();
         }
         return null;
     }
@@ -708,7 +728,7 @@ public class SensorService implements SensorEventListener  {
      * 
      */
     public void stop_sensing(int sensor_type) {
-        Log.d(TAG, "Entering stop_sensing");
+        Log.d(TAG, "Entering stop_sensing on sensor type " + java.lang.Integer.toString(sensor_type));
 
         Sensor tmp_sensor = null;
 
