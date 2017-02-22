@@ -310,7 +310,11 @@ public class MiscInfoService {
 
         List<CellInfo> cell_infos = telephony_manager.getAllCellInfo();
 
-        if (cell_infos.size() > 0) {
+        // Older devices may return null
+        // Android refs suggest to use getCellLocation as alternative
+        // I think we should not add this here but rather add an additional extension if we
+        // want to provide that call.
+        if (cell_infos != null && cell_infos.size() > 0) {
             JSONArray cell_info_json_array = new JSONArray();
             for (CellInfo cell_info : cell_infos) {
                 JSONObject cell_info_json = new JSONObject();
