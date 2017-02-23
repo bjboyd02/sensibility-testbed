@@ -11,7 +11,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
+import android.widget.EditText;
 
 import com.snakei.PythonInterpreterService;
 
@@ -64,8 +64,8 @@ public class SensibilityActivity extends Activity {
 
     public static final String TAG = "SensibilityActivity";
 
-    // XXX REPLACE!!
-    private String DOWNLOAD_URL =
+    // TODO This should point to an "altruistic" installer, not @lukpueh's!
+    private String DEFAULT_DOWNLOAD_URL =
             "https://alpha-ch.poly.edu/cib/60466ed2cc73477b874d7e72a2ebfb55bbc0d7f3/installers/android";
 
     private String ALPHA_CIB_CERTIFICATE;
@@ -124,6 +124,32 @@ public class SensibilityActivity extends Activity {
         PythonInterpreterService.startService(python_args, getBaseContext());
     }
 
+
+
+    private URL get_download_url() throws MalformedURLException {
+        /*
+         * Return the download URL for the Sensibility/Repy installer.
+         * It is either provided by the user through the `url_edittext`
+         * textbox, or (if that is empty) taken from the hardcoded default.
+         */
+
+        URL download_url;
+
+        // Get the user's desired download URL, if any
+        EditText editText = (EditText) findViewById(R.id.url_edittext);
+        String user_download_url = editText.getText().toString();
+
+       if (user_download_url.isEmpty()) {
+           Log.i(TAG, "Empty user download URL; using DEFAULT_DOWNLOAD_URL '" +
+                   DEFAULT_DOWNLOAD_URL + "' instead.");
+           return new URL(DEFAULT_DOWNLOAD_URL);
+       } else {
+           return new URL(user_download_url);
+       }
+    }
+
+
+
     private void downloadAndInstallSeattle() {
         Log.d(TAG, "Entering downloadAndInstallSeattle");
 
@@ -131,14 +157,15 @@ public class SensibilityActivity extends Activity {
             @Override
             public void run() {
                 try {
-                    Log.d(TAG, String.format("Downloading installer from %s to %s", DOWNLOAD_URL, SEATTLE_ZIP));
+                    URL download_url = get_download_url();
+
+                    Log.d(TAG, String.format("Downloading installer from %s to %s", download_url.toString(), SEATTLE_ZIP));
                     // Download seattle installer package and unpack to internal storage
                     InputStream input;
                     OutputStream output;
 
-                    URL url = new URL(DOWNLOAD_URL);
                     HttpsURLConnection connection;
-                    connection = (HttpsURLConnection) url.openConnection();
+                    connection = (HttpsURLConnection) download_url.openConnection();
                     connection.connect();
 
                     if (connection.getResponseCode() != HttpsURLConnection.HTTP_OK) {

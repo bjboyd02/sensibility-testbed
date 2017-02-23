@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="fill_parent"
+			xmlns:tools="http://schemas.android.com/tools"
+			android:layout_width="fill_parent"
 	android:layout_height="wrap_content"
 	android:fillViewport="true" >
 <LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:orientation="vertical"
-		android:layout_margin="20sp"
-        android:id="@+id/root">
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+	android:orientation="vertical"
+	android:layout_margin="20sp"
+	android:id="@+id/root"
+	android:weightSum="1">
 
 	<Button
 		android:id="@+id/install_python"
@@ -22,22 +24,33 @@
 		android:textAllCaps="false"
 		android:layout_alignParentStart="true">
 	</Button>
+
 	<Button
 		android:layout_marginTop="20sp"
 		android:id="@+id/install_seattle_referrer"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
-		android:text="Install Seattle (download)"
+		android:text="Install Seattle from this URL:"
 		android:textSize="20sp"
 		android:layout_below="@+id/view"
 		android:textAllCaps="false"
 		android:layout_alignParentStart="true">
 	</Button>
+
+	<EditText
+		android:id="@+id/url_edittext"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:inputType="textUri"
+		android:ems="10"
+		tools:text="Installer download URL"
+		android:contentDescription="Input an installer download URL here, or leave blank to use the default value. (Continuing with the default value will not let you access this device though!)"/>
+
 	<Button
 		android:id="@+id/install_seattle_zip"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
-		android:text="Install Seattle (from zip)"
+		android:text="*or* install from included zip file"
 		android:textSize="20sp"
 		android:layout_below="@+id/view"
 		android:textAllCaps="false"
