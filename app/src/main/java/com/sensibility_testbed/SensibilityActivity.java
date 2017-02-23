@@ -71,6 +71,7 @@ public class SensibilityActivity extends Activity {
     private String ALPHA_CIB_CERTIFICATE;
     private String FILES_ROOT;
     private String SEATTLE_ZIP;
+    private int SEATTLE_RAW_RESOURCE_ID;
     private String PYTHON;
     private String PYTHON_LIB;
     private String PYTHON_SCRIPTS;
@@ -104,7 +105,8 @@ public class SensibilityActivity extends Activity {
         Log.d(TAG, "Entering installSeattle");
         Log.d(TAG, String.format("Unpacking seattle to %s", FILES_ROOT));
         try {
-            Utils.unzip(getResources().openRawResource(R.raw.seattle_android), FILES_ROOT, true);
+            // The raw resource might not exist
+            Utils.unzip(getResources().openRawResource(SEATTLE_RAW_RESOURCE_ID), FILES_ROOT, true);
         } catch (Exception e) {
             Log.d(TAG, String.format("Could not unpack seattle: %s", e.getMessage()));
             Log.d(TAG, "Aborting installation");
@@ -254,6 +256,11 @@ public class SensibilityActivity extends Activity {
                 installSeattle();
             }
         });
+        // Disable the button if the resource does not exist
+        if (SEATTLE_RAW_RESOURCE_ID == 0) {
+            btn_install_seattle_zip.setEnabled(false);
+        }
+
         btn_start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -349,6 +356,11 @@ public class SensibilityActivity extends Activity {
         PYTHON = FILES_ROOT + "python/";
         PYTHON_LIB = FILES_ROOT + "python/lib/python2.7/";
         PYTHON_SCRIPTS = FILES_ROOT + "scripts/";
+
+        // If the raw resource does not exist the id is 0
+        SEATTLE_RAW_RESOURCE_ID = getResources()
+                .getIdentifier("seattle_android", "raw", getPackageName());
+
     }
 
     /*
