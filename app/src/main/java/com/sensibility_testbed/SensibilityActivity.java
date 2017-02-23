@@ -15,6 +15,7 @@ import android.widget.EditText;
 
 import com.snakei.PythonInterpreterService;
 
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -66,7 +67,7 @@ public class SensibilityActivity extends Activity {
 
     // TODO This should point to an "altruistic" installer, not @lukpueh's!
     private String DEFAULT_DOWNLOAD_URL =
-            "https://alpha-ch.poly.edu/cib/60466ed2cc73477b874d7e72a2ebfb55bbc0d7f3/installers/android";
+            "https://alpha-ch.poly.edu/cib/9512d6c89e75789da08063cbe8a0b14bf298e043/installers/android";
 
     private String ALPHA_CIB_CERTIFICATE;
     private String FILES_ROOT;
@@ -103,15 +104,6 @@ public class SensibilityActivity extends Activity {
 
     private void installSeattle() {
         Log.d(TAG, "Entering installSeattle");
-        Log.d(TAG, String.format("Unpacking seattle to %s", FILES_ROOT));
-        try {
-            // The raw resource might not exist
-            Utils.unzip(getResources().openRawResource(SEATTLE_RAW_RESOURCE_ID), FILES_ROOT, true);
-        } catch (Exception e) {
-            Log.d(TAG, String.format("Could not unpack seattle: %s", e.getMessage()));
-            Log.d(TAG, "Aborting installation");
-            return;
-        }
 
         // Get free disk space
         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
@@ -150,7 +142,20 @@ public class SensibilityActivity extends Activity {
        }
     }
 
+    private void rawResourceInstallSeattle() {
+        Log.d(TAG, "Entering rawResourceInstallSeattle");
 
+        Log.d(TAG, String.format("Unpacking seattle from raw resources to %s", FILES_ROOT));
+        try {
+            // The raw resource might not exist
+            Utils.unzip(getResources().openRawResource(SEATTLE_RAW_RESOURCE_ID), FILES_ROOT, true);
+        } catch (Exception e) {
+            Log.d(TAG, String.format("Could not unpack seattle: %s", e.getMessage()));
+            Log.d(TAG, "Aborting installation");
+            return;
+        }
+        installSeattle();
+    }
 
     private void downloadAndInstallSeattle() {
         Log.d(TAG, "Entering downloadAndInstallSeattle");
@@ -194,6 +199,10 @@ public class SensibilityActivity extends Activity {
                     if (connection != null) {
                         connection.disconnect();
                     }
+                    Log.d(TAG, String.format("Unpacking downloaded seattle to %s", FILES_ROOT));
+
+                    Utils.unzip(new FileInputStream(SEATTLE_ZIP), FILES_ROOT, true);
+
                 } catch (Exception e) {
                     Log.d(TAG, String.format("Download failed: %s", e.getMessage()));
                     Log.d(TAG, "Aborting installation");
@@ -253,7 +262,7 @@ public class SensibilityActivity extends Activity {
             @Override
             public void onClick(View v) {
                 Log.d(TAG, "Clicked 'Install Seattle (from zip)' button");
-                installSeattle();
+                rawResourceInstallSeattle();
             }
         });
         // Disable the button if the resource does not exist
