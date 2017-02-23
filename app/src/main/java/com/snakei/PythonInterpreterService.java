@@ -100,7 +100,7 @@ public class PythonInterpreterService extends Service {
 
         Intent intent = new Intent(context, idle_service_class);
 
-        Log.d(TAG, String.format("Starting interpreter service with args: $s", python_args));
+        Log.d(TAG, String.format("Starting interpreter service with args: %s", python_args));
 
         intent.putExtra("python_args", python_args);
         context.startService(intent);
