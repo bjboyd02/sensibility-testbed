@@ -101,7 +101,7 @@ public class PythonInterpreterService extends Service {
 
         Intent intent = new Intent(context, idle_service_class);
 
-        Log.d(TAG, String.format("Starting interpreter service with args: %s", python_args));
+        Log.d(TAG, String.format("Starting interpreter service with args: %s", (Object[])python_args));
 
         intent.putExtra("python_args", python_args);
         context.startService(intent);
@@ -161,7 +161,7 @@ public class PythonInterpreterService extends Service {
             public void run() {
 
                 String[] python_args = intent.getStringArrayExtra("python_args");
-                Log.d(TAG, String.format("Calling native runScript method with args: %s", python_args));
+                Log.d(TAG, String.format("Calling native runScript method with args: %s", (Object[])python_args));
 
                 runScript(python_args, python_home, python_path, getApplicationContext());
 
