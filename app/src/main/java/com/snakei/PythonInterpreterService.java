@@ -9,6 +9,8 @@ import android.os.IBinder;
 import android.util.Log;
 import android.os.Process;
 
+import com.sensibility_testbed.SensibilityActivity;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -47,14 +49,7 @@ import static android.os.Process.myUid;
  */
 public class PythonInterpreterService extends Service {
 
-
     static String TAG = "PyInterpreterService"; // (sic!) len(TAG) must be < 23
-
-    // Todo: don't hardcode here
-    private static String python_home =
-            "/data/data/com.sensibility_testbed/files/python";
-    private static String python_path =
-            "/data/data/com.sensibility_testbed/files/seattle/seattle_repy";
 
     private static Class[] enabled_services = {
             PythonInterpreterService0.class,
@@ -155,6 +150,10 @@ public class PythonInterpreterService extends Service {
         // Log.i(this.getPackageName(), "**** UID is " + Integer.toString(myUid()));
         Log.d(TAG, "Called service onStartCommand");
 
+        final Context ctx = getApplicationContext();
+
+        final String pythonHome = SensibilityActivity.filesRoot(ctx) + SensibilityActivity.PYTHON_HOME;
+        final String pythonPath = SensibilityActivity.filesRoot(ctx) + SensibilityActivity.PYTHON_PATH;
 
         // Worker thread for Python Interpreter Process to run Python code
         new Thread(new Runnable() {
@@ -163,7 +162,7 @@ public class PythonInterpreterService extends Service {
                 String[] python_args = intent.getStringArrayExtra("python_args");
                 Log.d(TAG, String.format("Calling native runScript method with args: %s", (Object[])python_args));
 
-                runScript(python_args, python_home, python_path, getApplicationContext());
+                runScript(python_args, pythonHome, pythonPath, ctx);
 
                 // Once the work is done, the service should stop itself (go idle)
                 // so that we can reuse it.
@@ -171,7 +170,6 @@ public class PythonInterpreterService extends Service {
                 // it will never get back here, but there is no need to call stopSelf
                 // anyway.
                 //stopSelf();
-
 
                 //FIXME: stopSelf appears to be just a friendly request but does not necessarily
                 //FIXME: stop the service process, which we want in order to re-use it.

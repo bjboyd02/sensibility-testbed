@@ -3,6 +3,7 @@ package com.sensibility_testbed;
 import android.Manifest;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -83,13 +84,17 @@ public class SensibilityActivity extends FragmentActivity {
      private String DEFAULT_DOWNLOAD_URL =
             "https://alpha-ch.poly.edu/cib/7e861c52f72c5e16e49b93cf60a84b4273a859d3/installers/android/";
 
-    private String FILES_ROOT;
-    private String SEATTLE_ZIP;
-    private String VESSEL_PATH;  /* use path to check if seattle is installed */
-    private String PYTHON_LIB;
+    // RELATIVE PATH constants
+    // Need to be prefixed by App's data directory path
+    // Use static filesRoot(Context ctx)
 
-    private int SEATTLE_RAW_RESOURCE_ID;
-    private String PYTHON;
+    static String SEATTLE_ZIP = "seattle_android.zip";
+    public static String PYTHON_HOME = "python";
+    public static String PYTHON_PATH = "seattle/seattle_repy";
+
+    // Used to check if Seattle is installed
+    static String VESSEL_PATH = "seattle/seattle_repy/v1/";
+
     private boolean DEV; /* check if been to dev mode before */
 
     // A code to filter permission requests issued by us in the permission request callback
@@ -103,8 +108,13 @@ public class SensibilityActivity extends FragmentActivity {
         }
     }
 
+    public static String filesRoot(Context ctx) {
+        return ctx.getFilesDir().getPath() + "/";
+    }
+
     /*
-     * About Home screen that shows if
+     * About Home screen that shows if Python was installed, Seattle was installed
+     * and Nodemanager is running
      */
     private void updateHome() {
 
@@ -149,7 +159,7 @@ public class SensibilityActivity extends FragmentActivity {
     /*
      * method to check if user needs to install any required packages and installs it
      *
-    */
+     */
     private void installRequired(){
         Log.d(TAG,"Checking install requirements");
 
@@ -241,8 +251,10 @@ public class SensibilityActivity extends FragmentActivity {
      *
      */
     private boolean isPythonInstalled() {
-        Log.d(TAG,"Checking if Python installed");
-        File pythonDir = new File(PYTHON);
+        Log.d(TAG, "Checking if Python installed");
+        Context ctx = getApplicationContext();
+
+        File pythonDir = new File(filesRoot(ctx) + PYTHON_HOME);
         if(pythonDir.isDirectory()) {
             return true;
         }
@@ -263,7 +275,10 @@ public class SensibilityActivity extends FragmentActivity {
      *
      */
     private boolean isSeattleInstalled() {
-        File vesselDir = new File(VESSEL_PATH);
+        Log.d(TAG, "Checking if Seattle is installed");
+        Context ctx = getApplicationContext();
+
+        File vesselDir = new File(filesRoot(ctx) + VESSEL_PATH);
         if(vesselDir.isDirectory()) {
             return true;
         }
@@ -281,9 +296,11 @@ public class SensibilityActivity extends FragmentActivity {
      */
     private void installPython() {
         Log.d(TAG, "Entering installPython");
-        Log.d(TAG, String.format("Unpacking python to %s", FILES_ROOT));
+        Context ctx = getApplicationContext();
+
+        Log.d(TAG, String.format("Unpacking python to %s", filesRoot(ctx)));
         try {
-            Utils.unzip(getResources().openRawResource(R.raw.python_lib), FILES_ROOT, true);
+            Utils.unzip(getResources().openRawResource(R.raw.python_lib), filesRoot(ctx), true);
         } catch (Exception e) {
             Log.d(TAG, String.format("Couldn't unpack python archive: %s", e.getMessage()));
         }
@@ -296,23 +313,28 @@ public class SensibilityActivity extends FragmentActivity {
      * textbox, or (if that is empty) taken from the hardcoded default.
      */
     private URL getDownloadUrl() throws MalformedURLException {
+
+        Context ctx = getApplicationContext();
+
         // Get the user's desired download URL, if any
         EditText editText = (EditText) findViewById(R.id.url_edittext);
         String user_download_url = editText.getText().toString();
 
         if (user_download_url.isEmpty()) {
             Log.i(TAG, "No URL passed downloading from zip");
-            Toast.makeText(getApplicationContext(),"Downloading from zip...",Toast.LENGTH_SHORT);
+            Toast.makeText(ctx, "Downloading from zip...", Toast.LENGTH_SHORT);
             return null;
         } else {
-            Log.i(TAG, "Downloading from LINK: "+user_download_url);
-            Toast.makeText(getApplicationContext(),"Downloading from: "+user_download_url,Toast.LENGTH_SHORT);
+            Log.i(TAG, "Downloading from LINK: " + user_download_url);
+            Toast.makeText(ctx, "Downloading from: " + user_download_url, Toast.LENGTH_SHORT);
             return new URL(user_download_url);
         }
     }
 
     private void installSeattleFromURL(final URL download_url) {
         Log.d(TAG, "Entering downloadAndInstallSeattle");
+        final Context ctx = getApplicationContext();
+        final String seattleZIP = filesRoot(ctx) + SEATTLE_ZIP;
 
         Thread t = new Thread() {
             @Override
@@ -324,7 +346,9 @@ public class SensibilityActivity extends FragmentActivity {
                         return;
                     }
 
-                    Log.d(TAG, String.format("Downloading installer from %s to %s", download_url.toString(), SEATTLE_ZIP));
+                    Log.d(TAG,String.format("Downloading installer from %s to %s",
+                            download_url.toString(), seattleZIP));
+
                     // Download seattle installer package and unpack to internal storage
                     InputStream input;
                     OutputStream output;
@@ -337,12 +361,12 @@ public class SensibilityActivity extends FragmentActivity {
                         Log.d(TAG, String.format("Connection failed, Code: %d, Message: %s",
                                 connection.getResponseCode(), connection.getResponseMessage()));
                         Log.d(TAG, "Aborting installation");
-                        Toast.makeText(getApplicationContext(),"Could not download from URL!",Toast.LENGTH_SHORT);
+                        Toast.makeText(ctx, "Could not download from URL!",Toast.LENGTH_SHORT);
                         return;
                     }
 
                     input = connection.getInputStream();
-                    output = new FileOutputStream(SEATTLE_ZIP);
+                    output = new FileOutputStream(seattleZIP);
 
                     byte data[] = new byte[4096];
                     int count;
@@ -358,9 +382,9 @@ public class SensibilityActivity extends FragmentActivity {
                     if (connection != null) {
                         connection.disconnect();
                     }
-                    Log.d(TAG, String.format("Unpacking downloaded seattle to %s", FILES_ROOT));
+                    Log.d(TAG, String.format("Unpacking downloaded seattle to %s", filesRoot(ctx)));
 
-                    Utils.unzip(new FileInputStream(SEATTLE_ZIP), FILES_ROOT, true);
+                    Utils.unzip(new FileInputStream(seattleZIP), filesRoot(ctx), true);
 
                 } catch (Exception e) {
                     Log.d(TAG, String.format("Download failed: %s", e.getMessage()));
@@ -376,17 +400,22 @@ public class SensibilityActivity extends FragmentActivity {
 
     private void installSeattleFromRaw() {
         Log.d(TAG, "Entering rawResourceInstallSeattle");
+        Context ctx = getApplicationContext();
 
-        if(SEATTLE_RAW_RESOURCE_ID == 0){
-            Log.d(TAG,"Could not download from zip");
-            Toast.makeText(getApplicationContext(), "Could not download from zip", Toast.LENGTH_SHORT);
+        int seattleRawResourceId = getResources()
+                .getIdentifier("seattle_android", "raw", getPackageName());
+
+        if(seattleRawResourceId == 0){
+            Log.d(TAG, "Could not download from zip");
+            Toast.makeText(ctx, "Could not download from zip", Toast.LENGTH_SHORT);
             return;
         }
 
-        Log.d(TAG, String.format("Unpacking seattle from raw resources to %s", FILES_ROOT));
+        Log.d(TAG, String.format("Unpacking seattle from raw resources to %s", filesRoot(ctx)));
+
         try {
             // The raw resource might not exist
-            Utils.unzip(getResources().openRawResource(SEATTLE_RAW_RESOURCE_ID), FILES_ROOT, true);
+            Utils.unzip(getResources().openRawResource(seattleRawResourceId), filesRoot(ctx), true);
         } catch (Exception e) {
             Log.d(TAG, String.format("Could not unpack seattle: %s", e.getMessage()));
             Log.d(TAG, "Aborting installation");
@@ -451,6 +480,7 @@ public class SensibilityActivity extends FragmentActivity {
         tabspec.setContent(R.id.home);
         tabspec.setIndicator("Home");
         tabhost.addTab(tabspec);
+
         tabspec = tabhost.newTabSpec("manual_tab_tag");
         tabspec.setContent(R.id.manual);
         tabspec.setIndicator("Manual");
@@ -463,21 +493,15 @@ public class SensibilityActivity extends FragmentActivity {
 
             @Override
             public void onTabChanged(String tabId) {
+                int i = tabhost.getCurrentTab();
+                Log.d("TAG", String.format("Clicked tab number: %s", i));
 
-            int i = tabhost.getCurrentTab();
-            Log.d("Clicked tab number: ", ": " + i);
-
-            if (i == 0) {
-                installRequired();
-                Log.i("Inside onClick tab 0", "Home Tab");
-
-            }
-            else if (i == 1) {
-                initializeButtons();
-                DEV = true;
-                Log.i("Inside onClick tab 1", "Manual tab");
-
-            }
+                if (i == 0) {
+                    installRequired();
+                } else if (i == 1) {
+                    initializeButtons();
+                    DEV = true;
+                }
             }
         });
     }
@@ -527,22 +551,6 @@ public class SensibilityActivity extends FragmentActivity {
         }
     }
 
-    /*
-     * Initialize "constant" global paths which cannot be initialized in class scope because they
-     * need a context.
-     */
-    private void initializePaths() {
-        Log.d(TAG, "Entering initializePaths");
-        FILES_ROOT = getApplicationContext().getFilesDir().getPath() + "/";
-        SEATTLE_ZIP = FILES_ROOT + "seattle_android.zip";
-        PYTHON = FILES_ROOT + "python/";
-        PYTHON_LIB = FILES_ROOT + "python/lib/python2.7/";
-        VESSEL_PATH = FILES_ROOT + "seattle/seattle_repy/v1/";
-
-        // If the raw resource does not exist the id is 0
-        SEATTLE_RAW_RESOURCE_ID = getResources()
-                .getIdentifier("seattle_android", "raw", getPackageName());
-    }
 
     /*
      * Check every required permission and request in case we don't have it yet
@@ -649,7 +657,6 @@ public class SensibilityActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
 
         Log.d(TAG, "Calling initializePaths");
-        initializePaths();
 
         DEV = false; /* set dev mode to false to start */
 
