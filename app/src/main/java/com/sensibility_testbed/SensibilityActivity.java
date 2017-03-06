@@ -478,12 +478,12 @@ public class SensibilityActivity extends FragmentActivity {
         Log.d(TAG, "Adding tabs to layout");
         TabHost.TabSpec tabspec = tabhost.newTabSpec("home_tab_tag");
         tabspec.setContent(R.id.home);
-        tabspec.setIndicator("Home");
+        tabspec.setIndicator("Auto");
         tabhost.addTab(tabspec);
 
         tabspec = tabhost.newTabSpec("manual_tab_tag");
         tabspec.setContent(R.id.manual);
-        tabspec.setIndicator("Manual");
+        tabspec.setIndicator("Develop");
         tabhost.addTab(tabspec);
 
         installRequired();
