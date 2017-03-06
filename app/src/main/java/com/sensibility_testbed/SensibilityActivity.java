@@ -1,38 +1,27 @@
 package com.sensibility_testbed;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Switch;
 import android.widget.TabHost;
 import android.widget.TextView;
-import android.widget.Toast;
-import android.widget.ToggleButton;
-import android.graphics.Color;
-
-
 import com.snakei.PythonInterpreterService;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -82,7 +71,7 @@ public class SensibilityActivity extends FragmentActivity {
 
     // TODO This should point to an "altruistic" installer, not @lukpueh's!
      private String DEFAULT_DOWNLOAD_URL =
-            "https://alpha-ch.poly.edu/cib/7e861c52f72c5e16e49b93cf60a84b4273a859d3/installers/android/";
+            "https://alpha-ch.poly.edu/cib/85663d3d84850a435f6169ff571c2464c02484af/installers/android/";
 
     // RELATIVE PATH constants
     // Need to be prefixed by App's data directory path
@@ -93,9 +82,8 @@ public class SensibilityActivity extends FragmentActivity {
     public static String PYTHON_PATH = "seattle/seattle_repy";
 
     // Used to check if Seattle is installed
+    static String SEATTLE_PATH = "seattle/seattle_repy";
     static String VESSEL_PATH = "seattle/seattle_repy/v1/";
-
-    private boolean DEV; /* check if been to dev mode before */
 
     // A code to filter permission requests issued by us in the permission request callback
     public final int SENSIBILITY_RUNTIME_PERMISSIONS = 1;
@@ -119,6 +107,7 @@ public class SensibilityActivity extends FragmentActivity {
     private void updateHome() {
 
         final TextView pythonInstalled = (TextView) findViewById(R.id.pythonSetup);
+        final TextView seattleDownloaded = (TextView) findViewById(R.id.seattleDownload);
         final TextView seattleInstalled = (TextView) findViewById(R.id.seattleSetup);
         final TextView nodemanagerRunning = (TextView) findViewById(R.id.nodeRunning);
 
@@ -138,13 +127,20 @@ public class SensibilityActivity extends FragmentActivity {
                     pythonInstalled.setTextColor(red);
                 }
 
-                if (isSeattleInstalled()){
+                if (isSeattleDownloaded()) {
+                    seattleDownloaded.setText("\u2713 Custom Installer Downloaded");
+                    seattleDownloaded.setTextColor(green);
+                } else {
+                    seattleDownloaded.setText("\u2715 Custom Installer Downloaded");
+                    seattleDownloaded.setTextColor(red);
+                }
 
-                    seattleInstalled.setText("\u2713 Seattle Installed");
+                if (isSeattleInstalled()){
+                    seattleInstalled.setText("\u2713 Custom Installer Installed");
                     seattleInstalled.setTextColor(green);
 
                 } else {
-                    seattleInstalled.setText("\u2715 Seattle Installed");
+                    seattleInstalled.setText("\u2715 Custom Installer Installed");
                     seattleInstalled.setTextColor(red);
                 }
 
@@ -157,80 +153,23 @@ public class SensibilityActivity extends FragmentActivity {
 
 
     /*
-     * method to check if user needs to install any required packages and installs it
+     * Get progress dialog spinning wheel
+     * Use progress.setMessage() to add an additional message and
+     * progress.show() and progress.dismiss() to show and hide the progress dialog
      *
      */
-    private void installRequired(){
-        Log.d(TAG,"Checking install requirements");
+    private ProgressDialog getSpinningWheel() {
+        Log.d(TAG, "Entering showSpinningWheel");
 
-        /* setup progress spinner */
-        final ProgressDialog progress = new ProgressDialog(this); /* set the context to the app's context */
-        progress.setMessage("Checking for requirements...");      /* set a default message */
-        progress.setIndeterminate(true);                          /* no total percent just spinning */
+        // Create new ProgressDialog in the app's context
+        ProgressDialog progress = new ProgressDialog(this);
+        // No total percent just spinning
+        progress.setIndeterminate(true);
         progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        progress.setCancelable(false);                            /* can't close the dialog */
-        progress.show();                                          /* show the progress dialog */
+        // Disable user input to cancel the dialog
+        progress.setCancelable(false);
 
-
-        /* Thread to install components and update the progress dialog */
-        Thread requireThread = new Thread() {
-            @Override
-            public void run() {
-
-                // Install Python if not installed
-                if (! isPythonInstalled()) {
-                    /* run UI thread for installing component and updating dialog */
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            progress.setMessage("Setting up python..."); /* update dialog */
-                            installPython();                             /* install python */
-                        }
-                    });
-
-                    // Give some time for user feedback
-                    _trySleep(1000);
-                    updateHome();
-                }
-
-                // Install Seattle if not installed
-                if(! isSeattleInstalled()) {
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            progress.setMessage("Setting up seattle..");   /* update dialog */
-                            try {
-                                URL def = new URL(DEFAULT_DOWNLOAD_URL);
-                                installSeattleFromURL(def);                    /* install seattle from default link */
-                            } catch (MalformedURLException e) {
-                                e.printStackTrace();
-                            }
-
-                        }
-                    });
-                    // Give some time for user feedback
-                    _trySleep(1000);
-                    updateHome();
-                }
-
-                // Start Seattle if not installed
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        progress.setMessage("Starting Seattle...");   /* update dialog */
-                        startSeattleNodemanager();                    /* start seattle after installing */
-                    }
-                });
-
-                // Give some time for user feedback
-                _trySleep(1000);
-                updateHome();
-
-                progress.dismiss(); /* close progress dialog at the end */
-            }
-        };
-        requireThread.start(); /* start the thread */
+        return progress;
     }
 
 
@@ -262,6 +201,20 @@ public class SensibilityActivity extends FragmentActivity {
     }
 
     /*
+     * Seattle is Downloaded if there is a seattle/seattle_repy directory in the app's data dir
+     */
+    private boolean isSeattleDownloaded() {
+        Log.d(TAG, "Checking if Seattle is downloaded/unpacked");
+        Context ctx = getApplicationContext();
+
+        File vesselDir = new File(filesRoot(ctx) + SEATTLE_PATH);
+        if(vesselDir.isDirectory()) {
+            return true;
+        }
+        return false;
+    }
+
+    /*
      * Seattle installation means downloading the seattle android installer from the custom
      * installer builder (CIB), either by taking the CIB URL from the App Installation referrer or
      * by specifying a CIB URL in the manual fragment or by copying it over from
@@ -285,18 +238,19 @@ public class SensibilityActivity extends FragmentActivity {
         return false;
     }
 
-
+    //FIXME: Dedicate process to nodemanager and check if that process is running using ActivityManager
     private boolean isSeattleRunning() {
-        return false;
+        return true;
     }
 
 
     /*
-     * Unzip the contents of res/raw/python_lib.zip into the app's files directory.
+     * Install Python
+     * Unzip the contents of res/raw/python_lib.zip into the app's files directory
      */
     private void installPython() {
         Log.d(TAG, "Entering installPython");
-        Context ctx = getApplicationContext();
+        final Context ctx = getApplicationContext();
 
         Log.d(TAG, String.format("Unpacking python to %s", filesRoot(ctx)));
         try {
@@ -314,102 +268,93 @@ public class SensibilityActivity extends FragmentActivity {
      */
     private URL getDownloadUrl() throws MalformedURLException {
 
-        Context ctx = getApplicationContext();
-
         // Get the user's desired download URL, if any
         EditText editText = (EditText) findViewById(R.id.url_edittext);
         String user_download_url = editText.getText().toString();
 
         if (user_download_url.isEmpty()) {
             Log.i(TAG, "No URL passed downloading from zip");
-            Toast.makeText(ctx, "Downloading from zip...", Toast.LENGTH_SHORT);
             return null;
         } else {
             Log.i(TAG, "Downloading from LINK: " + user_download_url);
-            Toast.makeText(ctx, "Downloading from: " + user_download_url, Toast.LENGTH_SHORT);
             return new URL(user_download_url);
         }
     }
 
-    private void installSeattleFromURL(final URL download_url) {
+    //FIXME: Get actual referrer URL passed from Google Play
+    private URL getReferrerUrl() {
+        URL url = null;
+        try {
+            url = new URL(DEFAULT_DOWNLOAD_URL);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return url;
+    }
+
+    /*
+     * Download Sensibility Custom Installer
+     */
+    private void downloadCustomInstallerFromURL(final URL download_url) {
         Log.d(TAG, "Entering downloadAndInstallSeattle");
         final Context ctx = getApplicationContext();
         final String seattleZIP = filesRoot(ctx) + SEATTLE_ZIP;
 
-        Thread t = new Thread() {
-            @Override
-            public void run() {
-                try {
-
-                    if(download_url == null){
-                        installSeattleFromRaw();
-                        return;
-                    }
-
-                    Log.d(TAG,String.format("Downloading installer from %s to %s",
-                            download_url.toString(), seattleZIP));
-
-                    // Download seattle installer package and unpack to internal storage
-                    InputStream input;
-                    OutputStream output;
-
-                    HttpsURLConnection connection;
-                    connection = (HttpsURLConnection) download_url.openConnection();
-                    connection.connect();
-
-                    if (connection.getResponseCode() != HttpsURLConnection.HTTP_OK) {
-                        Log.d(TAG, String.format("Connection failed, Code: %d, Message: %s",
-                                connection.getResponseCode(), connection.getResponseMessage()));
-                        Log.d(TAG, "Aborting installation");
-                        Toast.makeText(ctx, "Could not download from URL!",Toast.LENGTH_SHORT);
-                        return;
-                    }
-
-                    input = connection.getInputStream();
-                    output = new FileOutputStream(seattleZIP);
-
-                    byte data[] = new byte[4096];
-                    int count;
-                    while ((count = input.read(data)) != -1) {
-                        output.write(data, 0, count);
-                    }
-                    if (input != null) {
-                        input.close();
-                    }
-                    if (output != null) {
-                        output.close();
-                    }
-                    if (connection != null) {
-                        connection.disconnect();
-                    }
-                    Log.d(TAG, String.format("Unpacking downloaded seattle to %s", filesRoot(ctx)));
-
-                    Utils.unzip(new FileInputStream(seattleZIP), filesRoot(ctx), true);
-
-                } catch (Exception e) {
-                    Log.d(TAG, String.format("Download failed: %s", e.getMessage()));
-                    Log.d(TAG, "Aborting installation");
-                    return;
-                }
-                startSeattleInstaller();
+        try {
+            if(download_url == null){
+                return;
             }
-        };
-        t.start();
+
+            Log.d(TAG,String.format("Downloading custom installer from %s to %s",
+                    download_url.toString(), seattleZIP));
+
+            // Download seattle installer package and unpack to internal storage
+            InputStream input;
+            OutputStream output;
+
+            HttpsURLConnection connection;
+            connection = (HttpsURLConnection) download_url.openConnection();
+            connection.connect();
+
+            if (connection.getResponseCode() != HttpsURLConnection.HTTP_OK) {
+                Log.d(TAG, String.format("Connection failed, Code: %d, Message: %s",
+                        connection.getResponseCode(), connection.getResponseMessage()));
+                return;
+            }
+
+            input = connection.getInputStream();
+            output = new FileOutputStream(seattleZIP);
+
+            byte data[] = new byte[4096];
+            int count;
+            while ((count = input.read(data)) != -1) {
+                output.write(data, 0, count);
+            }
+            if (input != null) {
+                input.close();
+            }
+            if (output != null) {
+                output.close();
+            }
+            if (connection != null) {
+                connection.disconnect();
+            }
+
+            Log.d(TAG, String.format("Unpacking downloaded seattle to %s", filesRoot(ctx)));
+            Utils.unzip(new FileInputStream(seattleZIP), filesRoot(ctx), true);
+        } catch (Exception e) {
+            Log.d(TAG, String.format("Downloading custom installer failed: %s", e.getMessage()));
+        }
     }
 
 
-    private void installSeattleFromRaw() {
+    /*
+     * Alternatively to downloading Seattle from the Custom Installer builder you can
+     * build the app with a seattle_android.zip in res/raw, which is used as source in this function.
+     */
+    private void copySeattleFromRaw(int seattleRawResourceId) {
         Log.d(TAG, "Entering rawResourceInstallSeattle");
         Context ctx = getApplicationContext();
-
-        int seattleRawResourceId = getResources()
-                .getIdentifier("seattle_android", "raw", getPackageName());
-
-        if(seattleRawResourceId == 0){
-            Log.d(TAG, "Could not download from zip");
-            Toast.makeText(ctx, "Could not download from zip", Toast.LENGTH_SHORT);
-            return;
-        }
 
         Log.d(TAG, String.format("Unpacking seattle from raw resources to %s", filesRoot(ctx)));
 
@@ -421,7 +366,6 @@ public class SensibilityActivity extends FragmentActivity {
             Log.d(TAG, "Aborting installation");
             return;
         }
-        startSeattleInstaller();
     }
 
 
@@ -439,8 +383,8 @@ public class SensibilityActivity extends FragmentActivity {
                 "seattleinstaller.py", "--percent", "50",
                 "--disable-startup-script",
                 "--diskused", Long.toString(availableDiskSpace)};
-        Log.d(TAG, String.format("Calling PythonInterpreterService.startService with args %s", (Object[])python_args));
 
+        Log.d(TAG, String.format("Calling PythonInterpreterService.startService with args %s", (Object[])python_args));
         PythonInterpreterService.startService(python_args, getBaseContext());
     }
 
@@ -452,11 +396,225 @@ public class SensibilityActivity extends FragmentActivity {
     private void startSeattleNodemanager() {
         Log.d(TAG, "Entering startSeattle");
         String[] python_args = {"nmmain.py", "--foreground"};
+
         Log.d(TAG, String.format(
                 "Calling PythonInterpreterService.startService with args %s", (Object[])python_args));
         PythonInterpreterService.startService(python_args, getBaseContext());
     }
 
+    /*
+     * A single Asynchronous Task that copies Python, Downloads Seattle from a pasted URL
+     * or if not specified from res/raw and runs seattleinstaller.py forcefully, i.e. independently
+     * of the state of the app.
+     */
+    private void developInstall() {
+        // Get a progress dialog with a spinning wheel
+        final ProgressDialog progress = getSpinningWheel();
+
+        new AsyncTask<Void, String, Boolean>() {
+            @Override
+            protected Boolean doInBackground(Void... voids) {
+
+                publishProgress("Copying Python...");
+                installPython();
+
+                // Fetch Custom Installer URL
+                URL url = null;
+                try {
+                    url = getDownloadUrl();
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+
+                _trySleep(1000);
+
+                // If URL was not specified use debug installer from res raw
+                // Abort if no debug instsaller zip is in res/raw
+                if (url == null) {
+                    int seattleRawResourceId = getResources()
+                            .getIdentifier("seattle_android", "raw", getPackageName());
+
+                    if(seattleRawResourceId == 0) {
+                        Log.d(TAG, "Could not download from zip");
+                        publishProgress("No URL was specified, and no installer was " +
+                                "found in res raw, aborting installation ...");
+                        _trySleep(3000);
+                        return false;
+
+                    } else {
+                        publishProgress("No URL was specified, copying Custom Installer from debug zip...");
+                        copySeattleFromRaw(seattleRawResourceId);
+                    }
+
+                // If URL was specified download Custom Installer from URL
+                } else {
+                    publishProgress(String.format("Downloading Custom Installer from %s...", url.toString()));
+                    downloadCustomInstallerFromURL(url);
+                }
+
+                _trySleep(1000);
+
+                // Start seattleinstaller.py in background process if not yet installed
+                publishProgress("Starting seattleinstaller.py...");
+                startSeattleInstaller();
+
+                _trySleep(1000);
+
+                return true;
+            }
+            protected void onPreExecute() {
+                progress.show();
+            }
+
+            protected void onProgressUpdate(String... progressMessage) {
+                progress.setMessage(progressMessage[0]);
+            }
+
+            protected void onPostExecute(Boolean result) {
+                progress.dismiss();
+            }
+        }.execute();
+    }
+
+    private void developStart() {
+        final ProgressDialog progress = getSpinningWheel();
+
+        new AsyncTask<Void, String, Boolean>() {
+            @Override
+            protected Boolean doInBackground(Void... voids) {
+                publishProgress("Starting Nodemanager...");
+                startSeattleNodemanager();
+                _trySleep(1000);
+                return true;
+            }
+            protected void onPreExecute() {
+                progress.show();
+            }
+
+            protected void onProgressUpdate(String... progressMessage) {
+                progress.setMessage(progressMessage[0]);
+            }
+
+            protected void onPostExecute(Boolean result) {
+                progress.dismiss();
+            }
+        }.execute();
+    }
+
+
+    /*
+     * A single Asynchronous Task that executes all install tasks sequentially
+     * while updating the UI and giving progress feedback. The tasks are:
+     * - Copying over Python library files from res/raw
+     * - Downloading custom installer from CIB website using passed referrer
+     * - Starting seattleinstaller.py
+     * - Starting nodemanager.py
+     *
+     */
+    private void autoInstall() {
+
+        // Get a progress dialog with a spinning wheel
+        final ProgressDialog progress = getSpinningWheel();
+
+        new AsyncTask<Void, String, Boolean>() {
+            @Override
+            protected Boolean doInBackground(Void... voids) {
+
+                // Install Python if not installed
+                if (! isPythonInstalled()) {
+                    publishProgress("Installing Python...");
+                    installPython();
+
+                    _trySleep(1000);
+
+                    if (isPythonInstalled()) {
+                        publishProgress("Successfully installed Python!");
+                        updateHome();
+
+                    } else {
+                        publishProgress("Python could not be installed!");
+                        return false;
+                    }
+                    _trySleep(1000);
+                }
+
+
+                // Download Custom Installer if not downloaded
+                if (! isSeattleDownloaded()) {
+                    publishProgress("Downloading Custom Installer...");
+                    URL url = getReferrerUrl();
+                    downloadCustomInstallerFromURL(url);
+
+                    if (isSeattleDownloaded()) {
+                        publishProgress("Successfully downloaded Custom Installer!");
+                        updateHome();
+
+                    } else {
+                        publishProgress("Custom Installer could not be downloaded!");
+                        return false;
+                    }
+                    _trySleep(1000);
+                }
+
+
+                // Start seattleinstaller.py in background process if not yet installed
+                if (! isSeattleInstalled()) {
+                    publishProgress("Installing Custom Installer...");
+                    startSeattleInstaller();
+
+                    // Wait at most 20 seconds for installation to finish
+                    int waitForSec = 20;
+                    // FIXME: Think of a better way to do this
+                    for (int i = 0; i < waitForSec; i++) {
+                        _trySleep(1000);
+
+                        if (isSeattleInstalled()) {
+                            publishProgress("Successfully installed Custom Installer!");
+                            updateHome();
+                            break;
+                        }
+                    }
+
+                    if (! isSeattleInstalled()) {
+                        publishProgress("Custom Installer was not installed in a timely manner!");
+                        return false;
+                    }
+                    _trySleep(1000);
+                }
+
+
+                // Start nodemanager
+                if (! isSeattleRunning()) {
+                    publishProgress("Starting Nodemanager...");
+                    startSeattleNodemanager();
+
+                    if (isSeattleRunning()) {
+                        publishProgress("Successfully started Nodemanager!");
+                        updateHome();
+
+                    } else {
+                        publishProgress("Nodemanager could not be started!");
+                        return false;
+                    }
+                    _trySleep(1000);
+                }
+
+                updateHome();
+                return true;
+            }
+            protected void onPreExecute() {
+                progress.show();
+            }
+
+            protected void onProgressUpdate(String... progressMessage) {
+                progress.setMessage(progressMessage[0]);
+            }
+
+            protected void onPostExecute(Boolean result) {
+                progress.dismiss();
+            }
+        }.execute();
+    }
 
     private void stopSeattle() {
         Log.d(TAG, "Killing not implemented");
@@ -486,22 +644,13 @@ public class SensibilityActivity extends FragmentActivity {
         tabspec.setIndicator("Develop");
         tabhost.addTab(tabspec);
 
-        installRequired();
-
         Log.d(TAG,"add tab listeners");
         tabhost.setOnTabChangedListener(new TabHost.OnTabChangeListener() {
-
             @Override
             public void onTabChanged(String tabId) {
-                int i = tabhost.getCurrentTab();
-                Log.d("TAG", String.format("Clicked tab number: %s", i));
-
-                if (i == 0) {
-                    installRequired();
-                } else if (i == 1) {
-                    initializeButtons();
-                    DEV = true;
-                }
+               if (tabhost.getCurrentTab() == 0) {
+                   updateHome();
+               }
             }
         });
     }
@@ -512,43 +661,45 @@ public class SensibilityActivity extends FragmentActivity {
     private void initializeButtons() {
         Log.d(TAG, "Entering initializing buttons");
 
-        if(!DEV){ /* check if been to dev mode before (if not then setup the buttons */
-            final Button btn_install_seattle = (Button) findViewById(R.id.install_seattle);
-            final Button btn_start = (Button) findViewById(R.id.start);
-            final Button btn_kill = (Button) findViewById(R.id.kill);
+        final Button btn_auto_install = (Button) findViewById(R.id.auto_install);
+        final Button btn_install_seattle = (Button) findViewById(R.id.install_seattle);
+        final Button btn_start = (Button) findViewById(R.id.start);
+        final Button btn_kill = (Button) findViewById(R.id.kill);
 
-            // Define listeners for buttons
-            Log.d(TAG, "Defining button listeners");
+        // Define listeners for buttons
+        Log.d(TAG, "Defining button listeners");
 
-            btn_install_seattle.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Log.d(TAG, "Clicked 'Install Seattle (download)' button");
-                    try {
-                        URL downloadFrom = getDownloadUrl();
-                        installSeattleFromURL(downloadFrom);
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
+        btn_auto_install.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "Clicked 'Install' button");
+                autoInstall();
+            }
+        });
 
-            btn_start.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Log.d(TAG, "Clicked 'Start' button");
-                    startSeattleNodemanager();
-                }
-            });
+        btn_install_seattle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "Clicked 'Install Seattle (download)' button");
+                developInstall();
+            }
+        });
 
-            btn_kill.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Log.d(TAG, "Clicked 'Stop' button");
-                    stopSeattle();
-                }
-            });
-        }
+        btn_start.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "Clicked 'Start' button");
+                developStart();
+            }
+        });
+
+        btn_kill.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "Clicked 'Kill' button");
+                stopSeattle();
+            }
+        });
     }
 
 
@@ -637,9 +788,8 @@ public class SensibilityActivity extends FragmentActivity {
         Log.d(TAG, "Entering onStart");
         super.onStart();
 
-        Log.d(TAG, "Calling checkRequestPermissions");
-        checkRequestPermissions();
-
+        // Update Auto view
+        updateHome();
     }
 
 
@@ -649,21 +799,21 @@ public class SensibilityActivity extends FragmentActivity {
      * Called by system after:
      *  - Activity launched
      *  - App process was killed and user navigates back to the activity
-     *
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "Entering onCreate");
         super.onCreate(savedInstanceState);
 
-        Log.d(TAG, "Calling initializePaths");
-
-        DEV = false; /* set dev mode to false to start */
+        Log.d(TAG, "Calling checkRequestPermissions");
+        checkRequestPermissions();
 
         Log.d(TAG, "Calling setupTabLayout");
         setupTabLayout();
-    }
 
+        Log.d(TAG, "Calling initializeButtons");
+        initializeButtons();
+    }
 
     @Override
     protected void onResume() {
