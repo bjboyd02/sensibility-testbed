@@ -26,7 +26,10 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+
 import javax.net.ssl.HttpsURLConnection;
+
+import static com.sensibility_testbed.ReferralReceiver.getCustomInstallerReferralUrl;
 
 /**
  * Created by lukas.puehringer@nyu.edu on 7/15/16
@@ -281,17 +284,6 @@ public class SensibilityActivity extends FragmentActivity {
         }
     }
 
-    //FIXME: Get actual referrer URL passed from Google Play
-    private URL getReferrerUrl() {
-        URL url = null;
-        try {
-            url = new URL(DEFAULT_DOWNLOAD_URL);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        return url;
-    }
-
     /*
      * Download Sensibility Custom Installer
      */
@@ -530,7 +522,6 @@ public class SensibilityActivity extends FragmentActivity {
                     if (isPythonInstalled()) {
                         publishProgress("Successfully installed Python!");
                         updateHome();
-
                     } else {
                         publishProgress("Python could not be installed!");
                         return false;
@@ -542,7 +533,15 @@ public class SensibilityActivity extends FragmentActivity {
                 // Download Custom Installer if not downloaded
                 if (! isSeattleDownloaded()) {
                     publishProgress("Downloading Custom Installer...");
-                    URL url = getReferrerUrl();
+
+                    URL url = getCustomInstallerReferralUrl();
+
+                    if (url == null) {
+                        publishProgress("No Custom Installer URL available. " +
+                                "Please switch to the DEVELOP tab and provide the URL manually!");
+                        _trySleep(3000);
+                        return false;
+                    }
                     downloadCustomInstallerFromURL(url);
 
                     if (isSeattleDownloaded()) {
