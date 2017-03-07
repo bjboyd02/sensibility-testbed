@@ -446,7 +446,15 @@ public class SensibilityActivity extends FragmentActivity {
         boolean with_affix = affix_checkbox.isChecked();
         Log.d(TAG, String.format("Affix Checkbox:  %b", with_affix));
 
-        String[] python_args = {"nmmain.py", "--foreground"};
+        String[] python_args_no_affix = {"nmmain.py", "--foreground"};
+        String[] python_args_with_affix = {"nmmain.py", "--foreground", "--use-affix"};
+        String[] python_args;
+
+        if (with_affix) {
+            python_args = python_args_with_affix;
+        } else {
+            python_args = python_args_no_affix;
+        }
 
         Log.d(TAG, String.format(
                 "Calling PythonInterpreterService.startService with args %s", (Object[])python_args));
