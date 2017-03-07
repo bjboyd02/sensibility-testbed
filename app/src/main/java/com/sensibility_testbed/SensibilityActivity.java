@@ -14,6 +14,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TabHost;
 import android.widget.TextView;
@@ -387,6 +388,12 @@ public class SensibilityActivity extends FragmentActivity {
      */
     private void startSeattleNodemanager() {
         Log.d(TAG, "Entering startSeattle");
+
+        // Developer Install UI "Start Without Affix (no NAT) checkbox
+        CheckBox no_affix_checkbox = (CheckBox)findViewById(R.id.no_affix);
+        boolean no_affix = no_affix_checkbox.isChecked();
+        Log.d(TAG, String.format("No Affix Checkbox:  %b", no_affix));
+
         String[] python_args = {"nmmain.py", "--foreground"};
 
         Log.d(TAG, String.format(
@@ -472,15 +479,22 @@ public class SensibilityActivity extends FragmentActivity {
         final ProgressDialog progress = getSpinningWheel();
 
         new AsyncTask<Void, String, Boolean>() {
+            boolean no_affix;
+
             @Override
             protected Boolean doInBackground(Void... voids) {
-                publishProgress("Starting Nodemanager...");
                 startSeattleNodemanager();
                 _trySleep(1000);
                 return true;
             }
             protected void onPreExecute() {
                 progress.show();
+
+                CheckBox no_affix_checkbox = (CheckBox)findViewById(R.id.no_affix);
+                no_affix = no_affix_checkbox.isChecked();
+                progress.setMessage(
+                        String.format("Starting Nodemanager (%s affix)",
+                                (no_affix ? "without" : "with")));
             }
 
             protected void onProgressUpdate(String... progressMessage) {
