@@ -41,6 +41,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,7 +65,14 @@ import java.util.List;
  * Java Initialization on Demand Holder pattern
  * (cf. SensorService.java for more info )
  *
- * Exceptions should be thrown
+ * Exceptions should be thrown, save for SecurityExceptions which we
+ * catch and present to the sandbox by simply not passing down the
+ * disallowed sensor value.
+ *
+ * For example, if the sandbox calls `get_foo()` but the user didn't
+ * give their permission for the app to access Foo, the sandbox will
+ * see a return value of `None`. For more complex sensors, single values
+ * will be missing from the returned list or dict.
  *
  */
 public class MiscInfoService {
@@ -220,9 +228,16 @@ public class MiscInfoService {
      *
      */
     public String getNetworkInfo() throws JSONException {
+        Network[] networks;
         Log.d(TAG, "Entering getNetworkInfo");
 
-        Network[] networks = connectivity_manager.getAllNetworks();
+        try {
+            networks = connectivity_manager.getAllNetworks();
+        } catch (SecurityException e)
+                // We are lacking the ACCESS_NETWORK_STATE permission.
+        {
+            return null;
+        }
 
         if (networks.length > 0) {
             JSONArray network_info_json_array = new JSONArray();
@@ -308,120 +323,126 @@ public class MiscInfoService {
     public String getCellInfo() throws JSONException {
         Log.d(TAG, "Entering getCellInfo");
 
-        List<CellInfo> cell_infos = telephony_manager.getAllCellInfo();
+        List<CellInfo> cell_infos;
 
-        // Older devices may return null
-        // Android refs suggest to use getCellLocation as alternative
-        // I think we should not add this here but rather add an additional extension if we
-        // want to provide that call.
-        if (cell_infos != null && cell_infos.size() > 0) {
-            JSONArray cell_info_json_array = new JSONArray();
-            for (CellInfo cell_info : cell_infos) {
-                JSONObject cell_info_json = new JSONObject();
-                cell_info_json.put("is_registered", cell_info.isRegistered());
-                if (cell_info instanceof CellInfoCdma) {
+        try {
+            cell_infos = telephony_manager.getAllCellInfo();
+            // Older devices may return null
+            // Android refs suggest to use getCellLocation as alternative
+            // I think we should not add this here but rather add an additional extension if we
+            // want to provide that call.
+            if (cell_infos != null && cell_infos.size() > 0) {
+                JSONArray cell_info_json_array = new JSONArray();
+                for (CellInfo cell_info : cell_infos) {
+                    JSONObject cell_info_json = new JSONObject();
+                    cell_info_json.put("is_registered", cell_info.isRegistered());
+                    if (cell_info instanceof CellInfoCdma) {
 
-                    // CDMA Signal Strength
-                    CellSignalStrengthCdma signal_strength = ((CellInfoCdma)
-                            cell_info).getCellSignalStrength();
-                    cell_info_json.put("asu_level",
-                            signal_strength.getAsuLevel());
-                    cell_info_json.put("cdma_dbm",
-                            signal_strength.getCdmaDbm());
-                    cell_info_json.put("cdma_level",
-                            signal_strength.getCdmaLevel());
-                    cell_info_json.put("dbm", signal_strength.getDbm());
-                    cell_info_json.put("evdo_dbm",
-                            signal_strength.getEvdoDbm());
-                    cell_info_json.put("evdo_ecio",
-                            signal_strength.getEvdoEcio());
-                    cell_info_json.put("evdo_level",
-                            signal_strength.getEvdoLevel());
-                    cell_info_json.put("evdo_snr",
-                            signal_strength.getEvdoSnr());
-                    cell_info_json.put("level", signal_strength.getLevel());
+                        // CDMA Signal Strength
+                        CellSignalStrengthCdma signal_strength = ((CellInfoCdma)
+                                cell_info).getCellSignalStrength();
+                        cell_info_json.put("asu_level",
+                                signal_strength.getAsuLevel());
+                        cell_info_json.put("cdma_dbm",
+                                signal_strength.getCdmaDbm());
+                        cell_info_json.put("cdma_level",
+                                signal_strength.getCdmaLevel());
+                        cell_info_json.put("dbm", signal_strength.getDbm());
+                        cell_info_json.put("evdo_dbm",
+                                signal_strength.getEvdoDbm());
+                        cell_info_json.put("evdo_ecio",
+                                signal_strength.getEvdoEcio());
+                        cell_info_json.put("evdo_level",
+                                signal_strength.getEvdoLevel());
+                        cell_info_json.put("evdo_snr",
+                                signal_strength.getEvdoSnr());
+                        cell_info_json.put("level", signal_strength.getLevel());
 
-                    //CDMA Cell Identity
-                    CellIdentityCdma cell_id = ((CellInfoCdma)
-                            cell_info).getCellIdentity();
+                        //CDMA Cell Identity
+                        CellIdentityCdma cell_id = ((CellInfoCdma)
+                                cell_info).getCellIdentity();
 
-                    cell_info_json.put("base_station_id",
-                            cell_id.getBasestationId());
-                    cell_info_json.put("base_station_latitude",
-                            cell_id.getLatitude());
-                    cell_info_json.put("base_station_longitude",
-                            cell_id.getLongitude());
-                    cell_info_json.put("network_id",
-                            cell_id.getNetworkId());
-                    cell_info_json.put("system_id",
-                            cell_id.getSystemId());
+                        cell_info_json.put("base_station_id",
+                                cell_id.getBasestationId());
+                        cell_info_json.put("base_station_latitude",
+                                cell_id.getLatitude());
+                        cell_info_json.put("base_station_longitude",
+                                cell_id.getLongitude());
+                        cell_info_json.put("network_id",
+                                cell_id.getNetworkId());
+                        cell_info_json.put("system_id",
+                                cell_id.getSystemId());
 
-                } else if (cell_info instanceof CellInfoLte) {
-                    // LTE Signal Strength
-                    CellSignalStrengthLte signal_strength = ((CellInfoLte)
-                            cell_info).getCellSignalStrength();
-                    cell_info_json.put("dbm",
-                            signal_strength.getDbm());
-                    cell_info_json.put("asu_level",
-                            signal_strength.getAsuLevel());
-                    cell_info_json.put("level",
-                            signal_strength.getLevel());
-                    cell_info_json.put("timing_advance",
-                            signal_strength.getTimingAdvance());
+                    } else if (cell_info instanceof CellInfoLte) {
+                        // LTE Signal Strength
+                        CellSignalStrengthLte signal_strength = ((CellInfoLte)
+                                cell_info).getCellSignalStrength();
+                        cell_info_json.put("dbm",
+                                signal_strength.getDbm());
+                        cell_info_json.put("asu_level",
+                                signal_strength.getAsuLevel());
+                        cell_info_json.put("level",
+                                signal_strength.getLevel());
+                        cell_info_json.put("timing_advance",
+                                signal_strength.getTimingAdvance());
 
-                    //LTE Cell Identity
-                    CellIdentityLte cell_id = ((CellInfoLte)
-                            cell_info).getCellIdentity();
-                    cell_info_json.put("ci", cell_id.getCi());
-                    cell_info_json.put("mcc", cell_id.getMcc());
-                    cell_info_json.put("mnc", cell_id.getMnc());
-                    cell_info_json.put("pci", cell_id.getPci());
-                    cell_info_json.put("tac", cell_id.getTac());
+                        //LTE Cell Identity
+                        CellIdentityLte cell_id = ((CellInfoLte)
+                                cell_info).getCellIdentity();
+                        cell_info_json.put("ci", cell_id.getCi());
+                        cell_info_json.put("mcc", cell_id.getMcc());
+                        cell_info_json.put("mnc", cell_id.getMnc());
+                        cell_info_json.put("pci", cell_id.getPci());
+                        cell_info_json.put("tac", cell_id.getTac());
 
-                } else if (cell_info instanceof CellInfoGsm) {
-                    // GSM Signal Strength
-                    CellSignalStrengthGsm signal_strength = ((CellInfoGsm
-                            ) cell_info).getCellSignalStrength();
-                    cell_info_json.put("asu_level",
-                            signal_strength.getAsuLevel());
-                    cell_info_json.put("dbm", signal_strength.getDbm());
-                    cell_info_json.put("level", signal_strength.getLevel());
+                    } else if (cell_info instanceof CellInfoGsm) {
+                        // GSM Signal Strength
+                        CellSignalStrengthGsm signal_strength = ((CellInfoGsm
+                                ) cell_info).getCellSignalStrength();
+                        cell_info_json.put("asu_level",
+                                signal_strength.getAsuLevel());
+                        cell_info_json.put("dbm", signal_strength.getDbm());
+                        cell_info_json.put("level", signal_strength.getLevel());
 
-                    //GSM Cell Identity
-                    CellIdentityGsm cell_id = ((CellInfoGsm)
-                            cell_info).getCellIdentity();
-                    cell_info_json.put("mnc", cell_id.getMnc());
-                    cell_info_json.put("mcc", cell_id.getMcc());
-                    cell_info_json.put("cid", cell_id.getCid());
-                    cell_info_json.put("lac", cell_id.getLac());
+                        //GSM Cell Identity
+                        CellIdentityGsm cell_id = ((CellInfoGsm)
+                                cell_info).getCellIdentity();
+                        cell_info_json.put("mnc", cell_id.getMnc());
+                        cell_info_json.put("mcc", cell_id.getMcc());
+                        cell_info_json.put("cid", cell_id.getCid());
+                        cell_info_json.put("lac", cell_id.getLac());
 
-                } else if (cell_info instanceof CellInfoWcdma) {
-                    // WCDMA Signal Strength
-                    CellSignalStrengthWcdma signal_strength = ((CellInfoWcdma
-                            ) cell_info).getCellSignalStrength();
-                    cell_info_json.put("asu_level", signal_strength.getAsuLevel());
-                    cell_info_json.put("dbm", signal_strength.getDbm());
-                    cell_info_json.put("level", signal_strength.getLevel());
+                    } else if (cell_info instanceof CellInfoWcdma) {
+                        // WCDMA Signal Strength
+                        CellSignalStrengthWcdma signal_strength = ((CellInfoWcdma
+                                ) cell_info).getCellSignalStrength();
+                        cell_info_json.put("asu_level", signal_strength.getAsuLevel());
+                        cell_info_json.put("dbm", signal_strength.getDbm());
+                        cell_info_json.put("level", signal_strength.getLevel());
 
-                    //WCDMA Cell Identity
-                    CellIdentityWcdma cell_id = ((CellInfoWcdma)
-                            cell_info).getCellIdentity();
-                    cell_info_json.put("psc", cell_id.getPsc());
-                    cell_info_json.put("cid", cell_id.getCid());
-                    cell_info_json.put("lac", cell_id.getLac());
-                    cell_info_json.put("mcc", cell_id.getMcc());
-                    cell_info_json.put("mnc", cell_id.getMnc());
+                        //WCDMA Cell Identity
+                        CellIdentityWcdma cell_id = ((CellInfoWcdma)
+                                cell_info).getCellIdentity();
+                        cell_info_json.put("psc", cell_id.getPsc());
+                        cell_info_json.put("cid", cell_id.getCid());
+                        cell_info_json.put("lac", cell_id.getLac());
+                        cell_info_json.put("mcc", cell_id.getMcc());
+                        cell_info_json.put("mnc", cell_id.getMnc());
 
-                } else {
-                    // XXX Throw an exception?
-                    Log.wtf(TAG, "Cell info of unknown Type");
-                    continue;
+                    } else {
+                        // XXX Throw an exception?
+                        Log.wtf(TAG, "Cell info of unknown Type");
+                        continue;
+                    }
+                    cell_info_json_array.put(cell_info_json);
                 }
-                cell_info_json_array.put(cell_info_json);
+                return cell_info_json_array.toString();
             }
-            return cell_info_json_array.toString();
+        } catch (SecurityException e) {
+            // We are missing the ACCESS_COARSE_LOCATION permission.
         }
         return null;
+
     }
 
 
@@ -444,14 +465,23 @@ public class MiscInfoService {
         Log.d(TAG, "Entering getSimInfo");
 
         JSONObject sim_info_json = new JSONObject();
+
         sim_info_json.put("SIM_operator", telephony_manager.getSimOperator());
-        sim_info_json.put("SIM_state", telephony_manager.getSimState());
         sim_info_json.put("SIM_country_code",
                 telephony_manager.getSimCountryIso());
         sim_info_json.put("SIM_operator_name",
                 telephony_manager.getSimOperatorName());
-        sim_info_json.put("SIM_serial_number",
-                telephony_manager.getSimSerialNumber());
+        sim_info_json.put("SIM_state", telephony_manager.getSimState());
+
+    // This is the only permissions-secured telephony_manager call in here,
+    // but it's so privacy invasive that I remove it altogether.
+    //        try {
+    //            sim_info_json.put("SIM_serial_number",
+    //                   telephony_manager.getSimSerialNumber());
+    //
+    //        } catch (SecurityException e) {
+    //            // We are missing the READ_PHONE_STATE permission.
+    //        }
 
         return sim_info_json.toString();
     }
@@ -479,18 +509,25 @@ public class MiscInfoService {
 
         JSONObject phone_info_json = new JSONObject();
 
-        phone_info_json.put("subscriber_id",
-                telephony_manager.getSubscriberId());
         phone_info_json.put("call_state",
                 telephony_manager.getCallState());
         phone_info_json.put("data_activity",
                 telephony_manager.getDataActivity());
         phone_info_json.put("data_state", telephony_manager.getDataState());
-        phone_info_json.put("device_id", telephony_manager.getDeviceId());
-        phone_info_json.put("device_software_version",
-                telephony_manager.getDeviceSoftwareVersion());
         phone_info_json.put("network_type", telephony_manager.getNetworkType());
         phone_info_json.put("phone_type", telephony_manager.getPhoneType());
+
+        // The subscriber and device ID are too privacy invasive. Don't expose.
+        // phone_info_json.put("subscriber_id",
+        //        telephony_manager.getSubscriberId());
+        // phone_info_json.put("device_id", telephony_manager.getDeviceId());
+
+        try {
+            phone_info_json.put("device_software_version",
+                    telephony_manager.getDeviceSoftwareVersion());
+        } catch (SecurityException e) {
+            // We are missing the READ_PHONE_STATE permission.
+        }
 
         return phone_info_json.toString();
     }
@@ -757,7 +794,7 @@ public class MiscInfoService {
                 BatteryManager.EXTRA_TECHNOLOGY, "N/A");
 
         // Add values to JSON dict
-        battery_info_json.put("status",status);
+        battery_info_json.put("status", status);
         battery_info_json.put("temperature", temperature);
         battery_info_json.put("level", level);
         battery_info_json.put("battery_present", present);
