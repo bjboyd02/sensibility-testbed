@@ -390,9 +390,9 @@ public class SensibilityActivity extends FragmentActivity {
         Log.d(TAG, "Entering startSeattle");
 
         // Developer Install UI "Start Without Affix (no NAT) checkbox
-        CheckBox no_affix_checkbox = (CheckBox)findViewById(R.id.no_affix);
-        boolean no_affix = no_affix_checkbox.isChecked();
-        Log.d(TAG, String.format("No Affix Checkbox:  %b", no_affix));
+        CheckBox affix_checkbox = (CheckBox)findViewById(R.id.with_affix);
+        boolean with_affix = affix_checkbox.isChecked();
+        Log.d(TAG, String.format("Affix Checkbox:  %b", with_affix));
 
         String[] python_args = {"nmmain.py", "--foreground"};
 
@@ -479,7 +479,7 @@ public class SensibilityActivity extends FragmentActivity {
         final ProgressDialog progress = getSpinningWheel();
 
         new AsyncTask<Void, String, Boolean>() {
-            boolean no_affix;
+            boolean with_affix;
 
             @Override
             protected Boolean doInBackground(Void... voids) {
@@ -490,11 +490,11 @@ public class SensibilityActivity extends FragmentActivity {
             protected void onPreExecute() {
                 progress.show();
 
-                CheckBox no_affix_checkbox = (CheckBox)findViewById(R.id.no_affix);
-                no_affix = no_affix_checkbox.isChecked();
+                CheckBox affix_checkbox = (CheckBox)findViewById(R.id.with_affix);
+                with_affix = affix_checkbox.isChecked();
                 progress.setMessage(
                         String.format("Starting Nodemanager (%s affix)",
-                                (no_affix ? "without" : "with")));
+                                (with_affix ? "with" : "without")));
             }
 
             protected void onProgressUpdate(String... progressMessage) {
