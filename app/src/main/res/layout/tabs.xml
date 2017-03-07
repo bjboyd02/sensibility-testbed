@@ -37,7 +37,6 @@
                     android:orientation="vertical"
                     class="com.sensibility_testbed.AutoFragment"
                     tools:layout="@layout/auto_install">
-
                 </fragment>
 
                 <fragment
@@ -45,8 +44,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
-                    class="com.sensibility_testbed.ManualFragment"
-                    >
+                    class="com.sensibility_testbed.ManualFragment">
+                </fragment>
+                <fragment
+                    android:id="@+id/ip"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    class="com.sensibility_testbed.IpFragment">
                 </fragment>
 
             </FrameLayout>

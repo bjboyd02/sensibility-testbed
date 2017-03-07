@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -11,6 +13,7 @@ import android.os.StatFs;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -24,8 +27,13 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.NetworkInterface;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Enumeration;
 
 
 import javax.net.ssl.HttpsURLConnection;
@@ -102,6 +110,50 @@ public class SensibilityActivity extends FragmentActivity {
 
     public static String filesRoot(Context ctx) {
         return ctx.getFilesDir().getPath() + "/";
+    }
+
+
+    /*
+     * IP layout shows the current IP address of the device
+     *
+     */
+
+    private void updateIpLayout() {
+        final TextView lastUpdatedView = (TextView) findViewById(R.id.ip_layout_updated);
+        final TextView addressView = (TextView) findViewById(R.id.ip_layout_address);
+
+        // Get datetime
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        String dateTime = formatter.format(new Date());
+        final String lastUpdatedText = String.format("(last updated: %s)", dateTime);
+
+        // Get local WiFi IP
+        // NOTE: Only works with IPv4
+        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        int ipAddress = wifiInfo.getIpAddress();
+
+        // Convert Android IP integer to known format
+        String ipAddressFormatted = null;
+        try {
+            ipAddressFormatted = String.format( "%d.%d.%d.%d",
+                    (ipAddress & 0xff),
+                    (ipAddress >> 8 & 0xff),
+                    (ipAddress >> 16 & 0xff),
+                    (ipAddress >> 24 & 0xff));
+        } catch (Exception e) {
+            Log.d(TAG, String.format("Could not parse local WiFi IP Address: %s", e.getMessage()));
+        }
+
+        final String addressText = String.format("%s",
+                (ipAddressFormatted != null) ? ipAddressFormatted : "No IP available");
+        runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                  lastUpdatedView.setText(lastUpdatedText);
+                  addressView.setText(addressText);
+              }
+          });
     }
 
     /*
@@ -657,12 +709,19 @@ public class SensibilityActivity extends FragmentActivity {
         tabspec.setIndicator("Develop");
         tabhost.addTab(tabspec);
 
+        tabspec = tabhost.newTabSpec("ip_tab_tag");
+        tabspec.setContent(R.id.ip);
+        tabspec.setIndicator("Ip");
+        tabhost.addTab(tabspec);
+
         Log.d(TAG,"add tab listeners");
         tabhost.setOnTabChangedListener(new TabHost.OnTabChangeListener() {
             @Override
             public void onTabChanged(String tabId) {
-               if (tabhost.getCurrentTab() == 0) {
+               if (tabhost.getCurrentTabTag().equals("home_tab_tag")) {
                    updateHome();
+               } else if (tabhost.getCurrentTabTag().equals("ip_tab_tag")) {
+                   updateIpLayout();
                }
             }
         });
