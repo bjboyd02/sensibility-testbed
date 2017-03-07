@@ -1,114 +1,89 @@
-//package com.sensibility_testbed;
-//
-//import java.io.UnsupportedEncodingException;
-//import java.net.URLDecoder;
-//import java.util.HashMap;
-//import java.util.Map;
-//
-//import android.content.BroadcastReceiver;
-//import android.content.Context;
-//import android.content.Intent;
-//import android.content.SharedPreferences;
-//import android.os.Bundle;
-//import android.util.Log;
-//
-///*
-// *
-// * Based on: http://www.localytics.com/docs/android-market-campaign-analytics/
-// *
-// *
-// */
-//
-//public class ReferralReceiver extends BroadcastReceiver {
-//  @Override
-//  public void onReceive(Context context, Intent intent) {
-//    // Workaround for Android security issue:
-//    // http://code.google.com/p/android/issues/detail?id=16006
-//    try {
-//      final Bundle extras = intent.getExtras();
-//      if (extras != null) {
-//        extras.containsKey(null);
-//      }
-//    } catch (final Exception e) {
-//      return;
-//    }
-//
-//    Log.i(Common.LOG_TAG, "Refrec started");
-//    Map<String, String> referralParams = new HashMap<String, String>();
-//
-//    // Return if this is not the right intent.
-//    if (!intent.getAction().equals("com.android.vending.INSTALL_REFERRER")) { //$NON-NLS-1$
-//      return;
-//    }
-//
-//    Log.i(Common.LOG_TAG, "Refrec right intent");
-//    String referrer = intent.getStringExtra("referrer"); //$NON-NLS-1$
-//    if (referrer == null || referrer.length() == 0) {
-//      return;
-//    }
-//    Log.d(Common.LOG_TAG, "Refrec referrer");
-//
-//    try { // Remove any url encoding
-//      referrer = URLDecoder.decode(referrer, "utf-8"); //$NON-NLS-1$
-//    } catch (UnsupportedEncodingException e) {
-//      return;
-//    }
-//    Log.i(Common.LOG_TAG, "Refrec right encoding");
-//
-//    // Parse the query string, extracting the relevant data
-//    String[] params = referrer.split("&"); // $NON-NLS-1$
-//    for (String param : params) {
-//      String[] pair = param.split("="); // $NON-NLS-1$
-//      referralParams.put(pair[0], pair[1]);
-//    }
-//
-//    ReferralReceiver.storeReferralParams(context, referralParams);
-//    Log.i(Common.LOG_TAG, "Refrec params added");
-//  }
-//
-//  private final static String[] EXPECTED_PARAMETERS = { "utm_source",
-//      "utm_medium", "utm_term", "utm_content", "utm_campaign" };
-//  private final static String PREFS_FILE_NAME = "ReferralParamsFile";
-//
-//  /*
-//   * Stores the referral parameters in the app's sharedPreferences. Rewrite this
-//   * function and retrieveReferralParams() if a different storage mechanism is
-//   * preferred.
-//   */
-//  public static void storeReferralParams(Context context,
-//      Map<String, String> params) {
-//    SharedPreferences storage = context.getSharedPreferences(
-//        ReferralReceiver.PREFS_FILE_NAME, Context.MODE_PRIVATE);
-//    SharedPreferences.Editor editor = storage.edit();
-//
-//    for (String key : ReferralReceiver.EXPECTED_PARAMETERS) {
-//      String value = params.get(key);
-//      if (value != null) {
-//        editor.putString(key, value);
-//      }
-//    }
-//
-//    editor.commit();
-//
-//    Log.i(Common.LOG_TAG,
-//        Common.LOG_INFO_STORED_REFERRAL_PARAMS + params.toString());
-//  }
-//
-//  /*
-//   * Returns a map with the Market Referral parameters pulled from the
-//   * sharedPreferences.
-//   */
-//  public static Map<String, String> retrieveReferralParams(Context context) {
-//    HashMap<String, String> params = new HashMap<String, String>();
-//    SharedPreferences storage = context.getSharedPreferences(
-//        ReferralReceiver.PREFS_FILE_NAME, Context.MODE_PRIVATE);
-//
-//    for (String key : ReferralReceiver.EXPECTED_PARAMETERS) {
-//      String value = storage.getString(key, null);
-//      if (value != null) {
-//        params.put(key, value);
-//      }
-//    }
-//    return params;
-//  }
-//}
+package com.sensibility_testbed;
+
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+
+/**
+ * Created by
+ * albert.rafetseder@univie.ac.at
+ * lukas.puehringer@nyu.edu
+ *
+ * Implements an Android Broadcast Receiver that filters a com.android.vending.INSTALL_REFERRER
+ * intent, passed via the app installation Google Play URL.
+ *
+ * Although this mechanism is intended for market analysis we use it to pass the unique
+ * custom installer URL that points to the installer with the device owner's keys.
+ *
+ * The URL is expected to be the value of the optional parameter: "utm_content", the other
+ * parameters are ignored.
+ *
+ * Once the URL is received we store it to a static variable, which can be accessed from other
+ * components, e.g. SensibilityActivity, using a static method.
+ *
+ * Here is a shell script to broadcast a test referral intent (remove asterisks and backticks):
+ *   ```
+ *
+ *   #! /bin/bash
+ *
+ *   utm_source="cib"
+ *   utm_medium="cib"
+ *   utm_term="cib"
+ *   utm_campaign="cib"
+ *   utm_content="https://alpha-ch.poly.edu/cib/85663d3d84850a435f6169ff571c2464c02484af/installers/android/"
+ *
+ *   echo "am broadcast \
+ *   -a com.android.vending.INSTALL_REFERRER \
+ *   -n com.sensibility_testbed/com.sensibility_testbed.ReferralReceiver \
+ *   --es referrer \
+ *   \"utm_source=${utm_source}&utm_medium=${utm_medium}&utm_term=${utm_term}&utm_content=${utm_content}&utm_campaign=${utm_campaign}\"; \
+ *   exit" | adb shell
+ *
+ *   ```
+ *
+ */
+
+public class ReferralReceiver extends BroadcastReceiver {
+
+    private static final String TAG = "ReferralReceiver";
+    private static URL customInstallerUrl;
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        try {
+            Log.d(TAG, String.format("Received Referral Intent"));
+
+            String referrer = intent.getStringExtra("referrer");
+            referrer = URLDecoder.decode(referrer, "utf-8");
+
+            // Parse the query string, extracting the relevant data
+            String[] params = referrer.split("&");
+            for (String param : params) {
+                String[] pair = param.split("=");
+                if (pair.length == 2 && pair[0].equals("utm_content")) {
+                    customInstallerUrl = new URL(pair[1]);
+                    Log.d(TAG, String.format("Received custom installer URL %s",
+                            customInstallerUrl.toString()));
+                    break;
+                }
+            }
+        } catch (UnsupportedEncodingException e) {
+            Log.d(TAG, String.format("Bad referrer encoding: %s", e.getMessage()));
+        } catch (MalformedURLException e) {
+            Log.d(TAG, String.format("Malformed custom installer URL: %s", e.getMessage()));
+        } catch (Exception e) {
+            Log.d(TAG, String.format("Problem in custom installer ReferralReceiver: %s",
+                    e.getMessage()));
+        }
+    }
+
+    public static URL getCustomInstallerReferralUrl() {
+        return customInstallerUrl;
+    }
+}
