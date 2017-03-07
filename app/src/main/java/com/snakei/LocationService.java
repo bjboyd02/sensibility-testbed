@@ -402,8 +402,8 @@ public class LocationService implements android.location.LocationListener,
         Log.d(TAG, "Entering getGeoLocation");
 
         List<Address> addresses = null;
-        if (google_api_client.isConnected() &&
-                geocoder.isPresent()) {
+        if ((google_api_client != null) && google_api_client.isConnected() &&
+                Geocoder.isPresent()) {
             addresses = geocoder.getFromLocation(
                     latitude,
                     longitude,
