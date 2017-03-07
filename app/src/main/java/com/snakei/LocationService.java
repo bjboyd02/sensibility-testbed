@@ -131,7 +131,7 @@ public class LocationService implements android.location.LocationListener,
      * a location update listener
      *
      */
-    public void start_location() throws SecurityException {
+    public void start_location() {
         Log.d(TAG, "Entering start_location");
 
         // There is no use in listening for PASSIVE_PROVIDER if one of the
@@ -142,12 +142,25 @@ public class LocationService implements android.location.LocationListener,
         // for passive as for gps and network.
         // Current Sensibility API returns values from all three providers
         Log.d(TAG, "Requesting GPS location updates");
-        location_manager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                0, 0, this, Looper.getMainLooper());
+        try {
+            location_manager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER, 0, 0,
+                    this, Looper.getMainLooper());
+        } catch (SecurityException e)
+        {
+            // We are lacking the ACCESS_COARSE_LOCATION or
+            // ACCESS_FINE_LOCATION permission
+        }
+
         Log.d(TAG, "Requesting NETWORK location updates");
-        location_manager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER, 0, 0,
-                this, Looper.getMainLooper());
+        try {
+            location_manager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER, 0, 0,
+                    this, Looper.getMainLooper());
+        } catch (SecurityException e) {
+            // We are lacking the ACCESS_COARSE_LOCATION or
+            // ACCESS_FINE_LOCATION permission
+        }
 
         // Store a copy of this to use in
         // inner classes ConnectionCallbacks, OnConnectionFailedListener
@@ -160,22 +173,27 @@ public class LocationService implements android.location.LocationListener,
             public void onConnected(@Nullable Bundle bundle) {
                 Log.d(TAG, "Called Google API Client onConnected");
 
-                LocationServices.FusedLocationApi
-                        .requestLocationUpdates(_this.google_api_client,
-                        _this.google_location_request, _this,
-                                Looper.getMainLooper());
+                try {
+                    LocationServices.FusedLocationApi
+                            .requestLocationUpdates(_this.google_api_client,
+                                    _this.google_location_request, _this,
+                                    Looper.getMainLooper());
 
-                // Once connected we can unregister the connection listener
-                // and connection failed listener
-                _this.google_api_client.unregisterConnectionCallbacks(this);
+                    // Once connected we can unregister the connection listener
+                    // and connection failed listener
+                    _this.google_api_client.unregisterConnectionCallbacks(this);
 
-                // Only gets here after call to google_api_client.connect()
-                // which happens after google_api_connection_failed_callbacks
-                // is initialized but the compiler doesn't know this and
-                // wants us to check
-                if (_this.google_api_connection_failed_callbacks != null) {
-                    _this.google_api_client.unregisterConnectionFailedListener(
-                            google_api_connection_failed_callbacks);
+                    // Only gets here after call to google_api_client.connect()
+                    // which happens after google_api_connection_failed_callbacks
+                    // is initialized but the compiler doesn't know this and
+                    // wants us to check
+                    if (_this.google_api_connection_failed_callbacks != null) {
+                        _this.google_api_client.unregisterConnectionFailedListener(
+                                google_api_connection_failed_callbacks);
+                    }
+                } catch (SecurityException e) {
+                    // We are lacking the ACCESS_COARSE_LOCATION or
+                    // ACCESS_FINE_LOCATION permission
                 }
             }
             @Override
@@ -225,10 +243,15 @@ public class LocationService implements android.location.LocationListener,
      * Disconnects from Google Play Service
      *
      */
-    public void stop_location() throws SecurityException {
+    public void stop_location() {
         Log.d(TAG, "Entering stop_location");
 
         location_manager.removeUpdates(this);
+
+        // Make sure we don't access a null object later on
+        if (google_api_client == null) {
+            return;
+        }
 
         // If in the process of connecting wait with disconnect until
         // being connected
@@ -321,29 +344,37 @@ public class LocationService implements android.location.LocationListener,
     * @return  String serialized JSON Object or null
     * e.g.: same as getLocation
     */
-    public String getLastKnownLocation() throws JSONException, SecurityException {
+    public String getLastKnownLocation() throws JSONException {
         Log.d(TAG, "Entering getLastKnownLocation");
 
         JSONObject locations_json = new JSONObject();
-        Location location_gps = null;
-        Location location_network = null;
-        Location location_fused = null;
 
-        location_gps = location_manager.getLastKnownLocation("gps");
-        if (location_gps != null) {
-            locations_json.put("gps", jsonify_location(location_gps));
+        Location location = null;
+        String[] location_names = {"gps", "network"};
+
+        for (String location_name : location_names) {
+            try {
+                location = location_manager.getLastKnownLocation(location_name);
+                if (location != null) {
+                    locations_json.put(location_name, jsonify_location(location));
+                }
+                location = null;
+            } catch (SecurityException e) {
+                // We are lacking the ACCESS_COARSE_LOCATION or
+                // ACCESS_FINE_LOCATION permission
+            }
         }
 
-        location_network = location_manager.getLastKnownLocation("network");
-        if (location_network != null) {
-            locations_json.put("network", jsonify_location(location_network));
-        }
-
-        if (google_api_client.isConnected()) {
-            location_fused = LocationServices.FusedLocationApi.getLastLocation(
-                    google_api_client);
-            if (location_fused != null) {
-                locations_json.put("fused", jsonify_location(location_fused));
+        if ((google_api_client != null) && google_api_client.isConnected()) {
+            try {
+                location = LocationServices.FusedLocationApi.getLastLocation(
+                        google_api_client);
+                if (location != null) {
+                    locations_json.put("fused", jsonify_location(location));
+                }
+            } catch (SecurityException e) {
+                // We are lacking the ACCESS_COARSE_LOCATION or
+                // ACCESS_FINE_LOCATION permission
             }
         }
 
