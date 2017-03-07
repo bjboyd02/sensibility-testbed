@@ -28,10 +28,10 @@
         <!-- <service android:name="com.sensibility_testbed.ScriptService" />
         <service android:name="com.sensibility_testbed.InstallerService" /> -->
         <service
-            android:name="com.snakei.PythonInterpreterService0"
+            android:name="com.snakei.PythonNodemanagerService"
             android:enabled="true"
             android:exported="false"
-            android:process=":proc0"></service>
+            android:process=":nmmain"></service>
         <service
             android:name="com.snakei.PythonInterpreterService1"
             android:enabled="true"

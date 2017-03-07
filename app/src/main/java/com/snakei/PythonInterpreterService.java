@@ -52,7 +52,6 @@ public class PythonInterpreterService extends Service {
     static String TAG = "PyInterpreterService"; // (sic!) len(TAG) must be < 23
 
     private static Class[] enabled_services = {
-            PythonInterpreterService0.class,
             PythonInterpreterService1.class,
             PythonInterpreterService2.class,
             PythonInterpreterService3.class,
@@ -89,11 +88,10 @@ public class PythonInterpreterService extends Service {
         // Throw an exception?
         // Return not 0 ?
         if (idle_service_class == null) {
-            Log.d(TAG, "No idle service process was found (we only have 9)");
+            Log.d(TAG, "No idle service process was found (we only have 8)");
             return;
         }
         Log.d(TAG, "Found idle service process");
-
         Intent intent = new Intent(context, idle_service_class);
 
         Log.d(TAG, String.format("Starting interpreter service with args: %s", (Object[])python_args));
@@ -102,38 +100,44 @@ public class PythonInterpreterService extends Service {
         context.startService(intent);
     }
 
-    /* XXX LP: this is a critical section, take care of it!!! */
-    public static Class getIdleServiceClass(Context context) {
-
-        ActivityManager manager = (ActivityManager)context.getSystemService(ACTIVITY_SERVICE);
-
+    /* FIXME: this is a critical section, take care of it!!! */
+    private static Class getIdleServiceClass(Context context) {
         // Enabled but idle service
         Class idle_service = null;
 
-        // Currently running services reported by ActivityManager
-        List<ActivityManager.RunningServiceInfo> running_services =
-                manager.getRunningServices(Integer.MAX_VALUE);
-
-        find_idle_service_loop:
         for (Class enabled_service : enabled_services) {
-            for (ActivityManager.RunningServiceInfo running_service : running_services) {
-
-                if (enabled_service.getName().equals(running_service.service.getClassName())) {
-                    Log.d(TAG, String.format("Service '%s' is not idle", enabled_service.getName()));
-
-                    // If we find the enabled service in the list of running services
-                    // we can continue checking the next enabled service (outer loop)
-                    continue find_idle_service_loop;
-                }
+            if (! isServiceRunning(context, enabled_service)) {
+                // The enabled service was not found in the list of running services
+                // ergo it is idle and we can use it
+                idle_service = enabled_service;
+                break;
             }
-
-            // The enabled service was not found in the list of running services
-            // ergo it is idle and we can use it
-            idle_service = enabled_service;
-            break;
         }
 
         return idle_service;
+    }
+
+    /*
+     * Check whether a Service with a passed class is currently running or not.
+     *
+     * FIXME:
+     * From the Android docs:
+     * Note: this method is only intended for debugging or implementing service management type
+     * user interfaces.
+     *
+     */
+    public static boolean isServiceRunning(Context context, Class service_class) {
+
+        ActivityManager manager = (ActivityManager)context.getSystemService(ACTIVITY_SERVICE);
+        List<ActivityManager.RunningServiceInfo> running_services =
+                manager.getRunningServices(Integer.MAX_VALUE);
+
+        for (ActivityManager.RunningServiceInfo running_service : running_services) {
+            if (service_class.getName().equals(running_service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public native void runScript(String[] python_args,

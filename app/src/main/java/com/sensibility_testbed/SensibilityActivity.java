@@ -22,6 +22,8 @@ import android.widget.EditText;
 import android.widget.TabHost;
 import android.widget.TextView;
 import com.snakei.PythonInterpreterService;
+import com.snakei.PythonNodemanagerService;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -114,8 +116,8 @@ public class SensibilityActivity extends FragmentActivity {
 
 
     /*
-     * IP layout shows the current IP address of the device
-     *
+     * IP layout shows the current IP address of the device. Updates when changing to the layout.
+     * NOTE: Currently only supports IPv4
      */
 
     private void updateIpLayout() {
@@ -191,7 +193,7 @@ public class SensibilityActivity extends FragmentActivity {
                     seattleDownloaded.setTextColor(red);
                 }
 
-                if (isSeattleInstalled()){
+                if (isSeattleInstalled()) {
                     seattleInstalled.setText("\u2713 Custom Installer Installed");
                     seattleInstalled.setTextColor(green);
 
@@ -201,8 +203,13 @@ public class SensibilityActivity extends FragmentActivity {
                 }
 
                 //FIXME: find out if nm is running
-                nodemanagerRunning.setText("\u2713 Nodemanager running (FIXME)");
-                nodemanagerRunning.setTextColor(gray);
+                if (isSeattleRunning()) {
+                    nodemanagerRunning.setText("\u2713 Nodemanager running");
+                    nodemanagerRunning.setTextColor(green);
+                } else {
+                    nodemanagerRunning.setText("\u2715 Nodemanager running");
+                    nodemanagerRunning.setTextColor(red);
+                }
             }
         });
     }
@@ -270,6 +277,7 @@ public class SensibilityActivity extends FragmentActivity {
         return false;
     }
 
+
     /*
      * Seattle installation means downloading the seattle android installer from the custom
      * installer builder (CIB), either by taking the CIB URL from the App Installation referrer or
@@ -294,11 +302,14 @@ public class SensibilityActivity extends FragmentActivity {
         return false;
     }
 
-    //FIXME: Dedicate process to nodemanager and check if that process is running using ActivityManager
+    /*
+     * Seattle is running if the ActivityManager lists the dedicated class nodemanager service class
+     * name in the running services list.
+     */
     private boolean isSeattleRunning() {
-        return true;
+        return PythonInterpreterService.isServiceRunning(
+                getApplicationContext(), PythonNodemanagerService.class);
     }
-
 
     /*
      * Install Python
@@ -449,8 +460,9 @@ public class SensibilityActivity extends FragmentActivity {
         String[] python_args = {"nmmain.py", "--foreground"};
 
         Log.d(TAG, String.format(
-                "Calling PythonInterpreterService.startService with args %s", (Object[])python_args));
-        PythonInterpreterService.startService(python_args, getBaseContext());
+                "Calling PythonNodemanagerService.startService with args %s", (Object[])python_args));
+
+        PythonNodemanagerService.startService(python_args, getBaseContext());
     }
 
     /*
@@ -535,8 +547,13 @@ public class SensibilityActivity extends FragmentActivity {
 
             @Override
             protected Boolean doInBackground(Void... voids) {
+                if (! isSeattleRunning()) {
+                    startSeattleNodemanager();
+                } else {
+                    publishProgress("The Nodemanager is already running. Kill it first to restart.");
+                }
                 startSeattleNodemanager();
-                _trySleep(1000);
+                _trySleep(3000);
                 return true;
             }
             protected void onPreExecute() {
@@ -621,7 +638,6 @@ public class SensibilityActivity extends FragmentActivity {
                     _trySleep(1000);
                 }
 
-
                 // Start seattleinstaller.py in background process if not yet installed
                 if (! isSeattleInstalled()) {
                     publishProgress("Installing Custom Installer...");
@@ -636,32 +652,34 @@ public class SensibilityActivity extends FragmentActivity {
                         if (isSeattleInstalled()) {
                             publishProgress("Successfully installed Custom Installer!");
                             updateHome();
+                            _trySleep(1000);
                             break;
                         }
                     }
 
                     if (! isSeattleInstalled()) {
                         publishProgress("Custom Installer was not installed in a timely manner!");
+                        _trySleep(1000);
                         return false;
                     }
-                    _trySleep(1000);
                 }
-
 
                 // Start nodemanager
                 if (! isSeattleRunning()) {
                     publishProgress("Starting Nodemanager...");
                     startSeattleNodemanager();
 
+                    _trySleep(1000);
+
                     if (isSeattleRunning()) {
                         publishProgress("Successfully started Nodemanager!");
                         updateHome();
-
+                        _trySleep(1000);
                     } else {
                         publishProgress("Nodemanager could not be started!");
+                        _trySleep(1000);
                         return false;
                     }
-                    _trySleep(1000);
                 }
 
                 updateHome();
