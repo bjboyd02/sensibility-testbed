@@ -238,7 +238,7 @@ public class LocationService implements android.location.LocationListener,
         }
 
         // Disconnect from Google Api Only if we are connected
-        if(google_api_client.isConnected()) {
+        if (google_api_client.isConnected()) {
             // If listener is not registered this has no effects
             LocationServices.FusedLocationApi.removeLocationUpdates(
                     google_api_client, this);
