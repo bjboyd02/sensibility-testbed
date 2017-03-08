@@ -483,6 +483,15 @@ public class SensibilityActivity extends FragmentActivity {
         PythonNodemanagerService.startService(python_args, getBaseContext());
     }
 
+
+    /*
+     * Harshly kills the dedicated Seattle Nodemanager process if it is running.
+     */
+    private void killSeattleNodemanager() {
+        Log.d(TAG, "Entering killSeattleNodemanager");
+        PythonNodemanagerService.killService(getApplicationContext());
+    }
+
     /*
      * A single Asynchronous Task that copies Python, Downloads Seattle from a pasted URL
      * or if not specified from res/raw and runs seattleinstaller.py forcefully, i.e. independently
@@ -557,6 +566,11 @@ public class SensibilityActivity extends FragmentActivity {
         }.execute();
     }
 
+
+    /*
+     * An asynchronous task that starts the Nodemanager if Seattle is installed in the Nodemanager
+     * isn't running yet, giving user feedback.
+     */
     private void developStart() {
         final ProgressDialog progress = getSpinningWheel();
 
@@ -600,6 +614,42 @@ public class SensibilityActivity extends FragmentActivity {
             }
         }.execute();
     }
+
+    /*
+     * An asynchronous task that forcefully kills the Nodemanager process if it is running.
+     *
+     */
+    private void developKill() {
+        final ProgressDialog progress = getSpinningWheel();
+
+        new AsyncTask<Void, String, Boolean>() {
+
+            @Override
+            protected Boolean doInBackground(Void... voids) {
+
+                if (isSeattleRunning()) {
+                    publishProgress("Killing Nodemanager...");
+                    killSeattleNodemanager();
+                } else {
+                    publishProgress("The Nodemanager isn't running. Start first, then kill.");
+                }
+                _trySleep(3000);
+                return true;
+            }
+            protected void onPreExecute() {
+                progress.show();
+            }
+
+            protected void onProgressUpdate(String... progressMessage) {
+                progress.setMessage(progressMessage[0]);
+            }
+
+            protected void onPostExecute(Boolean result) {
+                progress.dismiss();
+            }
+        }.execute();
+    }
+
 
 
     /*
@@ -724,10 +774,6 @@ public class SensibilityActivity extends FragmentActivity {
         }.execute();
     }
 
-    private void stopSeattle() {
-        Log.d(TAG, "Killing not implemented");
-    }
-
     /* ##########################################################################################
      * Setup
      * ##########################################################################################
@@ -812,7 +858,7 @@ public class SensibilityActivity extends FragmentActivity {
             @Override
             public void onClick(View v) {
                 Log.d(TAG, "Clicked 'Kill' button");
-                stopSeattle();
+                developKill();
             }
         });
     }

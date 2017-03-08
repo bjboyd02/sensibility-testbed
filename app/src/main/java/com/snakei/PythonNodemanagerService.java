@@ -1,7 +1,9 @@
 package com.snakei;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Process;
 import android.util.Log;
 
 /**
@@ -19,6 +21,16 @@ import android.util.Log;
  */
 
 public class PythonNodemanagerService extends PythonInterpreterService {
+
+    public static void killService(Context context) {
+        ActivityManager.RunningServiceInfo info = PythonNodemanagerService.
+                getRunningServiceInfoByClass(context, PythonNodemanagerService.class);
+
+        if (info != null) {
+            Process.killProcess(info.pid);
+        }
+    }
+
 
     public static void startService(String[] python_args, Context context) {
 

@@ -118,26 +118,38 @@ public class PythonInterpreterService extends Service {
     }
 
     /*
-     * Check whether a Service with a passed class is currently running or not.
+     * Check whether a Service with a passed class is currently running or not using
+     * a RunningServiceInfo.
+     */
+    public static boolean isServiceRunning(Context context, Class service_class) {
+
+        if (getRunningServiceInfoByClass(context, service_class) != null) {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+     * Get the RunningServiceInfo by Service class.
      *
      * FIXME:
      * From the Android docs:
      * Note: this method is only intended for debugging or implementing service management type
      * user interfaces.
-     *
      */
-    public static boolean isServiceRunning(Context context, Class service_class) {
 
+    public static ActivityManager.RunningServiceInfo getRunningServiceInfoByClass(Context context,
+                                                                                  Class service_class) {
         ActivityManager manager = (ActivityManager)context.getSystemService(ACTIVITY_SERVICE);
         List<ActivityManager.RunningServiceInfo> running_services =
                 manager.getRunningServices(Integer.MAX_VALUE);
 
         for (ActivityManager.RunningServiceInfo running_service : running_services) {
             if (service_class.getName().equals(running_service.service.getClassName())) {
-                return true;
+                return running_service;
             }
         }
-        return false;
+        return null;
     }
 
     public native void runScript(String[] python_args,
