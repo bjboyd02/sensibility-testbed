@@ -24,8 +24,8 @@ model {
             applicationId = "com.sensibility_testbed"
             minSdkVersion.apiLevel = 21
             targetSdkVersion.apiLevel = 24
-            versionCode = 1
-            versionName = "1.0"
+            versionCode = 17
+            versionName = "20170308-1040-CET"
         }
         ndk {
             platformVersion 21
@@ -52,6 +52,9 @@ model {
             release {
                 minifyEnabled false
                 proguardFiles.add(file('proguard-android.txt'))
+                // NOTE: We MUST use debuggable builds at the moment, see
+                // https://github.com/aaaaalbert/sensibility-testbed/issues/30
+                debuggable true
             }
             // debug build type is implicit
         }
