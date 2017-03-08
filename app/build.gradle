@@ -52,9 +52,6 @@ model {
             release {
                 minifyEnabled false
                 proguardFiles.add(file('proguard-android.txt'))
-                // NOTE: We MUST use debuggable builds at the moment, see
-                // https://github.com/aaaaalbert/sensibility-testbed/issues/30
-                debuggable true
             }
             // debug build type is implicit
         }
