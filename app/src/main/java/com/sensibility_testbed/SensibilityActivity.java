@@ -13,7 +13,6 @@ import android.os.StatFs;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
-import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -21,24 +20,25 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TabHost;
 import android.widget.TextView;
-import com.snakei.PythonInterpreterService;
-import com.snakei.PythonNodemanagerService;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
-import java.net.NetworkInterface;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Enumeration;
-
 
 import javax.net.ssl.HttpsURLConnection;
+
+import com.snakei.PythonInterpreterService;
+import com.snakei.PythonNodemanagerService;
+
 
 import static com.sensibility_testbed.ReferralReceiver.getCustomInstallerReferralUrl;
 
@@ -97,7 +97,7 @@ public class SensibilityActivity extends FragmentActivity {
 
     // Used to check if Seattle is installed
     static String SEATTLE_PATH = "seattle/seattle_repy";
-    static String VESSEL_PATH = "seattle/seattle_repy/v1/";
+    static String INSTALL_LOG_PATH = "seattle/seattle_repy/installerstdout.log";
 
     // A code to filter permission requests issued by us in the permission request callback
     public final int SENSIBILITY_RUNTIME_PERMISSIONS = 1;
@@ -171,7 +171,6 @@ public class SensibilityActivity extends FragmentActivity {
 
         final int red =  getResources().getColor(android.R.color.holo_red_dark);
         final int green = getResources().getColor(android.R.color.holo_green_dark);
-        final int gray = getResources().getColor(android.R.color.darker_gray);
 
         runOnUiThread(new Runnable() {
             @Override
@@ -284,21 +283,32 @@ public class SensibilityActivity extends FragmentActivity {
      * by specifying a CIB URL in the manual fragment or by copying it over from
      * res/raw/seattle_installer.zip and running seattleinstaller.py
      *
-     * In any case we expect a directory "seattle/seattle_repy/v1" to exist in the app's
-     * data directory, if the installation was successful.
+     * In any case on android we expect there to be a file INSTALL_LOG_PATH
+     * (seattle/seattle_repy/seattleinstallerstdout.log) containing a line that says
+     * "seattle has been installed" if the installation has finished.
      *
-     * If the app's files directory has a subdirectory called Python we assume that
-     * Python is installed.
+     * TODO: Think of a better (less costly) way to see if Seattle is installed
      *
      */
     private boolean isSeattleInstalled() {
         Log.d(TAG, "Checking if Seattle is installed");
         Context ctx = getApplicationContext();
 
-        File vesselDir = new File(filesRoot(ctx) + VESSEL_PATH);
-        if(vesselDir.isDirectory()) {
-            return true;
+        File installLog = new File(filesRoot(ctx) + INSTALL_LOG_PATH);
+
+        // Try to read log file and grep for a specific line
+        try (BufferedReader br = new BufferedReader(new FileReader(installLog))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.indexOf("seattle has been installed") != -1) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            Log.d(TAG, String.format("Could not read %s: %s", INSTALL_LOG_PATH, e.getMessage()));
         }
+        // If the log file does not exist or does not contain the desired line,
+        // Seattle was not installed.
         return false;
     }
 
@@ -555,6 +565,13 @@ public class SensibilityActivity extends FragmentActivity {
 
             @Override
             protected Boolean doInBackground(Void... voids) {
+
+                if (! isSeattleInstalled()) {
+                    publishProgress("Can't start the nodemanager. " +
+                            "Custom Installer is not installed.");
+
+                }
+
                 if (! isSeattleRunning()) {
                     startSeattleNodemanager();
                 } else {
@@ -620,7 +637,6 @@ public class SensibilityActivity extends FragmentActivity {
                     _trySleep(1000);
                 }
 
-
                 // Download Custom Installer if not downloaded
                 if (! isSeattleDownloaded()) {
                     publishProgress("Downloading Custom Installer...");
@@ -648,11 +664,12 @@ public class SensibilityActivity extends FragmentActivity {
 
                 // Start seattleinstaller.py in background process if not yet installed
                 if (! isSeattleInstalled()) {
-                    publishProgress("Installing Custom Installer...");
+                    publishProgress("Installing Custom Installer (this could take a while) ...");
                     startSeattleInstaller();
 
-                    // Wait at most 20 seconds for installation to finish
-                    int waitForSec = 20;
+                    // Wait a specified time for installation to finish
+                    int waitForSec = 120;
+
                     // FIXME: Think of a better way to do this
                     for (int i = 0; i < waitForSec; i++) {
                         _trySleep(1000);
