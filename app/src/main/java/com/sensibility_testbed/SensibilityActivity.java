@@ -183,15 +183,21 @@ public class SensibilityActivity extends FragmentActivity {
         final TextView seattleDownloaded = (TextView) findViewById(R.id.seattleDownload);
         final TextView seattleInstalled = (TextView) findViewById(R.id.seattleSetup);
         final TextView nodemanagerRunning = (TextView) findViewById(R.id.nodeRunning);
+        final Button installBtn = (Button) findViewById(R.id.auto_install);
 
         final int red =  getResources().getColor(android.R.color.holo_red_dark);
         final int green = getResources().getColor(android.R.color.holo_green_dark);
+
+        final boolean pythonIsInstalled = isPythonInstalled();
+        final boolean seattleIsDownloaded = isSeattleDownloaded();
+        final boolean seattleIsInstalled = isSeattleInstalled();
+        final boolean seattleIsRunning = isSeattleRunning();
 
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
 
-                if (isPythonInstalled()) {
+                if (pythonIsInstalled) {
                     pythonInstalled.setText("\u2713 Python Installed");
                     pythonInstalled.setTextColor(green);
                 } else {
@@ -199,7 +205,7 @@ public class SensibilityActivity extends FragmentActivity {
                     pythonInstalled.setTextColor(red);
                 }
 
-                if (isSeattleDownloaded()) {
+                if (seattleIsDownloaded) {
                     seattleDownloaded.setText("\u2713 Custom Installer Downloaded");
                     seattleDownloaded.setTextColor(green);
                 } else {
@@ -207,7 +213,7 @@ public class SensibilityActivity extends FragmentActivity {
                     seattleDownloaded.setTextColor(red);
                 }
 
-                if (isSeattleInstalled()) {
+                if (seattleIsInstalled) {
                     seattleInstalled.setText("\u2713 Custom Installer Installed");
                     seattleInstalled.setTextColor(green);
 
@@ -216,14 +222,19 @@ public class SensibilityActivity extends FragmentActivity {
                     seattleInstalled.setTextColor(red);
                 }
 
-                //FIXME: find out if nm is running
-                if (isSeattleRunning()) {
+                if (seattleIsRunning) {
                     nodemanagerRunning.setText("\u2713 Nodemanager running");
                     nodemanagerRunning.setTextColor(green);
                 } else {
                     nodemanagerRunning.setText("\u2715 Nodemanager running");
                     nodemanagerRunning.setTextColor(red);
                 }
+
+                // Enable the button if any of above is false
+                // only if  all are true, then disable
+                installBtn.setEnabled(! (pythonIsInstalled && seattleIsDownloaded &&
+                            seattleIsInstalled && seattleIsRunning) );
+
             }
         });
     }
