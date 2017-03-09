@@ -96,7 +96,8 @@ public class SensibilityActivity extends FragmentActivity {
     public static String PYTHON_PATH = "seattle/seattle_repy";
 
     // Used to check if Seattle is installed
-    static String SEATTLE_PATH = "seattle/seattle_repy";
+    static String SEATTLE_PATH = "seattle";
+    static String SEATTLE_REPY_PATH = "seattle/seattle_repy";
     static String INSTALL_LOG_PATH = "seattle/seattle_repy/installerstdout.log";
 
     // A code to filter permission requests issued by us in the permission request callback
@@ -114,6 +115,20 @@ public class SensibilityActivity extends FragmentActivity {
         return ctx.getFilesDir().getPath() + "/";
     }
 
+    private void deleteRecursively(File file) {
+
+        // Recurse if the file is a directory
+        if (file.isDirectory()) {
+            for (File child : file.listFiles()) {
+                deleteRecursively(child);
+            }
+        }
+
+        // Delete if it exists
+        if (file.exists()) {
+            file.delete();
+        }
+    }
 
     /*
      * IP layout shows the current IP address of the device. Updates when changing to the layout.
@@ -269,7 +284,7 @@ public class SensibilityActivity extends FragmentActivity {
         Log.d(TAG, "Checking if Seattle is downloaded/unpacked");
         Context ctx = getApplicationContext();
 
-        File vesselDir = new File(filesRoot(ctx) + SEATTLE_PATH);
+        File vesselDir = new File(filesRoot(ctx) + SEATTLE_REPY_PATH);
         if(vesselDir.isDirectory()) {
             return true;
         }
@@ -492,6 +507,23 @@ public class SensibilityActivity extends FragmentActivity {
         PythonNodemanagerService.killService(getApplicationContext());
     }
 
+
+    /*
+     * Recursively removes all files in SEATTLE_PATH
+     */
+    private boolean removeSeattle() {
+        File seattleDir = new File(filesRoot(getApplicationContext()) + SEATTLE_PATH);
+
+        try {
+            deleteRecursively(seattleDir);
+        } catch (Exception e) {
+            Log.d(TAG, "Failed to remove Custom Installer.");
+            return false;
+        }
+        return true;
+    }
+
+
     /*
      * A single Asynchronous Task that copies Python, Downloads Seattle from a pasted URL
      * or if not specified from res/raw and runs seattleinstaller.py forcefully, i.e. independently
@@ -517,6 +549,14 @@ public class SensibilityActivity extends FragmentActivity {
                 }
 
                 _trySleep(1000);
+
+                if (isSeattleInstalled()) {
+                    publishProgress("Removing existing Custom Installer...");
+                    removeSeattle();
+                }
+
+                _trySleep(1000);
+
 
                 // If URL was specified download Custom Installer from URL
                 if (url != null) {
@@ -545,10 +585,28 @@ public class SensibilityActivity extends FragmentActivity {
                 _trySleep(1000);
 
                 // Start seattleinstaller.py in background process if not yet installed
-                publishProgress("Starting seattleinstaller.py...");
+                publishProgress("Installing Custom Installer (this could take a while) ...");
                 startSeattleInstaller();
 
-                _trySleep(1000);
+                // Wait a specified time for installation to finish
+                int waitForSec = 120;
+
+                // FIXME: Think of a better way to do this
+                for (int i = 0; i < waitForSec; i++) {
+                    _trySleep(1000);
+
+                    if (isSeattleInstalled()) {
+                        publishProgress("Successfully installed Custom Installer!");
+                        _trySleep(1000);
+                        break;
+                    }
+                }
+
+                if (! isSeattleInstalled()) {
+                    publishProgress("Custom Installer was not installed in a timely manner!");
+                    _trySleep(1000);
+                    return false;
+                }
 
                 return true;
             }
