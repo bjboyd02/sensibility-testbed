@@ -518,9 +518,14 @@ public class SensibilityActivity extends FragmentActivity {
 
                 _trySleep(1000);
 
+                // If URL was specified download Custom Installer from URL
+                if (url != null) {
+                    publishProgress(String.format("Downloading Custom Installer from %s...", url.toString()));
+                    downloadCustomInstallerFromURL(url);
+
                 // If URL was not specified use debug installer from res raw
-                // Abort if no debug instsaller zip is in res/raw
-                if (url == null) {
+                // Abort if no debug installer zip is in res/raw
+                } else {
                     int seattleRawResourceId = getResources()
                             .getIdentifier("seattle_android", "raw", getPackageName());
 
@@ -535,11 +540,6 @@ public class SensibilityActivity extends FragmentActivity {
                         publishProgress("No URL was specified, copying Custom Installer from debug zip...");
                         copySeattleFromRaw(seattleRawResourceId);
                     }
-
-                // If URL was specified download Custom Installer from URL
-                } else {
-                    publishProgress(String.format("Downloading Custom Installer from %s...", url.toString()));
-                    downloadCustomInstallerFromURL(url);
                 }
 
                 _trySleep(1000);
@@ -583,7 +583,6 @@ public class SensibilityActivity extends FragmentActivity {
                 if (! isSeattleInstalled()) {
                     publishProgress("Can't start the nodemanager. " +
                             "Custom Installer is not installed.");
-
                 }
 
                 if (! isSeattleRunning()) {
