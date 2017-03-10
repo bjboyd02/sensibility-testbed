@@ -16,6 +16,30 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!--
+               Filters intents sent when clicking on a link in the format specified in data, i.e.:
+               "sensi://send.data"
+
+               We have to register this intent-filter on an activity, where we relay it
+               to a BroadcastReceiver in DataService, which filters for
+               actions DataService.SEND_DATA_ACTION with a data format:
+
+               DataService.SEND_DATA_SCHEME://DataService.SEND_DATA_PATH
+
+               Make sure that the the data scheme and data host match.
+
+               FIXME: Use manifest variables for data schemes
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="sensi"
+                    android:host="send.data"/>
+            </intent-filter>
+
             <!--
             <intent-filter>
                 <action android:name="com.googlecode.android_scripting.action.ACTION_LAUNCH_FOR_RESULT" />

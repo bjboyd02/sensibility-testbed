@@ -3,7 +3,9 @@ package com.sensibility_testbed;
 import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
@@ -20,6 +22,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TabHost;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -36,6 +39,7 @@ import java.util.Date;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import com.snakei.DataService;
 import com.snakei.PythonInterpreterService;
 import com.snakei.PythonNodemanagerService;
 
@@ -842,6 +846,45 @@ public class SensibilityActivity extends FragmentActivity {
         }.execute();
     }
 
+
+    /*
+     * If the app was launched by clicking on a special link (see intent filters in
+     * AndroidManifest.xml) we broadcast the URI (as is) using the custom action
+     * DataService.SEND_DATA_ACTION.
+     *
+     * If a Seattle vessel registers this a broadcast listener it can access the query parameters
+     * passed via this URI.
+     *
+     * TODO:
+     * Check for isolation and security
+     * I think we can receive intents by everyone and also
+     * everyone can receive the intents we broadcast.
+     *
+     */
+    private void handleUriIntent() {
+        Log.d(TAG, "Entering handleUriIntent");
+
+        Intent activityIntent = getIntent();
+        String action = activityIntent.getAction();
+        final Uri uri = activityIntent.getData();
+
+        // TODO: Isolation? We have a filter for this action but who else can send it?
+        if (action == "android.intent.action.VIEW" && uri != null) {
+            Intent broadcastIntent = new Intent();
+            broadcastIntent.setAction(DataService.SEND_DATA_ACTION);
+            broadcastIntent.setData(uri);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(),
+                            String.format("Relaying URI '%s' to vessels", uri.toString()),
+                            Toast.LENGTH_LONG);
+                }
+            });
+            sendBroadcast(broadcastIntent);
+        }
+    }
+
     /* ##########################################################################################
      * Setup
      * ##########################################################################################
@@ -1019,6 +1062,9 @@ public class SensibilityActivity extends FragmentActivity {
 
         // Update Auto view
         updateHome();
+
+        // Check cases where activity was started by clicking on a special link
+        handleUriIntent();
     }
 
 

@@ -110,5 +110,14 @@ jmethodID cached_output_notify;
 jmethodID cached_output_vibrate;
 
 
+jclass cached_data_class;
+jmethodID cached_data_start_data;
+jmethodID cached_data_stop_data;
+jmethodID cached_data_init;
+jmethodID cached_data_get_instance;
+jmethodID cached_data_get_most_recent_data;
+jmethodID cached_data_get_all_data;
+
+
 #endif /* defined _SNAKEI_H_ */
 

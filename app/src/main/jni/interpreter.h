@@ -15,6 +15,7 @@
 #include "pyhelper.h"
 #include "miscinfo.h"
 #include "popen.h"
+#include "data.h"
 
 void interpreter_init(char* home, char* path);
 void interpreter_run(int argc, char **argv);

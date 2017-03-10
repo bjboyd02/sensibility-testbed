@@ -172,6 +172,23 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     cached_output_vibrate = jni_find_static_method(
             cached_output_class, "vibrate", "(Landroid/content/Context;D)V");
 
+
+    /* Cache data */
+    cached_data_class = jni_find_class_as_global(
+            "com/snakei/DataService");
+    cached_data_start_data = jni_find_method(
+            cached_data_class, "start_data", "()V");
+    cached_data_stop_data = jni_find_method(
+            cached_data_class, "stop_data", "()V");
+    cached_data_init = jni_find_method(
+            cached_data_class,"init","(Landroid/content/Context;)V");
+    cached_data_get_instance = jni_find_getter(
+            cached_data_class, "()Lcom/snakei/DataService;");
+    cached_data_get_most_recent_data = jni_find_method(
+            cached_data_class, "getMostRecentData", "()Ljava/lang/String;");
+    cached_data_get_all_data = jni_find_method(
+            cached_data_class, "getAllData", "()Ljava/lang/String;");
+
     return JNI_VERSION_1_6;
 }
 

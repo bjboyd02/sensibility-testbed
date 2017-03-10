@@ -101,6 +101,7 @@ void interpreter_init(char* home, char* path) {
   sensor_init_pymodule();
   media_init_pymodule();
   location_init_pymodule();
+  data_init_pymodule();
 
   // Init Java Services (this could be done in Python)
   LOGI("Initializing C-Python Extension Java targets");
@@ -108,6 +109,7 @@ void interpreter_init(char* home, char* path) {
   sensor_init();
   media_init();
   location_init();
+  data_init();
 
   // Some snakei components need to start resources (drains battery)
   // Think of a way to start and STOP!!! in Seattle (only when needed)
@@ -118,6 +120,7 @@ void interpreter_init(char* home, char* path) {
   }
   media_start_media();
   location_start_location();
+  data_start_data();
 
   PyObject *sys_module = PyImport_ImportModule("sys");
   PyObject *sys_attr_path = PyObject_GetAttrString(sys_module, "path");
