@@ -24,8 +24,8 @@ model {
             applicationId = "com.sensibility_testbed"
             minSdkVersion.apiLevel = 21
             targetSdkVersion.apiLevel = 24
-            versionCode = 17
-            versionName = "20170308-1040-CET"
+            versionCode = 18
+            versionName = "20170310-1810-ET"
         }
         ndk {
             platformVersion 21
