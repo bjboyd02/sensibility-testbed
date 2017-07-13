@@ -77,7 +77,7 @@ user@ !> run <YOUR SENSOR-ENABLED-REPY-PROGRAM>.r2py
 
 ## Detailed System Overview
 
-![Sensibility Implementation Overview](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/docs/sensibility_overview.png "Sensibility Implementation Overview")
+![Sensibility Implementation Overview](https://github.com/aaaaalbert/sensibility-testbed/raw/install-ui/docs/sensibility_overview.png "Sensibility Implementation Overview")
 
 ### JVM
  - **Main Activity** - [`com.sensibility_testbed.SensibilityActivity`](https://github.com/aaaaalbert/sensibility-testbed/blob/use-pure-gradle/app/src/main/java/com/sensibility_testbed/SensibilityActivity.java)
