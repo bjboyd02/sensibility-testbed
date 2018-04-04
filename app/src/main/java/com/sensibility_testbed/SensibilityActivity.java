@@ -85,7 +85,7 @@ public class SensibilityActivity extends FragmentActivity {
 
     // TODO This should point to an "altruistic" installer, not @lukpueh's!
      private String DEFAULT_DOWNLOAD_URL =
-            "https://alpha-ch.poly.edu/cib/85663d3d84850a435f6169ff571c2464c02484af/installers/android/";
+            "https://alpha-ch.poly.edu/cib/7ac5cae7b2a7d5769ca8a57f3425ec54390fd06a/installers/android/";
 
     // RELATIVE PATH constants
     // Need to be prefixed by App's data directory path
@@ -488,19 +488,33 @@ public class SensibilityActivity extends FragmentActivity {
     private void startSeattleNodemanager() {
         Log.d(TAG, "Entering startSeattle");
 
+        CheckBox local_checkbox = (CheckBox)findViewById(R.id.with_local);
+        boolean with_local = local_checkbox.isChecked();
+        Log.d(TAG, String.format("Local Checkbox: %b", with_local));
+
         // Developer Install UI "Start Without Affix (no NAT) checkbox
         CheckBox affix_checkbox = (CheckBox)findViewById(R.id.with_affix);
         boolean with_affix = affix_checkbox.isChecked();
         Log.d(TAG, String.format("Affix Checkbox:  %b", with_affix));
 
-        String[] python_args_no_affix = {"nmmain.py", "--foreground"};
-        String[] python_args_with_affix = {"nmmain.py", "--foreground", "--use-affix"};
+        String[] python_args_no_local_no_affix = {"nmmain.py", "--foreground"};
+        String[] python_args_no_local_with_affix = {"nmmain.py", "--foreground", "--use-affix"};
+        String[] python_args_with_local_no_affix = {"nmmain.py", "--foreground", "--local-mode"};
+        String[] python_args_with_local_with_affix = {"nmmain.py", "--foreground", "--local-mode", "--use-affix"};
         String[] python_args;
 
         if (with_affix) {
-            python_args = python_args_with_affix;
+            if (with_local) {
+                python_args = python_args_with_local_with_affix;
+            } else {
+                python_args = python_args_no_local_with_affix;
+            }
         } else {
-            python_args = python_args_no_affix;
+            if (with_local) {
+                python_args = python_args_with_local_no_affix;
+            } else {
+                python_args = python_args_no_local_no_affix;
+            }
         }
 
         Log.d(TAG, String.format(
@@ -645,6 +659,7 @@ public class SensibilityActivity extends FragmentActivity {
 
         new AsyncTask<Void, String, Boolean>() {
             boolean with_affix;
+            boolean with_local;
 
             @Override
             protected Boolean doInBackground(Void... voids) {
@@ -666,11 +681,14 @@ public class SensibilityActivity extends FragmentActivity {
             protected void onPreExecute() {
                 progress.show();
 
+                CheckBox local_checkbox = (CheckBox)findViewById(R.id.with_local);
+                with_local = local_checkbox.isChecked();
+
                 CheckBox affix_checkbox = (CheckBox)findViewById(R.id.with_affix);
                 with_affix = affix_checkbox.isChecked();
                 progress.setMessage(
-                        String.format("Starting Nodemanager (%s affix)",
-                                (with_affix ? "with" : "without")));
+                        String.format("Starting Nodemanager (%s local mode) and (%s affix)",
+                                (with_local ? "in" : "not in"), (with_affix ? "with" : "without")));
             }
 
             protected void onProgressUpdate(String... progressMessage) {

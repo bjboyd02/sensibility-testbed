@@ -37,6 +37,14 @@
 	</Button>
 
 	<CheckBox
+		android:id="@+id/with_local"
+		android:layout_width="290dp"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="30sp"
+		android:checked="false"
+		android:text="Start in Local Mode" />
+
+	<CheckBox
 		android:id="@+id/with_affix"
 		android:layout_width="290dp"
 		android:layout_height="wrap_content"
